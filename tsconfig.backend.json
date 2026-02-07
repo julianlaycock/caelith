@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/backend",
+    "rootDir": "./src"
+  },
+  "include": ["src/backend/**/*", "src/rules-engine/**/*"],
+  "exclude": ["node_modules", "**/*.test.ts", "src/frontend"]
+}
