@@ -1,0 +1,119 @@
+/**
+ * Express Server
+ * 
+ * Main API server for Private Asset Registry
+ */
+
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { closeDb } from './db.js';
+
+// Import routes
+import assetRoutes from './routes/asset-routes.js';
+import investorRoutes from './routes/investor-routes.js';
+import holdingRoutes from './routes/holding-routes.js';
+import rulesRoutes from './routes/rules-routes.js';
+import transferRoutes from './routes/transfer-routes.js';
+import eventRoutes from './routes/event-routes.js';
+
+// Load environment variables
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// API info endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    name: 'Private Asset Registry API',
+    version: '1.0.0',
+    endpoints: {
+      assets: '/api/assets',
+      investors: '/api/investors',
+      holdings: '/api/holdings',
+      rules: '/api/rules',
+      transfers: '/api/transfers',
+      events: '/api/events',
+    },
+  });
+});
+
+// Register API routes
+app.use('/api/assets', assetRoutes);
+app.use('/api/investors', investorRoutes);
+app.use('/api/holdings', holdingRoutes);
+app.use('/api/rules', rulesRoutes);
+app.use('/api/transfers', transferRoutes);
+app.use('/api/events', eventRoutes);
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'NOT_FOUND',
+    message: `Route not found: ${req.method} ${req.path}`,
+  });
+});
+
+// Error handling middleware
+app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    error: 'INTERNAL_SERVER_ERROR',
+    message: err.message,
+  });
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\nShutting down gracefully...');
+  closeDb();
+  process.exit(0);
+});
+
+import { getDb, saveDb } from './db.js';
+
+// Test-only: reset database
+app.post('/api/reset', async (_req, res): Promise<void> => {
+  try {
+    const db = await getDb();
+    db.run('DELETE FROM events');
+    db.run('DELETE FROM transfers');
+    db.run('DELETE FROM holdings');
+    db.run('DELETE FROM rules');
+    db.run('DELETE FROM investors');
+    db.run('DELETE FROM assets');
+    saveDb();
+    res.json({ status: 'reset' });
+  } catch (error) {
+    res.status(500).json({ error: 'RESET_FAILED' });
+  }
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`📊 API: http://localhost:${PORT}/api`);
+  console.log(`💚 Health: http://localhost:${PORT}/health`);
+  console.log('\n📋 Available endpoints:');
+  console.log(`   POST   /api/assets`);
+  console.log(`   GET    /api/assets`);
+  console.log(`   POST   /api/investors`);
+  console.log(`   GET    /api/investors`);
+  console.log(`   POST   /api/holdings`);
+  console.log(`   POST   /api/rules`);
+  console.log(`   POST   /api/transfers`);
+  console.log(`   POST   /api/transfers/simulate`);
+  console.log(`   GET    /api/events`);
+});
+
+export default app;
