@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tasklist:*)",
+      "Bash(DEBUG=vite:*)",
+      "Bash(npm run test:*)",
+      "Bash(git checkout:*)"
+    ]
+  }
+}

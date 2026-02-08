@@ -1,0 +1,249 @@
+openapi: 3.0.3
+info:
+  title: Private Asset Registry API
+  description: REST API for managing private asset ownership and transfer validation
+  version: 0.1.0
+servers:
+  - url: http://localhost:3001/api
+paths:
+  /assets:
+    post:
+      summary: Create asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, asset_type, total_units]
+              properties:
+                name: { type: string }
+                asset_type: { type: string }
+                total_units: { type: integer, minimum: 1 }
+      responses:
+        '201': { description: Asset created }
+    get:
+      summary: List all assets
+      responses:
+        '200': { description: Array of assets }
+  /assets/{id}:
+    get:
+      summary: Get asset by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Asset details }
+        '404': { description: Not found }
+  /assets/{id}/utilization:
+    get:
+      summary: Get asset allocation stats
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Utilization stats }
+  /investors:
+    post:
+      summary: Create investor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, jurisdiction, accredited]
+              properties:
+                name: { type: string }
+                jurisdiction: { type: string }
+                accredited: { type: boolean }
+      responses:
+        '201': { description: Investor created }
+    get:
+      summary: List all investors
+      responses:
+        '200': { description: Array of investors }
+  /investors/{id}:
+    get:
+      summary: Get investor by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Investor details }
+    patch:
+      summary: Update investor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                jurisdiction: { type: string }
+                accredited: { type: boolean }
+      responses:
+        '200': { description: Updated investor }
+  /holdings:
+    post:
+      summary: Allocate units to investor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [investor_id, asset_id, units, acquired_at]
+              properties:
+                investor_id: { type: string, format: uuid }
+                asset_id: { type: string, format: uuid }
+                units: { type: integer, minimum: 0 }
+                acquired_at: { type: string, format: date-time }
+      responses:
+        '201': { description: Holding created }
+    get:
+      summary: Get holdings
+      parameters:
+        - name: assetId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: investorId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Array of holdings }
+  /holdings/cap-table/{assetId}:
+    get:
+      summary: Get cap table for asset
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Cap table entries }
+  /rules:
+    post:
+      summary: Create or update rules for asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id, qualification_required, lockup_days, jurisdiction_whitelist]
+              properties:
+                asset_id: { type: string, format: uuid }
+                qualification_required: { type: boolean }
+                lockup_days: { type: integer, minimum: 0 }
+                jurisdiction_whitelist: { type: array, items: { type: string } }
+                transfer_whitelist:
+                  type: array
+                  items: { type: string }
+                  nullable: true
+      responses:
+        '201': { description: Rules created }
+  /rules/{assetId}:
+    get:
+      summary: Get active rules for asset
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Rule set }
+  /transfers/simulate:
+    post:
+      summary: Validate transfer without executing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid: { type: boolean }
+                  violations: { type: array, items: { type: string } }
+  /transfers:
+    post:
+      summary: Execute transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '201': { description: Transfer executed }
+        '422': { description: Validation failed }
+    get:
+      summary: Get transfers
+      parameters:
+        - name: assetId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Array of transfers }
+  /transfers/history/{assetId}:
+    get:
+      summary: Get transfer history with investor names
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Transfer history }
+  /events:
+    get:
+      summary: Get audit trail
+      parameters:
+        - name: entityType
+          in: query
+          schema: { type: string }
+        - name: entityId
+          in: query
+          schema: { type: string }
+        - name: eventType
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100 }
+      responses:
+        '200': { description: Array of events }
+  /reset:
+    post:
+      summary: Reset database (testing only)
+      responses:
+        '200': { description: Database reset }
+components:
+  schemas:
+    TransferRequest:
+      type: object
+      required: [asset_id, from_investor_id, to_investor_id, units, execution_date]
+      properties:
+        asset_id: { type: string, format: uuid }
+        from_investor_id: { type: string, format: uuid }
+        to_investor_id: { type: string, format: uuid }
+        units: { type: integer, minimum: 1 }
+        execution_date: { type: string, format: date-time }

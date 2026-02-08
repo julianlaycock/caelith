@@ -1,0 +1,76 @@
+import { randomUUID } from 'crypto';
+import { query, execute } from '../db.js';
+import { Asset, CreateAssetInput } from '../models/index.js';
+
+/**
+ * Asset Repository - Handles all database operations for assets
+ */
+
+/**
+ * Create a new asset
+ */
+export async function createAsset(input: CreateAssetInput): Promise<Asset> {
+  const id = randomUUID();
+  const now = new Date().toISOString();
+
+  await execute(
+    `INSERT INTO assets (id, name, asset_type, total_units, created_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    [id, input.name, input.asset_type, input.total_units, now]
+  );
+
+  const asset: Asset = {
+    id,
+    name: input.name,
+    asset_type: input.asset_type,
+    total_units: input.total_units,
+    created_at: now,
+  };
+
+  return asset;
+}
+
+/**
+ * Find asset by ID
+ */
+export async function findAssetById(id: string): Promise<Asset | null> {
+  const results = await query<Asset>(
+    'SELECT * FROM assets WHERE id = ?',
+    [id]
+  );
+
+  return results.length > 0 ? results[0] : null;
+}
+
+/**
+ * Find all assets
+ */
+export async function findAllAssets(): Promise<Asset[]> {
+  return await query<Asset>('SELECT * FROM assets ORDER BY created_at DESC');
+}
+
+/**
+ * Check if asset exists
+ */
+export async function assetExists(id: string): Promise<boolean> {
+  const results = await query<{ count: number }>(
+    'SELECT COUNT(*) as count FROM assets WHERE id = ?',
+    [id]
+  );
+
+  return results.length > 0 && results[0].count > 0;
+}
+
+/**
+ * Get total allocated units for an asset
+ */
+export async function getTotalAllocatedUnits(assetId: string): Promise<number> {
+  const results = await query<{ total: number | null }>(
+    'SELECT SUM(units) as total FROM holdings WHERE asset_id = ?',
+    [assetId]
+  );
+
+  return results.length > 0 && results[0].total !== null
+    ? results[0].total
+    : 0;
+}
