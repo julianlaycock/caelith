@@ -78,7 +78,16 @@ export default function HoldingsPage() {
       <PageHeader
         title="Holdings & Cap Table"
         description="View ownership and allocate units"
-        action={<Button onClick={() => setShowForm(true)}>+ Allocate Units</Button>}
+        action={
+          <div className="flex gap-2">
+            {selectedAssetId && (
+              <Button variant="secondary" onClick={() => api.downloadCapTablePdf(selectedAssetId)}>
+                ↓ Export PDF
+              </Button>
+            )}
+            <Button onClick={() => setShowForm(true)}>+ Allocate Units</Button>
+          </div>
+        }
       />
 
       {successMsg && (
