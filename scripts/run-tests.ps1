@@ -61,11 +61,15 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host ""
 
-# Function to reset database
+# Function to reset database via API
 function Reset-Database {
     Write-Host "  Resetting database..." -ForegroundColor Gray
-    Remove-Item -Force data/registry.db -ErrorAction SilentlyContinue
-    npm run migrate 2>&1 | Out-Null
+    try {
+        Invoke-RestMethod -Uri "http://localhost:3001/api/reset" -Method POST -UseBasicParsing | Out-Null
+        Write-Host "  [OK] Database reset" -ForegroundColor Green
+    } catch {
+        Write-Host "  [WARN] Reset via API failed, continuing..." -ForegroundColor Yellow
+    }
     Start-Sleep -Seconds 1
 }
 
