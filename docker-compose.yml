@@ -1,17 +1,37 @@
 version: "3.8"
 
 services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: codex
+      POSTGRES_PASSWORD: codex
+      POSTGRES_DB: codex
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codex"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "3001:3001"
-    volumes:
-      - ./data:/app/data
     environment:
-      - NODE_ENV=production
-      - PORT=3001
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://codex:codex@db:5432/codex
+      JWT_SECRET: codex-change-this-in-production
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
     build:
@@ -19,7 +39,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
     depends_on:
       - backend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:3001/api
+
+volumes:
+  pgdata:
