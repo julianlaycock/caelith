@@ -27,6 +27,8 @@ import { Transfer } from '../models/index.js';
 export interface SimulationResult {
   valid: boolean;
   violations: string[];
+  checks: Array<{ rule: string; passed: boolean; message: string }>;
+  summary: string;
 }
 
 /**
@@ -55,11 +57,15 @@ export async function simulateTransfer(
     return {
       valid: result.valid,
       violations: result.violations,
+      checks: result.checks,
+      summary: result.summary,
     };
   } catch (error) {
     return {
       valid: false,
       violations: [error instanceof Error ? error.message : 'Unknown error'],
+      checks: [],
+      summary: 'Transfer validation failed due to an error.',
     };
   }
 }
