@@ -34,6 +34,7 @@ export default function TransfersPage() {
     from_investor_id: string;
     to_investor_id: string;
     units: number;
+    execution_date: string;
   } | null>(null);
 
   const assets = useAsync(() => api.getAssets());
@@ -66,6 +67,7 @@ export default function TransfersPage() {
       from_investor_id: data.get('from_investor_id') as string,
       to_investor_id: data.get('to_investor_id') as string,
       units: Number(data.get('units')),
+      execution_date: new Date().toISOString(),
     };
   };
 

@@ -58,6 +58,7 @@ export interface CreateHoldingRequest {
   investor_id: string;
   asset_id: string;
   units: number;
+  acquired_at?: string;
 }
 
 export interface CapTableEntry {
@@ -101,6 +102,7 @@ export interface TransferRequest {
   from_investor_id: string;
   to_investor_id: string;
   units: number;
+  execution_date: string;
 }
 
 export interface TransferHistoryEntry {
