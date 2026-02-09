@@ -66,6 +66,27 @@ app.use('/api/events', authenticate, eventRoutes);
 app.use('/api/webhooks', authenticate, authorize('admin'), webhookRoutes);
 app.use('/api/composite-rules', authenticate, authorize('admin', 'compliance_officer'), compositeRulesRoutes);
 
+import { execute as dbExecute } from './db.js';
+
+// Test-only: reset database
+app.post('/api/reset', async (_req, res): Promise<void> => {
+  try {
+    await dbExecute('DELETE FROM webhook_deliveries');
+    await dbExecute('DELETE FROM webhooks');
+    await dbExecute('DELETE FROM composite_rules');
+    await dbExecute('DELETE FROM rule_versions');
+    await dbExecute('DELETE FROM events');
+    await dbExecute('DELETE FROM transfers');
+    await dbExecute('DELETE FROM holdings');
+    await dbExecute('DELETE FROM rules');
+    await dbExecute('DELETE FROM investors');
+    await dbExecute('DELETE FROM assets');
+    res.json({ status: 'reset' });
+  } catch (error) {
+    res.status(500).json({ error: 'RESET_FAILED' });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -88,23 +109,6 @@ process.on('SIGINT', () => {
   console.log('\nShutting down gracefully...');
   closeDb();
   process.exit(0);
-});
-
-import { execute as dbExecute } from './db.js';
-
-// Test-only: reset database
-app.post('/api/reset', async (_req, res): Promise<void> => {
-  try {
-    await dbExecute('DELETE FROM events');
-    await dbExecute('DELETE FROM transfers');
-    await dbExecute('DELETE FROM holdings');
-    await dbExecute('DELETE FROM rules');
-    await dbExecute('DELETE FROM investors');
-    await dbExecute('DELETE FROM assets');
-    res.json({ status: 'reset' });
-  } catch (error) {
-    res.status(500).json({ error: 'RESET_FAILED' });
-  }
 });
 
 // Start server

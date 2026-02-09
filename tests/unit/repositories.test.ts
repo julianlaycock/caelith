@@ -16,6 +16,10 @@ import {
 } from '../../src/backend/repositories/index.js';
 
 async function cleanDb(): Promise<void> {
+  await execute('DELETE FROM webhook_deliveries');
+  await execute('DELETE FROM webhooks');
+  await execute('DELETE FROM composite_rules');
+  await execute('DELETE FROM rule_versions');
   await execute('DELETE FROM events');
   await execute('DELETE FROM transfers');
   await execute('DELETE FROM holdings');
