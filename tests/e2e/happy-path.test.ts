@@ -1,19 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { TEST_ASSETS, TEST_INVESTORS, TEST_RULES, API_BASE } from '../fixtures/test-data';
+import { TEST_ASSETS, TEST_INVESTORS, TEST_RULES } from '../fixtures/test-data';
+import { api, ensureAuth } from '../fixtures/api-helper';
 
 interface CreatedEntity {
   id: string;
   [key: string]: unknown;
-}
-
-async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers as Record<string, string> },
-    ...options,
-  });
-  const body = await res.json();
-  if (!res.ok) throw { status: res.status, ...body };
-  return body as T;
 }
 
 describe('Happy Path: Full Workflow', () => {
@@ -23,6 +14,13 @@ describe('Happy Path: Full Workflow', () => {
   let charlieId: string;
   let dianaId: string;
   let eveId: string;
+
+// ── Step 0: Authenticate ──────────────────────────────────
+
+  it('should authenticate before running tests', async () => {
+    await ensureAuth();
+    expect(true).toBe(true);
+  });
 
   // ── Step 1: Create Asset ──────────────────────────────
 

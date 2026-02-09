@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { API_BASE } from '../fixtures/test-data';
+import { api, resetDb, ensureAuth } from '../fixtures/api-helper';
 
 interface CreatedEntity {
   id: string;
@@ -11,16 +11,6 @@ interface ValidationResult {
   violations: string[];
 }
 
-async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers as Record<string, string> },
-    ...options,
-  });
-  const body = await res.json();
-  if (!res.ok) throw { status: res.status, ...body };
-  return body as T;
-}
-
 describe('Validation Failures', () => {
   let assetId: string;
   let accreditedUsId: string;   // accredited, US
@@ -29,7 +19,8 @@ describe('Validation Failures', () => {
   let blockedJurisdictionId: string; // accredited, CN (not whitelisted)
 
   beforeAll(async () => {
-    await fetch('http://localhost:3001/api/reset', { method: 'POST' });
+    await ensureAuth();
+    await resetDb();
     // Create asset
     const asset = await api<CreatedEntity>('/assets', {
       method: 'POST',
