@@ -11,6 +11,7 @@ import {
   getHoldingsForInvestor,
   getCapTable,
 } from '../services/index.js';
+import { generateCapTablePdf } from '../services/cap-table-pdf.js';
 
 const router = express.Router();
 
@@ -83,6 +84,17 @@ router.get('/', async (req, res): Promise<void> => {
  * GET /holdings/cap-table/:assetId
  * Get cap table for an asset
  */
+router.get('/cap-table/:assetId/pdf', async (req, res): Promise<void> => {
+  try {
+    const pdf = await generateCapTablePdf(req.params.assetId);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="cap-table-${req.params.assetId.substring(0, 8)}.pdf"`);
+    res.send(pdf);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'PDF generation failed';
+    res.status(msg === 'Asset not found' ? 404 : 500).json({ error: 'PDF_EXPORT_FAILED', message: msg });
+  }
+});
 router.get('/cap-table/:assetId', async (req, res) => {
   try {
     const capTable = await getCapTable(req.params.assetId);

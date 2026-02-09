@@ -35,6 +35,22 @@ class ApiClient {
     return this.token;
   }
 
+  async downloadCapTablePdf(assetId: string): Promise<void> {
+    const headers: Record<string, string> = {};
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+    const res = await fetch(`${BASE_URL}/holdings/cap-table/${assetId}/pdf`, { headers });
+    if (!res.ok) throw new Error('PDF download failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cap-table-${assetId.substring(0, 8)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   private async request<T>(
     path: string,
     options: RequestInit = {}

@@ -23,6 +23,9 @@ import authRoutes from './routes/auth-routes.js';
 import { authenticate, authorize } from './middleware/auth.js';
 import webhookRoutes from './routes/webhook-routes.js';
 import compositeRulesRoutes from './routes/composite-rules-routes.js';
+import templateRoutes from './routes/template-routes.js';
+import { securityHeaders, apiRateLimit, authRateLimit, sanitizeInput, exportRateLimit } from './middleware/security.js';
+import { generateCapTablePdf } from './services/cap-table-pdf.js';
 
 // Load environment variables
 dotenv.config();
@@ -31,8 +34,11 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+// Middleware
+app.use(securityHeaders);
 app.use(cors());
 app.use(express.json());
+app.use(sanitizeInput);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -57,7 +63,7 @@ app.get('/api', (req, res) => {
 
 // Register API routes
 // Public routes (no auth required)
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRateLimit, authRoutes);
 
 // API Documentation
 const openapiDoc = parse(readFileSync('./openapi.yml', 'utf-8'));
@@ -75,6 +81,8 @@ app.use('/api/transfers', authenticate, transferRoutes);
 app.use('/api/events', authenticate, eventRoutes);
 app.use('/api/webhooks', authenticate, authorize('admin'), webhookRoutes);
 app.use('/api/composite-rules', authenticate, authorize('admin', 'compliance_officer'), compositeRulesRoutes);
+
+app.use('/api/templates', authenticate, templateRoutes);
 
 import { execute as dbExecute } from './db.js';
 
