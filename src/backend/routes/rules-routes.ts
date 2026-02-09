@@ -8,6 +8,7 @@ import express from 'express';
 import {
   createOrUpdateRuleSet,
   getRuleSetForAsset,
+  getRuleVersions,
 } from '../services/index.js';
 
 const router = express.Router();
@@ -46,7 +47,7 @@ router.post('/', async (req, res): Promise<void> => {
       lockup_days: Number(lockup_days),
       jurisdiction_whitelist: Array.isArray(jurisdiction_whitelist) ? jurisdiction_whitelist : [],
       transfer_whitelist: transfer_whitelist === null ? null : (Array.isArray(transfer_whitelist) ? transfer_whitelist : []),
-    });
+    }, req.user?.userId);
 
     res.status(201).json(ruleSet);
   } catch (error) {
@@ -74,6 +75,22 @@ router.get('/:assetId', async (req, res): Promise<void> => {
     }
 
     res.json(ruleSet);
+  } catch (error) {
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /rules/:assetId/versions
+ * Get full version history for an asset's rules
+ */
+router.get('/:assetId/versions', async (req, res): Promise<void> => {
+  try {
+    const versions = await getRuleVersions(req.params.assetId);
+    res.json(versions);
   } catch (error) {
     res.status(500).json({
       error: 'INTERNAL_ERROR',

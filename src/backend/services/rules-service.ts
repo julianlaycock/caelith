@@ -1,7 +1,8 @@
 /**
  * Rules Service
- * 
- * Business logic for rule set management
+ *
+ * Business logic for rule set management.
+ * Now archives every version in rule_versions table.
  */
 
 import {
@@ -10,24 +11,26 @@ import {
   assetExists,
   createEvent,
 } from '../repositories/index.js';
+import { execute, query } from '../db.js';
 import { RuleSet, CreateRuleSetInput } from '../models/index.js';
+import { randomUUID } from 'crypto';
 
 /**
- * Create or update rule set for an asset
+ * Create or update rule set for an asset (archives previous version)
  */
-export async function createOrUpdateRuleSet(input: CreateRuleSetInput): Promise<RuleSet> {
-  // Validate asset exists
+export async function createOrUpdateRuleSet(
+  input: CreateRuleSetInput,
+  userId?: string
+): Promise<RuleSet> {
   const assetFound = await assetExists(input.asset_id);
   if (!assetFound) {
     throw new Error(`Asset not found: ${input.asset_id}`);
   }
 
-  // Validate lockup days
   if (input.lockup_days < 0) {
     throw new Error('Lockup days cannot be negative');
   }
 
-  // Validate jurisdiction whitelist
   if (input.jurisdiction_whitelist.length > 0) {
     const validJurisdictions = input.jurisdiction_whitelist.every(
       (j) => j.trim().length > 0
@@ -37,12 +40,30 @@ export async function createOrUpdateRuleSet(input: CreateRuleSetInput): Promise<
     }
   }
 
-  // Check if updating existing rules
   const existing = await findRuleSetByAsset(input.asset_id);
   const eventType = existing ? 'rules.updated' : 'rules.created';
 
-  // Create/update rules
+  // Create/update active rules
   const ruleSet = await createRuleSetRepo(input);
+
+  // Archive this version
+  await execute(
+    `INSERT INTO rule_versions (id, asset_id, version, config, created_by, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      randomUUID(),
+      ruleSet.asset_id,
+      ruleSet.version,
+      JSON.stringify({
+        qualification_required: ruleSet.qualification_required,
+        lockup_days: ruleSet.lockup_days,
+        jurisdiction_whitelist: ruleSet.jurisdiction_whitelist,
+        transfer_whitelist: ruleSet.transfer_whitelist,
+      }),
+      userId || null,
+      new Date().toISOString(),
+    ]
+  );
 
   // Log event
   await createEvent({
@@ -63,8 +84,23 @@ export async function createOrUpdateRuleSet(input: CreateRuleSetInput): Promise<
 }
 
 /**
- * Get rule set for an asset
+ * Get active rule set for an asset
  */
 export async function getRuleSetForAsset(assetId: string): Promise<RuleSet | null> {
   return await findRuleSetByAsset(assetId);
+}
+
+/**
+ * Get full version history for an asset's rules
+ */
+export async function getRuleVersions(
+  assetId: string
+): Promise<Array<{ version: number; config: Record<string, unknown>; created_by: string | null; created_at: string }>> {
+  return await query(
+    `SELECT version, config, created_by, created_at
+     FROM rule_versions
+     WHERE asset_id = ?
+     ORDER BY version DESC`,
+    [assetId]
+  );
 }
