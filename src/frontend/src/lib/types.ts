@@ -136,3 +136,30 @@ export interface ApiError {
   violations?: string[];
   details?: Record<string, unknown>;
 }
+
+// Auth types
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'compliance_officer' | 'viewer';
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuthResult {
+  user: User;
+  token: string;
+}
+
+export interface CheckResult {
+  rule: string;
+  passed: boolean;
+  message: string;
+}
+
+export interface DetailedValidationResult extends ValidationResult {
+  checks: CheckResult[];
+  summary: string;
+}

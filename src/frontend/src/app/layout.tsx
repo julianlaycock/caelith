@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Sidebar } from '../components/sidebar';
+import { AuthLayout } from '../components/auth-layout';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Private Asset Registry',
-  description: 'Private Asset Registry & Transfer Rules Engine MVP',
+  title: 'Codex — Compliance Engine',
+  description: 'Compliance infrastructure for tokenized assets',
 };
 
 export default function RootLayout({
@@ -18,10 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div className="flex h-screen bg-gray-50">
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto p-8">{children}</main>
-        </div>
+        <AuthLayout>{children}</AuthLayout>
       </body>
     </html>
   );
