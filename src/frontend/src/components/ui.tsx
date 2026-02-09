@@ -3,7 +3,7 @@
 import React from 'react';
 import { classNames } from '../lib/utils';
 
-// ── Page Shell ────────────────────────────────────────────
+// ── Page Shell ────────────────────────────────────────
 
 export function PageHeader({
   title,
@@ -15,11 +15,11 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-8 flex items-start justify-between">
+    <div className="mb-6 flex items-end justify-between">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-900">{title}</h1>
         {description && (
-          <p className="mt-1 text-sm text-gray-500">{description}</p>
+          <p className="mt-0.5 text-sm text-slate-500">{description}</p>
         )}
       </div>
       {action && <div>{action}</div>}
@@ -27,19 +27,22 @@ export function PageHeader({
   );
 }
 
-// ── Card ──────────────────────────────────────────────────
+// ── Card ──────────────────────────────────────────────
 
 export function Card({
   children,
   className,
+  padding = true,
 }: {
   children: React.ReactNode;
   className?: string;
+  padding?: boolean;
 }) {
   return (
     <div
       className={classNames(
-        'rounded-lg border border-gray-200 bg-white p-6 shadow-sm',
+        'rounded-lg border border-slate-200 bg-white shadow-sm',
+        padding && 'p-5',
         className
       )}
     >
@@ -48,10 +51,41 @@ export function Card({
   );
 }
 
-// ── Button ────────────────────────────────────────────────
+// ── Metric Card ───────────────────────────────────────
+
+export function MetricCard({
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  accent?: 'success' | 'warning' | 'danger' | 'default';
+}) {
+  const accentColors = {
+    success: 'border-l-emerald-500',
+    warning: 'border-l-amber-500',
+    danger: 'border-l-red-500',
+    default: 'border-l-blue-600',
+  };
+  return (
+    <div className={classNames(
+      'rounded-lg border border-slate-200 bg-white p-5 shadow-sm border-l-[3px]',
+      accentColors[accent || 'default']
+    )}>
+      <p className="metric-label">{label}</p>
+      <p className="metric-value mt-1">{value}</p>
+      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
+    </div>
+  );
+}
+
+// ── Button ────────────────────────────────────────────
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   size?: 'sm' | 'md';
 }
 
@@ -64,15 +98,16 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    'inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center rounded-md font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
   const variants = {
-    primary: 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500',
+    primary: 'bg-blue-800 text-white hover:bg-blue-900 focus:ring-blue-700 shadow-sm',
     secondary:
-      'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-indigo-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+      'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-slate-400',
+    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm',
+    ghost: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:ring-slate-400',
   };
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
+    sm: 'px-3 py-1.5 text-xs',
     md: 'px-4 py-2 text-sm',
   };
 
@@ -87,7 +122,7 @@ export function Button({
   );
 }
 
-// ── Input ─────────────────────────────────────────────────
+// ── Input ─────────────────────────────────────────────
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -98,28 +133,25 @@ export function Input({ label, error, id, ...props }: InputProps) {
   const inputId = id || label.toLowerCase().replace(/\s+/g, '-');
   return (
     <div>
-      <label
-        htmlFor={inputId}
-        className="block text-sm font-medium text-gray-700"
-      >
+      <label htmlFor={inputId} className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1.5">
         {label}
       </label>
       <input
         id={inputId}
         className={classNames(
-          'mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
+          'block w-full rounded-md border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1',
           error
             ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-            : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'
+            : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500 bg-white'
         )}
         {...props}
       />
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }
 
-// ── Select ────────────────────────────────────────────────
+// ── Select ────────────────────────────────────────────
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
@@ -131,37 +163,31 @@ export function Select({ label, options, error, id, ...props }: SelectProps) {
   const selectId = id || label.toLowerCase().replace(/\s+/g, '-');
   return (
     <div>
-      <label
-        htmlFor={selectId}
-        className="block text-sm font-medium text-gray-700"
-      >
+      <label htmlFor={selectId} className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1.5">
         {label}
       </label>
       <select
         id={selectId}
         className={classNames(
-          'mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
+          'block w-full rounded-md border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1',
           error
             ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-            : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'
+            : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500 bg-white'
         )}
         {...props}
       >
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }
 
-// ── Checkbox ──────────────────────────────────────────────
+// ── Checkbox ──────────────────────────────────────────
 
-interface CheckboxProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label: string;
 }
 
@@ -172,17 +198,15 @@ export function Checkbox({ label, id, ...props }: CheckboxProps) {
       <input
         type="checkbox"
         id={checkboxId}
-        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+        className="h-4 w-4 rounded border-slate-300 text-blue-800 focus:ring-blue-700"
         {...props}
       />
-      <label htmlFor={checkboxId} className="text-sm text-gray-700">
-        {label}
-      </label>
+      <label htmlFor={checkboxId} className="text-sm text-slate-700">{label}</label>
     </div>
   );
 }
 
-// ── Badge ─────────────────────────────────────────────────
+// ── Badge ─────────────────────────────────────────────
 
 export function Badge({
   children,
@@ -192,30 +216,41 @@ export function Badge({
   variant?: 'green' | 'red' | 'yellow' | 'blue' | 'gray';
 }) {
   const colors = {
-    green: 'bg-green-100 text-green-700',
-    red: 'bg-red-100 text-red-700',
-    yellow: 'bg-yellow-100 text-yellow-700',
-    blue: 'bg-blue-100 text-blue-700',
-    gray: 'bg-gray-100 text-gray-700',
+    green: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20',
+    red: 'bg-red-50 text-red-700 ring-1 ring-red-600/20',
+    yellow: 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20',
+    blue: 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20',
+    gray: 'bg-slate-100 text-slate-600 ring-1 ring-slate-500/10',
   };
   return (
-    <span
-      className={classNames(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-        colors[variant]
-      )}
-    >
+    <span className={classNames(
+      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+      colors[variant]
+    )}>
       {children}
     </span>
   );
 }
 
-// ── Loading / Error / Empty States ────────────────────────
+// ── Status Dot ────────────────────────────────────────
+
+export function StatusDot({ status }: { status: 'active' | 'inactive' | 'warning' }) {
+  const colors = {
+    active: 'bg-emerald-500',
+    inactive: 'bg-slate-300',
+    warning: 'bg-amber-500',
+  };
+  return (
+    <span className={classNames('inline-block h-2 w-2 rounded-full', colors[status])} />
+  );
+}
+
+// ── Loading / Error / Empty States ────────────────────
 
 export function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center py-12">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-indigo-600" />
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-800" />
     </div>
   );
 }
@@ -231,10 +266,7 @@ export function ErrorMessage({
     <div className="rounded-lg border border-red-200 bg-red-50 p-4">
       <p className="text-sm text-red-700">{message}</p>
       {onRetry && (
-        <button
-          onClick={onRetry}
-          className="mt-2 text-sm font-medium text-red-700 underline hover:text-red-800"
-        >
+        <button onClick={onRetry} className="mt-2 text-sm font-medium text-red-700 underline hover:text-red-800">
           Try again
         </button>
       )}
@@ -252,17 +284,15 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="py-12 text-center">
-      <h3 className="text-sm font-medium text-gray-900">{title}</h3>
-      {description && (
-        <p className="mt-1 text-sm text-gray-500">{description}</p>
-      )}
+    <div className="py-10 text-center">
+      <p className="text-sm font-medium text-slate-700">{title}</p>
+      {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }
 
-// ── Modal ─────────────────────────────────────────────────
+// ── Modal ─────────────────────────────────────────────
 
 export function Modal({
   open,
@@ -278,16 +308,15 @@ export function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-500"
-          >
-            ✕
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]">
+      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-lg border border-slate-200 bg-white p-6 shadow-xl">
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+          <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
         {children}
@@ -296,7 +325,7 @@ export function Modal({
   );
 }
 
-// ── Alert ─────────────────────────────────────────────────
+// ── Alert ─────────────────────────────────────────────
 
 export function Alert({
   variant,
@@ -308,13 +337,13 @@ export function Alert({
   children: React.ReactNode;
 }) {
   const styles = {
-    success: 'border-green-200 bg-green-50 text-green-800',
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
     error: 'border-red-200 bg-red-50 text-red-800',
     info: 'border-blue-200 bg-blue-50 text-blue-800',
   };
   return (
-    <div className={classNames('rounded-lg border p-4', styles[variant])}>
-      {title && <p className="mb-1 font-medium">{title}</p>}
+    <div className={classNames('rounded-lg border p-3', styles[variant])}>
+      {title && <p className="mb-0.5 text-sm font-medium">{title}</p>}
       <div className="text-sm">{children}</div>
     </div>
   );
