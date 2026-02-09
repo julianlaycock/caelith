@@ -80,19 +80,17 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-import { getDb, saveDb } from './db.js';
+import { execute as dbExecute } from './db.js';
 
 // Test-only: reset database
 app.post('/api/reset', async (_req, res): Promise<void> => {
   try {
-    const db = await getDb();
-    db.run('DELETE FROM events');
-    db.run('DELETE FROM transfers');
-    db.run('DELETE FROM holdings');
-    db.run('DELETE FROM rules');
-    db.run('DELETE FROM investors');
-    db.run('DELETE FROM assets');
-    saveDb();
+    await dbExecute('DELETE FROM events');
+    await dbExecute('DELETE FROM transfers');
+    await dbExecute('DELETE FROM holdings');
+    await dbExecute('DELETE FROM rules');
+    await dbExecute('DELETE FROM investors');
+    await dbExecute('DELETE FROM assets');
     res.json({ status: 'reset' });
   } catch (error) {
     res.status(500).json({ error: 'RESET_FAILED' });

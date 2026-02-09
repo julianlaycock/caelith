@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import initSqlJs from 'sql.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { closeDb, setTestDb } from '../../src/backend/db.js';
+import { query, execute, closeDb } from '../../src/backend/db.js';
 import {
   createAsset,
   findAssetById,
@@ -19,27 +15,22 @@ import {
   createEvent,
 } from '../../src/backend/repositories/index.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const MIGRATION_PATH = path.join(__dirname, '../../migrations/001_initial_schema.sql');
-
-async function setupTestDb(): Promise<void> {
-  const SQL = await initSqlJs();
-  const db = new SQL.Database();
-  const migrationSQL = fs.readFileSync(MIGRATION_PATH, 'utf-8');
-  db.run(migrationSQL);
-  db.run('PRAGMA foreign_keys = ON');
-  setTestDb(db);
+async function cleanDb(): Promise<void> {
+  await execute('DELETE FROM events');
+  await execute('DELETE FROM transfers');
+  await execute('DELETE FROM holdings');
+  await execute('DELETE FROM rules');
+  await execute('DELETE FROM investors');
+  await execute('DELETE FROM assets');
 }
 
 describe('Repository Layer Tests', () => {
   beforeEach(async () => {
-    closeDb();
-    await setupTestDb();
+    await cleanDb();
   });
 
-  afterEach(() => {
-    closeDb();
+  afterEach(async () => {
+    await cleanDb();
   });
 
   describe('Test 1: Asset and Investor Creation', () => {

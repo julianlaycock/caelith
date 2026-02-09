@@ -1,79 +1,29 @@
-import initSqlJs from 'sql.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+/**
+ * Database Connection - PostgreSQL
+ *
+ * Drop-in replacement for the SQLite db.ts.
+ * Same API surface: query(), execute(), boolToInt(), intToBool(), parseJSON(), stringifyJSON()
+ * Repositories require zero changes.
+ */
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { Pool, types } from 'pg';
 
-const DB_PATH = path.join(__dirname, '../../data/registry.db');
+// PostgreSQL BIGINT (OID 20) and NUMERIC (OID 1700) are returned as strings.
+// Parse as Number since our values are within safe integer range.
+types.setTypeParser(20, (val: string) => parseInt(val, 10));
+types.setTypeParser(1700, (val: string) => parseFloat(val));
 
-let dbInstance: initSqlJs.Database | null = null;
-let SQL: initSqlJs.SqlJsStatic | null = null;
+const pool = new Pool({
+  connectionString:
+    process.env.DATABASE_URL || 'postgresql://codex:codex@localhost:5432/codex',
+});
 
 /**
- * Initialize sql.js library
+ * Convert ? placeholders to $1, $2, etc. (SQLite → PostgreSQL compatibility)
  */
-async function initSQL(): Promise<initSqlJs.SqlJsStatic> {
-  if (!SQL) {
-    SQL = await initSqlJs();
-  }
-  return SQL;
-}
-
-/**
- * Get database connection (singleton pattern)
- */
-export async function getDb(): Promise<initSqlJs.Database> {
-  if (dbInstance) {
-    return dbInstance;
-  }
-
-  const sql = await initSQL();
-
-  if (!fs.existsSync(DB_PATH)) {
-    throw new Error(
-      `Database not found at ${DB_PATH}. Run 'npm run migrate' first.`
-    );
-  }
-
-  const buffer = fs.readFileSync(DB_PATH);
-  dbInstance = new sql.Database(buffer);
-
-  // Enable foreign keys
-  dbInstance.run('PRAGMA foreign_keys = ON');
-
-  return dbInstance;
-}
-
-/**
- * Save database to disk
- */
-export function saveDb(): void {
-  if (!dbInstance) {
-    throw new Error('Database not initialized');
-  }
-
-  const data = dbInstance.export();
-  fs.writeFileSync(DB_PATH, data);
-}
-
-/**
- * Close database connection
- */
-export function closeDb(): void {
-  if (dbInstance) {
-    saveDb();
-    dbInstance.close();
-    dbInstance = null;
-  }
-}
-
-/**
- * Set a custom database instance (for testing)
- */
-export function setTestDb(db: initSqlJs.Database): void {
-  dbInstance = db;
+function convertPlaceholders(sql: string): string {
+  let index = 0;
+  return sql.replace(/\?/g, () => `$${++index}`);
 }
 
 /**
@@ -81,77 +31,89 @@ export function setTestDb(db: initSqlJs.Database): void {
  */
 export async function query<T = unknown>(
   sql: string,
-  params: (string | number | null)[] = []
+  params: (string | number | boolean | null)[] = []
 ): Promise<T[]> {
-  const db = await getDb();
-  const results = db.exec(sql, params);
-
-  if (results.length === 0) {
-    return [];
-  }
-
-  const result = results[0];
-  const rows: T[] = [];
-
-  for (const valueArray of result.values) {
-    const row: Record<string, unknown> = {};
-    result.columns.forEach((col, index) => {
-      row[col] = valueArray[index];
-    });
-    rows.push(row as T);
-  }
-
-  return rows;
+  const result = await pool.query(convertPlaceholders(sql), params);
+  return result.rows as T[];
 }
 
-/**
- * Execute a query that doesn't return results (INSERT, UPDATE, DELETE)
- */
 /**
  * Execute a query that doesn't return results (INSERT, UPDATE, DELETE)
  */
 export async function execute(
   sql: string,
-  params: (string | number | null)[] = []
+  params: (string | number | boolean | null)[] = []
 ): Promise<void> {
-  const db = await getDb();
-  const stmt = db.prepare(sql);
-  stmt.run(params);
-  stmt.free();
-  saveDb();
+  await pool.query(convertPlaceholders(sql), params);
 }
 
 /**
- * Helper to convert boolean to SQLite integer
+ * Helper: boolean → PostgreSQL compatible value
+ * Previously converted to 0/1 for SQLite. Now passes through for PostgreSQL.
  */
-export function boolToInt(value: boolean): number {
-  return value ? 1 : 0;
+export function boolToInt(value: boolean): boolean {
+  return value;
 }
 
 /**
- * Helper to convert SQLite integer to boolean
+ * Helper: PostgreSQL value → boolean
+ * Handles both number (legacy) and boolean (PostgreSQL native)
  */
-export function intToBool(value: number): boolean {
-  return value === 1;
+export function intToBool(value: number | boolean): boolean {
+  return Boolean(value);
 }
 
 /**
- * Helper to parse JSON string from SQLite
+ * Helper: Parse JSON from database
+ * PostgreSQL JSONB returns objects directly; handles both string and object input.
  */
-export function parseJSON<T>(value: string | null): T | null {
-  if (value === null) {
-    return null;
-  }
+export function parseJSON<T>(value: string | T | null): T | null {
+  if (value === null) return null;
+  if (typeof value === 'object') return value as T;
   try {
-    return JSON.parse(value) as T;
+    return JSON.parse(value as string) as T;
   } catch {
     return null;
   }
 }
 
 /**
- * Helper to stringify JSON for SQLite
+ * Helper: Stringify JSON for database
  */
-export function stringifyJSON(value: string[] | Record<string, unknown> | null): string {
+export function stringifyJSON(
+  value: string[] | Record<string, unknown> | null
+): string {
   return JSON.stringify(value);
+}
+
+/**
+ * Get the pool (for migration scripts or direct access)
+ */
+export function getPool(): Pool {
+  return pool;
+}
+
+/**
+ * Close database connection
+ */
+let poolEnded = false;
+
+export function closeDb(): void {
+  if (!poolEnded) {
+    poolEnded = true;
+    pool.end();
+  }
+}
+
+/**
+ * Legacy compatibility - no-ops for PostgreSQL
+ */
+export async function getDb(): Promise<Pool> {
+  return pool;
+}
+export function saveDb(): void {
+  /* no-op: PostgreSQL persists automatically */
+}
+export function setTestDb(): void {
+  /* no-op: use DATABASE_URL env var for test databases */
 }
