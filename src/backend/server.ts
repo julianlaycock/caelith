@@ -16,6 +16,8 @@ import holdingRoutes from './routes/holding-routes.js';
 import rulesRoutes from './routes/rules-routes.js';
 import transferRoutes from './routes/transfer-routes.js';
 import eventRoutes from './routes/event-routes.js';
+import authRoutes from './routes/auth-routes.js';
+import { authenticate, authorize } from './middleware/auth.js';
 
 // Load environment variables
 dotenv.config();
@@ -49,12 +51,16 @@ app.get('/api', (req, res) => {
 });
 
 // Register API routes
-app.use('/api/assets', assetRoutes);
-app.use('/api/investors', investorRoutes);
-app.use('/api/holdings', holdingRoutes);
-app.use('/api/rules', rulesRoutes);
-app.use('/api/transfers', transferRoutes);
-app.use('/api/events', eventRoutes);
+// Public routes (no auth required)
+app.use('/api/auth', authRoutes);
+
+// Protected routes (auth required)
+app.use('/api/assets', authenticate, assetRoutes);
+app.use('/api/investors', authenticate, investorRoutes);
+app.use('/api/holdings', authenticate, holdingRoutes);
+app.use('/api/rules', authenticate, authorize('admin', 'compliance_officer'), rulesRoutes);
+app.use('/api/transfers', authenticate, transferRoutes);
+app.use('/api/events', authenticate, eventRoutes);
 
 // 404 handler
 app.use((req, res) => {
