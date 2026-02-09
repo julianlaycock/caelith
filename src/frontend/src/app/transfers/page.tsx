@@ -16,7 +16,7 @@ import {
   Alert,
 } from '../../components/ui';
 import { formatNumber, formatDateTime } from '../../lib/utils';
-import type { ValidationResult, ApiError } from '../../lib/types';
+import type { DetailedValidationResult, ApiError } from '../../lib/types';
 
 export default function TransfersPage() {
   const [showForm, setShowForm] = useState(false);
@@ -24,7 +24,7 @@ export default function TransfersPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [validationResult, setValidationResult] =
-    useState<ValidationResult | null>(null);
+    useState<DetailedValidationResult | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [executing, setExecuting] = useState(false);
 
@@ -126,6 +126,8 @@ export default function TransfersPage() {
         setValidationResult({
           valid: false,
           violations: apiErr.violations,
+          checks: [],
+          summary: 'Transfer validation failed.',
         });
       } else {
         setFormError(apiErr.message || 'Failed to execute transfer');
@@ -192,28 +194,34 @@ export default function TransfersPage() {
 
           {/* Validation Result */}
           {validationResult && (
-            <div
-              className={`rounded-lg border p-4 ${
-                validationResult.valid
-                  ? 'border-green-200 bg-green-50'
-                  : 'border-red-200 bg-red-50'
-              }`}
-            >
-              <p
-                className={`mb-1 font-semibold ${
-                  validationResult.valid ? 'text-green-800' : 'text-red-800'
-                }`}
-              >
-                {validationResult.valid
-                  ? '✓ Validation Passed'
-                  : '✗ Validation Failed'}
+            <div className={`rounded-lg border p-4 ${
+              validationResult.valid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+            }`}>
+              <p className={`mb-1 font-semibold ${
+                validationResult.valid ? 'text-green-800' : 'text-red-800'
+              }`}>
+                {validationResult.valid ? '✓ Validation Passed' : '✗ Validation Failed'}
               </p>
-              {validationResult.violations.length > 0 && (
+              {validationResult.summary && (
+                <p className="text-sm text-gray-700 mb-2">{validationResult.summary}</p>
+              )}
+              {validationResult.checks && validationResult.checks.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {validationResult.checks.map((check, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <span className={check.passed ? 'text-green-600' : 'text-red-600'}>
+                        {check.passed ? '✓' : '✗'}
+                      </span>
+                      <span className="font-medium text-gray-800">{check.rule}</span>
+                      <span className="text-gray-500">— {check.message}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(!validationResult.checks || validationResult.checks.length === 0) && validationResult.violations.length > 0 && (
                 <ul className="mt-2 space-y-1">
                   {validationResult.violations.map((v, i) => (
-                    <li key={i} className="text-sm text-red-700">
-                      • {v}
-                    </li>
+                    <li key={i} className="text-sm text-red-700">• {v}</li>
                   ))}
                 </ul>
               )}

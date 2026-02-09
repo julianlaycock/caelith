@@ -17,6 +17,9 @@ import type {
   Event,
   ApiError,
   AuthResult,
+  CompositeRule,
+  CreateCompositeRuleRequest,
+  RuleVersion,
 } from './types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -173,8 +176,32 @@ class ApiClient {
     return this.request<RuleSet>(`/rules/${assetId}`);
   }
 
-  async getRuleVersions(assetId: string): Promise<Array<{ version: number; config: Record<string, unknown>; created_by: string | null; created_at: string }>> {
-    return this.request(`/rules/${assetId}/versions`);
+  async getRuleVersions(assetId: string): Promise<RuleVersion[]> {
+    return this.request<RuleVersion[]>(`/rules/${assetId}/versions`);
+  }
+
+// ── Composite Rules ─────────────────────────────────
+
+  async getCompositeRules(assetId: string): Promise<CompositeRule[]> {
+    return this.request<CompositeRule[]>(`/composite-rules?assetId=${assetId}`);
+  }
+
+  async createCompositeRule(data: CreateCompositeRuleRequest): Promise<CompositeRule> {
+    return this.request<CompositeRule>('/composite-rules', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCompositeRule(id: string, data: Partial<CreateCompositeRuleRequest>): Promise<void> {
+    await this.request(`/composite-rules/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCompositeRule(id: string): Promise<void> {
+    await this.request(`/composite-rules/${id}`, { method: 'DELETE' });
   }
 
   // ── Transfers ─────────────────────────────────────────

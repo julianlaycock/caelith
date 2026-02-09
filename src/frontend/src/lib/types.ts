@@ -163,3 +163,41 @@ export interface DetailedValidationResult extends ValidationResult {
   checks: CheckResult[];
   summary: string;
 }
+
+// ── Composite Rules ──────────────────────────────────
+export interface RuleCondition {
+  field: string;
+  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'not_in';
+  value: unknown;
+}
+
+export interface CompositeRule {
+  id: string;
+  asset_id: string;
+  name: string;
+  description: string;
+  operator: 'AND' | 'OR' | 'NOT';
+  conditions: RuleCondition[];
+  enabled: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCompositeRuleRequest {
+  asset_id: string;
+  name: string;
+  description: string;
+  operator: 'AND' | 'OR' | 'NOT';
+  conditions: RuleCondition[];
+  enabled?: boolean;
+}
+
+export interface RuleVersion {
+  id: string;
+  asset_id: string;
+  version: number;
+  config: Record<string, unknown>;
+  created_by: string | null;
+  created_at: string;
+}
