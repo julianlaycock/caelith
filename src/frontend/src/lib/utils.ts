@@ -17,10 +17,12 @@ export function formatDateTime(iso: string): string {
 }
 
 export function formatNumber(n: number): string {
+  if (n == null) return '0';
   return n.toLocaleString('en-US');
 }
 
 export function formatPercentage(n: number): string {
+  if (n == null) return '0';
   return `${n.toFixed(2)}%`;
 }
 

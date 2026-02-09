@@ -66,7 +66,7 @@ export default function HoldingsPage() {
     }
 
     try {
-      await api.allocateHolding({ asset_id, investor_id, units });
+      await api.allocateHolding({ asset_id, investor_id, units, acquired_at: new Date().toISOString() });
       setShowForm(false);
       setSuccessMsg('Units allocated successfully.');
       capTable.refetch();
