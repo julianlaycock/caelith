@@ -87,7 +87,10 @@ export type EventType =
   | 'rules.created'
   | 'rules.updated'
   | 'transfer.executed'
-  | 'transfer.rejected';
+  | 'transfer.rejected'
+  | 'composite_rule.created'
+  | 'composite_rule.updated'
+  | 'composite_rule.deleted';
 
 /**
  * Entity types in the system
@@ -97,7 +100,8 @@ export type EntityType =
   | 'investor'
   | 'holding'
   | 'rules'
-  | 'transfer';
+  | 'transfer'
+  | 'composite_rule';
 
 /**
  * Input types for creating new entities (without generated fields)

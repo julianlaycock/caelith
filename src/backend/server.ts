@@ -19,6 +19,7 @@ import eventRoutes from './routes/event-routes.js';
 import authRoutes from './routes/auth-routes.js';
 import { authenticate, authorize } from './middleware/auth.js';
 import webhookRoutes from './routes/webhook-routes.js';
+import compositeRulesRoutes from './routes/composite-rules-routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -63,6 +64,7 @@ app.use('/api/rules', authenticate, authorize('admin', 'compliance_officer'), ru
 app.use('/api/transfers', authenticate, transferRoutes);
 app.use('/api/events', authenticate, eventRoutes);
 app.use('/api/webhooks', authenticate, authorize('admin'), webhookRoutes);
+app.use('/api/composite-rules', authenticate, authorize('admin', 'compliance_officer'), compositeRulesRoutes);
 
 // 404 handler
 app.use((req, res) => {
