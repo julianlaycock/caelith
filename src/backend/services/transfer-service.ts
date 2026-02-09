@@ -20,6 +20,7 @@ import {
 import { validateTransfer } from '../../rules-engine/validator.js';
 import { ValidationContext, TransferRequest } from '../../rules-engine/types.js';
 import { Transfer } from '../models/index.js';
+import { getActiveCompositeRules } from './composite-rules-service.js';
 
 /**
  * Simulation result (validation only, no execution)
@@ -182,11 +183,12 @@ async function buildValidationContext(
   request: TransferRequest
 ): Promise<ValidationContext> {
   // Fetch all required data
-  const [fromInvestor, toInvestor, fromHolding, rules] = await Promise.all([
+  const [fromInvestor, toInvestor, fromHolding, rules, customRules] = await Promise.all([
     findInvestorById(request.from_investor_id),
     findInvestorById(request.to_investor_id),
     findHoldingByInvestorAndAsset(request.from_investor_id, request.asset_id),
     findRuleSetByAsset(request.asset_id),
+    getActiveCompositeRules(request.asset_id),
   ]);
   
   // Validate data exists
@@ -208,5 +210,6 @@ async function buildValidationContext(
     toInvestor,
     fromHolding,
     rules,
+    customRules,
   };
 }
