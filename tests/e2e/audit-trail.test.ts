@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { API_BASE } from '../fixtures/test-data';
+import { api, resetDb, ensureAuth } from '../fixtures/api-helper';
 
 interface CreatedEntity {
   id: string;
@@ -15,23 +15,14 @@ interface Event {
   timestamp: string;
 }
 
-async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers as Record<string, string> },
-    ...options,
-  });
-  const body = await res.json();
-  if (!res.ok) throw { status: res.status, ...body };
-  return body as T;
-}
-
 describe('Audit Trail', () => {
   let assetId: string;
   let investorAId: string;
   let investorBId: string;
 
   beforeAll(async () => {
-    await fetch('http://localhost:3001/api/reset', { method: 'POST' });
+    await ensureAuth();
+    await resetDb();
     // Create asset
     const asset = await api<CreatedEntity>('/assets', {
       method: 'POST',
