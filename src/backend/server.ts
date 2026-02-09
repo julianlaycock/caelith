@@ -8,6 +8,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { closeDb } from './db.js';
+import swaggerUi from 'swagger-ui-express';
+import { readFileSync } from 'fs';
+import { parse } from 'yaml';
 
 // Import routes
 import assetRoutes from './routes/asset-routes.js';
@@ -55,6 +58,13 @@ app.get('/api', (req, res) => {
 // Register API routes
 // Public routes (no auth required)
 app.use('/api/auth', authRoutes);
+
+// API Documentation
+const openapiDoc = parse(readFileSync('./openapi.yml', 'utf-8'));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Codex API Documentation',
+}));
 
 // Protected routes (auth required)
 app.use('/api/assets', authenticate, assetRoutes);
@@ -116,6 +126,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📊 API: http://localhost:${PORT}/api`);
   console.log(`💚 Health: http://localhost:${PORT}/health`);
+  console.log(`📖 Docs: http://localhost:${PORT}/api/docs`);
   console.log('\n📋 Available endpoints:');
   console.log(`   POST   /api/assets`);
   console.log(`   GET    /api/assets`);
