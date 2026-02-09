@@ -9,7 +9,11 @@ import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { query, execute } from '../db.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'codex-dev-secret-change-in-production';
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET environment variable is required');
+  return secret;
+}
 const JWT_EXPIRES_IN = '24h';
 const SALT_ROUNDS = 10;
 
@@ -112,7 +116,7 @@ export async function loginUser(
  * Verify a JWT token and return the payload
  */
 export function verifyToken(token: string): TokenPayload {
-  return jwt.verify(token, JWT_SECRET) as TokenPayload;
+  return jwt.verify(token, getJwtSecret()) as TokenPayload;
 }
 
 /**
@@ -124,7 +128,7 @@ function generateToken(user: User): string {
     email: user.email,
     role: user.role,
   };
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
 }
 
 /**
