@@ -13,28 +13,51 @@ import type {
   Transfer,
   TransferRequest,
   TransferHistoryEntry,
-  ValidationResult,
+  DetailedValidationResult,
   Event,
   ApiError,
+  AuthResult,
 } from './types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 class ApiClient {
+  private token: string | null = null;
+
+  setToken(token: string | null): void {
+    this.token = token;
+  }
+
+  getToken(): string | null {
+    return this.token;
+  }
+
   private async request<T>(
     path: string,
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${BASE_URL}${path}`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string>),
+    };
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
     const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
       ...options,
+      headers,
     };
 
     const response = await fetch(url, config);
+
+    if (response.status === 401) {
+      this.token = null;
+      window.dispatchEvent(new CustomEvent('auth:expired'));
+      throw { error: 'UNAUTHORIZED', message: 'Session expired' } as ApiError;
+    }
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({
@@ -45,6 +68,30 @@ class ApiClient {
     }
 
     return response.json() as Promise<T>;
+  }
+
+  // ── Auth ──────────────────────────────────────────────────
+
+  async register(email: string, password: string, name: string, role?: string): Promise<AuthResult> {
+    const result = await this.request<AuthResult>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name, role }),
+    });
+    this.token = result.token;
+    return result;
+  }
+
+  async login(email: string, password: string): Promise<AuthResult> {
+    const result = await this.request<AuthResult>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    this.token = result.token;
+    return result;
+  }
+
+  logout(): void {
+    this.token = null;
   }
 
   // ── Assets ──────────────────────────────────────────────
@@ -68,7 +115,7 @@ class ApiClient {
     return this.request<AssetUtilization>(`/assets/${id}/utilization`);
   }
 
-  // ── Investors ───────────────────────────────────────────
+  // ── Investors ─────────────────────────────────────────
 
   async createInvestor(data: CreateInvestorRequest): Promise<Investor> {
     return this.request<Investor>('/investors', {
@@ -85,17 +132,14 @@ class ApiClient {
     return this.request<Investor>(`/investors/${id}`);
   }
 
-  async updateInvestor(
-    id: string,
-    data: UpdateInvestorRequest
-  ): Promise<Investor> {
+  async updateInvestor(id: string, data: UpdateInvestorRequest): Promise<Investor> {
     return this.request<Investor>(`/investors/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
-  // ── Holdings ────────────────────────────────────────────
+  // ── Holdings ──────────────────────────────────────────
 
   async allocateHolding(data: CreateHoldingRequest): Promise<Holding> {
     return this.request<Holding>('/holdings', {
@@ -116,7 +160,7 @@ class ApiClient {
     return this.request<CapTableEntry[]>(`/holdings/cap-table/${assetId}`);
   }
 
-  // ── Rules ───────────────────────────────────────────────
+  // ── Rules ─────────────────────────────────────────────
 
   async createRules(data: CreateRuleSetRequest): Promise<RuleSet> {
     return this.request<RuleSet>('/rules', {
@@ -129,10 +173,14 @@ class ApiClient {
     return this.request<RuleSet>(`/rules/${assetId}`);
   }
 
-  // ── Transfers ───────────────────────────────────────────
+  async getRuleVersions(assetId: string): Promise<Array<{ version: number; config: Record<string, unknown>; created_by: string | null; created_at: string }>> {
+    return this.request(`/rules/${assetId}/versions`);
+  }
 
-  async simulateTransfer(data: TransferRequest): Promise<ValidationResult> {
-    return this.request<ValidationResult>('/transfers/simulate', {
+  // ── Transfers ─────────────────────────────────────────
+
+  async simulateTransfer(data: TransferRequest): Promise<DetailedValidationResult> {
+    return this.request<DetailedValidationResult>('/transfers/simulate', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -151,12 +199,10 @@ class ApiClient {
   }
 
   async getTransferHistory(assetId: string): Promise<TransferHistoryEntry[]> {
-    return this.request<TransferHistoryEntry[]>(
-      `/transfers/history/${assetId}`
-    );
+    return this.request<TransferHistoryEntry[]>(`/transfers/history/${assetId}`);
   }
 
-  // ── Events ──────────────────────────────────────────────
+  // ── Events ────────────────────────────────────────────
 
   async getEvents(params?: {
     entityType?: string;
