@@ -1,13 +1,82 @@
 openapi: 3.0.3
 info:
-  title: Private Asset Registry API
-  description: REST API for managing private asset ownership and transfer validation
-  version: 0.1.0
+  title: Codex Compliance Engine API
+  description: |
+    Programmable transfer restriction infrastructure for tokenized assets.
+    Source-available compliance engine that works off-chain today and on-chain tomorrow.
+  version: 1.0.0
+  contact:
+    name: Codex
 servers:
   - url: http://localhost:3001/api
+    description: Local development
+
+security:
+  - bearerAuth: []
+
 paths:
+  # ── Auth ──────────────────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                name: { type: string }
+                role: { type: string, enum: [admin, compliance_officer, viewer], default: viewer }
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  token: { type: string }
+        '400': { description: Validation error }
+        '409': { description: Email already exists }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  token: { type: string }
+        '401': { description: Invalid credentials }
+
+  # ── Assets ────────────────────────────────────────────
   /assets:
     post:
+      tags: [Assets]
       summary: Create asset
       requestBody:
         required: true
@@ -23,11 +92,14 @@ paths:
       responses:
         '201': { description: Asset created }
     get:
+      tags: [Assets]
       summary: List all assets
       responses:
         '200': { description: Array of assets }
+
   /assets/{id}:
     get:
+      tags: [Assets]
       summary: Get asset by ID
       parameters:
         - name: id
@@ -37,8 +109,10 @@ paths:
       responses:
         '200': { description: Asset details }
         '404': { description: Not found }
+
   /assets/{id}/utilization:
     get:
+      tags: [Assets]
       summary: Get asset allocation stats
       parameters:
         - name: id
@@ -47,8 +121,11 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         '200': { description: Utilization stats }
+
+  # ── Investors ─────────────────────────────────────────
   /investors:
     post:
+      tags: [Investors]
       summary: Create investor
       requestBody:
         required: true
@@ -59,16 +136,19 @@ paths:
               required: [name, jurisdiction, accredited]
               properties:
                 name: { type: string }
-                jurisdiction: { type: string }
+                jurisdiction: { type: string, description: ISO 3166 country code }
                 accredited: { type: boolean }
       responses:
         '201': { description: Investor created }
     get:
+      tags: [Investors]
       summary: List all investors
       responses:
         '200': { description: Array of investors }
+
   /investors/{id}:
     get:
+      tags: [Investors]
       summary: Get investor by ID
       parameters:
         - name: id
@@ -78,6 +158,7 @@ paths:
       responses:
         '200': { description: Investor details }
     patch:
+      tags: [Investors]
       summary: Update investor
       parameters:
         - name: id
@@ -95,8 +176,11 @@ paths:
                 accredited: { type: boolean }
       responses:
         '200': { description: Updated investor }
+
+  # ── Holdings ──────────────────────────────────────────
   /holdings:
     post:
+      tags: [Holdings]
       summary: Allocate units to investor
       requestBody:
         required: true
@@ -113,6 +197,7 @@ paths:
       responses:
         '201': { description: Holding created }
     get:
+      tags: [Holdings]
       summary: Get holdings
       parameters:
         - name: assetId
@@ -123,8 +208,10 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         '200': { description: Array of holdings }
+
   /holdings/cap-table/{assetId}:
     get:
+      tags: [Holdings]
       summary: Get cap table for asset
       parameters:
         - name: assetId
@@ -132,10 +219,14 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: Cap table entries }
+        '200': { description: Cap table entries with percentages }
+
+  # ── Rules ─────────────────────────────────────────────
   /rules:
     post:
+      tags: [Rules]
       summary: Create or update rules for asset
+      description: Creates a new rule set or updates existing. All changes are versioned.
       requestBody:
         required: true
         content:
@@ -153,9 +244,11 @@ paths:
                   items: { type: string }
                   nullable: true
       responses:
-        '201': { description: Rules created }
+        '201': { description: Rules created/updated }
+
   /rules/{assetId}:
     get:
+      tags: [Rules]
       summary: Get active rules for asset
       parameters:
         - name: assetId
@@ -163,10 +256,129 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: Rule set }
+        '200': { description: Active rule set }
+
+  /rules/{assetId}/versions:
+    get:
+      tags: [Rules]
+      summary: Get rule version history
+      description: Returns all historical versions of rules for an asset, newest first.
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Array of rule versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/RuleVersion' }
+
+  # ── Composite Rules ───────────────────────────────────
+  /composite-rules:
+    post:
+      tags: [Composite Rules]
+      summary: Create a composite rule
+      description: |
+        Define custom compliance rules using field conditions with AND/OR/NOT logic.
+        Composite rules are evaluated alongside built-in rules during transfer validation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id, name, operator, conditions]
+              properties:
+                asset_id: { type: string, format: uuid }
+                name: { type: string }
+                description: { type: string }
+                operator: { type: string, enum: [AND, OR, NOT] }
+                conditions:
+                  type: array
+                  items: { $ref: '#/components/schemas/RuleCondition' }
+                enabled: { type: boolean, default: true }
+            examples:
+              jurisdiction_restriction:
+                summary: Restrict to EU recipients
+                value:
+                  asset_id: "uuid"
+                  name: "EU recipients only"
+                  description: "Only EU-based investors can receive transfers"
+                  operator: "AND"
+                  conditions:
+                    - field: "to.jurisdiction"
+                      operator: "in"
+                      value: ["DE", "FR", "ES", "IT", "GB"]
+              transfer_limit:
+                summary: Maximum transfer size
+                value:
+                  asset_id: "uuid"
+                  name: "Transfer size limit"
+                  operator: "AND"
+                  conditions:
+                    - field: "transfer.units"
+                      operator: "lt"
+                      value: 100000
+      responses:
+        '201': { description: Composite rule created }
+    get:
+      tags: [Composite Rules]
+      summary: List composite rules for asset
+      parameters:
+        - name: assetId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Array of composite rules }
+
+  /composite-rules/{id}:
+    patch:
+      tags: [Composite Rules]
+      summary: Update a composite rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                operator: { type: string, enum: [AND, OR, NOT] }
+                conditions:
+                  type: array
+                  items: { $ref: '#/components/schemas/RuleCondition' }
+                enabled: { type: boolean }
+      responses:
+        '200': { description: Updated }
+    delete:
+      tags: [Composite Rules]
+      summary: Delete a composite rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Deleted }
+
+  # ── Transfers ─────────────────────────────────────────
   /transfers/simulate:
     post:
+      tags: [Transfers]
       summary: Validate transfer without executing
+      description: |
+        Runs all built-in rules and composite rules against the proposed transfer.
+        Returns detailed per-rule check results and a human-readable summary.
       requestBody:
         required: true
         content:
@@ -179,13 +391,13 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  valid: { type: boolean }
-                  violations: { type: array, items: { type: string } }
+                $ref: '#/components/schemas/ValidationResult'
+
   /transfers:
     post:
+      tags: [Transfers]
       summary: Execute transfer
+      description: Validates and executes. Updates holdings atomically.
       requestBody:
         required: true
         content:
@@ -194,8 +406,18 @@ paths:
               $ref: '#/components/schemas/TransferRequest'
       responses:
         '201': { description: Transfer executed }
-        '422': { description: Validation failed }
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+                  message: { type: string }
+                  violations: { type: array, items: { type: string } }
     get:
+      tags: [Transfers]
       summary: Get transfers
       parameters:
         - name: assetId
@@ -203,8 +425,10 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         '200': { description: Array of transfers }
+
   /transfers/history/{assetId}:
     get:
+      tags: [Transfers]
       summary: Get transfer history with investor names
       parameters:
         - name: assetId
@@ -212,10 +436,93 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: Transfer history }
+        '200': { description: Transfer history with names }
+
+  # ── Webhooks ──────────────────────────────────────────
+  /webhooks:
+    post:
+      tags: [Webhooks]
+      summary: Register a webhook
+      description: |
+        Subscribe to events. Payloads are signed with HMAC-SHA256 (X-Codex-Signature header).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: { type: string, format: uri }
+                event_types:
+                  type: array
+                  items: { type: string }
+                  default: ["*"]
+                  description: "Event types to subscribe to. Use '*' for all."
+      responses:
+        '201':
+          description: Webhook registered (includes secret for signature verification)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Webhook' }
+    get:
+      tags: [Webhooks]
+      summary: List all webhooks
+      responses:
+        '200': { description: Array of webhooks }
+
+  /webhooks/{id}:
+    patch:
+      tags: [Webhooks]
+      summary: Update webhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url: { type: string, format: uri }
+                event_types: { type: array, items: { type: string } }
+                active: { type: boolean }
+      responses:
+        '200': { description: Updated }
+    delete:
+      tags: [Webhooks]
+      summary: Delete webhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Deleted }
+
+  /webhooks/{id}/deliveries:
+    get:
+      tags: [Webhooks]
+      summary: Get delivery history for a webhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200': { description: Array of delivery attempts }
+
+  # ── Events ────────────────────────────────────────────
   /events:
     get:
+      tags: [Audit Trail]
       summary: Get audit trail
+      description: Immutable event log of all system mutations.
       parameters:
         - name: entityType
           in: query
@@ -231,13 +538,31 @@ paths:
           schema: { type: integer, default: 100 }
       responses:
         '200': { description: Array of events }
+
+  # ── System ────────────────────────────────────────────
   /reset:
     post:
+      tags: [System]
       summary: Reset database (testing only)
       responses:
         '200': { description: Database reset }
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        role: { type: string, enum: [admin, compliance_officer, viewer] }
+
     TransferRequest:
       type: object
       required: [asset_id, from_investor_id, to_investor_id, units, execution_date]
@@ -247,3 +572,56 @@ components:
         to_investor_id: { type: string, format: uuid }
         units: { type: integer, minimum: 1 }
         execution_date: { type: string, format: date-time }
+
+    ValidationResult:
+      type: object
+      properties:
+        valid: { type: boolean }
+        violations:
+          type: array
+          items: { type: string }
+        checks:
+          type: array
+          items: { $ref: '#/components/schemas/CheckResult' }
+        summary: { type: string, description: "Human-readable summary" }
+
+    CheckResult:
+      type: object
+      properties:
+        rule: { type: string, description: "Rule name" }
+        passed: { type: boolean }
+        message: { type: string, description: "Human-readable explanation" }
+
+    RuleCondition:
+      type: object
+      required: [field, operator, value]
+      properties:
+        field:
+          type: string
+          description: "Dot-notation field path"
+          enum: [from.jurisdiction, from.accredited, to.jurisdiction, to.accredited, transfer.units, holding.units, holding.acquired_at]
+        operator:
+          type: string
+          enum: [eq, neq, gt, gte, lt, lte, in, not_in]
+        value:
+          description: "Comparison value (type depends on field)"
+
+    RuleVersion:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        asset_id: { type: string, format: uuid }
+        version: { type: integer }
+        config: { type: object }
+        created_by: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    Webhook:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string, format: uri }
+        secret: { type: string, description: "HMAC-SHA256 signing key" }
+        event_types: { type: array, items: { type: string } }
+        active: { type: boolean }
+        created_at: { type: string, format: date-time }
