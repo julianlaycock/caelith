@@ -42,5 +42,5 @@ export async function ensureAuth(): Promise<void> {
 
 export async function resetDb(): Promise<void> {
   await ensureAuth();
-  await fetch(`${API_BASE}/reset`, { method: 'POST' });
+  await api('/reset', { method: 'POST' });
 }
