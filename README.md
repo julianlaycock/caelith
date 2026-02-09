@@ -1,159 +1,230 @@
-# Private Asset Registry & Transfer Rules Engine
+# Codex — Compliance Engine for Private Assets
 
-Programmable private asset ownership simulation with compliance rule enforcement. Manage investor registries, track unit allocations, configure transfer rules, and validate transfers against programmable constraints — all without blockchain infrastructure.
+Programmable transfer restriction infrastructure for tokenized assets. Configure investor eligibility rules, validate transactions against regulatory constraints, and maintain a complete audit trail — all through a single API.
+
+**Source-available** · **Off-chain today, on-chain tomorrow** · **EU-first compliance**
+
+---
+
+## What Codex Does
+
+Codex replaces manual compliance workflows with a deterministic, auditable rules engine. Platform operators define transfer restrictions per asset, and Codex enforces them automatically — returning detailed pass/fail results with per-rule explanations.
+
+**Core capabilities:**
+
+- **Asset registry** — Define private assets with unit-based ownership tracking
+- **Investor registry** — Manage investor profiles with jurisdiction and accreditation attributes
+- **Ownership ledger** — Track unit allocations with full cap table views
+- **Built-in rules** — Qualification checks, lockup periods, jurisdiction whitelists, transfer whitelists
+- **Custom rules** — Composable AND/OR/NOT logic with field-level conditions
+- **Transfer simulation** — Validate proposed transfers without executing them
+- **Transfer execution** — Atomic ownership updates with automatic audit logging
+- **Webhooks** — Real-time event notifications with HMAC-SHA256 signed payloads
+- **Rule versioning** — Full history of every rule change for regulatory audit
+- **Immutable audit trail** — Every mutation logged with timestamp, actor, and payload
 
 ## Tech Stack
 
-- **Backend**: Node.js + TypeScript + Express + SQLite (sql.js)
-- **Frontend**: Next.js 14 + React + TypeScript + Tailwind CSS
-- **Rules Engine**: Custom TypeScript validation module
-- **Testing**: Vitest (49 tests)
-
-## Prerequisites
-
-- Node.js 20.x+
-- npm 10.x+
+| Layer | Technology |
+|-------|-----------|
+| Backend | Node.js · TypeScript · Express |
+| Database | PostgreSQL |
+| Rules Engine | Custom TypeScript module (pure functions, zero side effects) |
+| Frontend | Next.js 14 · React · Tailwind CSS |
+| Auth | JWT with role-based access control (admin, compliance_officer, investor_readonly) |
+| Testing | Vitest (65 tests) |
+| Deployment | Docker Compose |
 
 ## Quick Start
+
+### Prerequisites
+
+- Node.js 20.x+
+- PostgreSQL 15+ (or Docker)
+
+### Option A: Docker (recommended)
+```bash
+docker-compose up
+```
+
+This starts PostgreSQL, the backend API (port 3001), and the frontend (port 3000).
+
+### Option B: Local development
 ```bash
 # 1. Install dependencies
 npm install
 cd src/frontend && npm install && cd ../..
 
-# 2. Run database migrations
+# 2. Set up PostgreSQL and create a database named 'codex'
+# 3. Copy .env and configure DATABASE_URL and JWT_SECRET
+
+# 4. Run database migrations
 npm run migrate
 
-# 3. Start development servers
+# 5. Seed demo data (optional)
+npx tsx scripts/seed-data.ts
+
+# 6. Start development servers
 npm run dev
 ```
 
-- Backend API: http://localhost:3001
-- Frontend: http://localhost:3000
+- **Backend API:** http://localhost:3001/api
+- **Frontend:** http://localhost:3000
+- **Health check:** http://localhost:3001/health
 
-## API Reference
+### First steps
 
-Base URL: `http://localhost:3001/api`
+1. Register an account at http://localhost:3000/login
+2. Create an asset (e.g., "Growth Fund I" with 1,000,000 units)
+3. Add investors with jurisdiction and accreditation attributes
+4. Configure transfer rules for the asset
+5. Allocate units to investors
+6. Simulate and execute transfers
 
-### Assets
+## API Overview
+
+All endpoints require JWT authentication. Include `Authorization: Bearer <token>` header.
+
+### Authentication
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | /assets | Create asset |
-| GET | /assets | List all assets |
-| GET | /assets/:id | Get asset by ID |
-| GET | /assets/:id/utilization | Get allocation stats |
+| POST | /api/auth/register | Create account |
+| POST | /api/auth/login | Get JWT token |
 
-### Investors
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /investors | Create investor |
-| GET | /investors | List all investors |
-| GET | /investors/:id | Get investor by ID |
-| PATCH | /investors/:id | Update investor |
+### Core Resources
 
-### Holdings
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /holdings | Allocate units to investor |
-| GET | /holdings?assetId=X | Get holdings for asset |
-| GET | /holdings/cap-table/:assetId | Get cap table |
+| Resource | Endpoints | Operations |
+|----------|-----------|-----------|
+| Assets | 4 | Create, list, get, utilization stats |
+| Investors | 4 | Create, list, get, update |
+| Holdings | 3 | Allocate, query, cap table |
+| Rules | 3 | Create/update, get, version history |
+| Composite Rules | 4 | Create, list, update, delete |
+| Transfers | 4 | Simulate, execute, list, history |
+| Webhooks | 5 | Register, list, update, delete, deliveries |
+| Events | 1 | Filterable audit trail |
 
-### Rules
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /rules | Create/update rules for asset |
-| GET | /rules/:assetId | Get active rules |
-
-### Transfers
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /transfers/simulate | Validate without executing |
-| POST | /transfers | Execute transfer |
-| GET | /transfers?assetId=X | Get transfers for asset |
-| GET | /transfers/history/:assetId | Get history with names |
-
-### Events
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /events | Audit trail (filterable) |
-
-Query params for events: `entityType`, `entityId`, `eventType`, `limit`
+Full API specification: [`openapi.yml`](openapi.yml)
 
 ## Rules Engine
 
-Four configurable constraints per asset:
+### Built-in Rules (per asset)
 
-| Rule | Field | Description |
-|------|-------|-------------|
-| Qualification | `qualification_required` | Receiver must be accredited |
-| Lockup | `lockup_days` | Days after acquisition before transfer allowed |
-| Jurisdiction | `jurisdiction_whitelist` | Allowed country codes for receiver |
-| Whitelist | `transfer_whitelist` | Allowed investor IDs (null = unrestricted) |
+| Rule | Description |
+|------|-------------|
+| Qualification | Receiver must be an accredited investor |
+| Lockup period | Minimum days after acquisition before transfer is allowed |
+| Jurisdiction whitelist | Receiver must be in an approved jurisdiction |
+| Transfer whitelist | Receiver must be on an approved investor list |
 
-Transfers are validated against all active rules. Violations are aggregated and returned.
+### Custom Rules (composable)
+
+Create field-level conditions with AND/OR/NOT logic:
+```json
+{
+  "name": "EU accredited recipients only",
+  "operator": "AND",
+  "conditions": [
+    { "field": "to.jurisdiction", "operator": "in", "value": ["DE", "FR", "ES", "IT", "NL"] },
+    { "field": "to.accredited", "operator": "eq", "value": true }
+  ]
+}
+```
+
+Available fields: `to.jurisdiction`, `to.accredited`, `from.jurisdiction`, `from.accredited`, `transfer.units`, `holding.units`
+
+### Transfer Simulation
+
+Validate a transfer without executing it. Returns per-rule check results:
+```
+POST /api/transfers/simulate
+
+Response:
+{
+  "valid": false,
+  "summary": "Transfer blocked: 1 of 7 checks failed",
+  "checks": [
+    { "rule": "Qualification Check", "passed": true, "message": "Receiver is accredited" },
+    { "rule": "Lockup Period", "passed": false, "message": "22 days remaining (requires 90)" },
+    ...
+  ],
+  "violations": ["Lockup period not met: 22 days remaining"]
+}
+```
 
 ## Testing
 ```bash
-# Run all tests (requires backend running)
+# Run all tests (backend must be running)
 npm run dev:backend          # Terminal 1
-npm run test -- --run        # Terminal 2
+npx vitest run               # Terminal 2
 
-# Run only unit tests (no backend needed)
-npm run test -- --run src/rules-engine/ tests/unit/
+# Unit tests only (no backend needed)
+npx vitest run src/rules-engine/ tests/unit/
 
-# Run only e2e tests (backend required)
-npm run test -- --run tests/e2e/
+# E2E tests only (backend required)
+npx vitest run tests/e2e/
 ```
 
-Test suite: 49 tests total (20 rules engine, 2 repository, 27 e2e).
+**65 tests:** 20 rules engine · 9 composite rules · 2 repository · 8 validation failures · 10 happy path · 10 audit trail · 6 composite rules e2e
 
 ## Project Structure
 ```
-private-asset-registry/
-├── migrations/                # Database migrations
-├── scripts/                   # Utility scripts
+codex/
+├── migrations/              # PostgreSQL schema migrations (001-006)
+├── scripts/
+│   ├── migrate.ts           # Migration runner
+│   ├── seed-data.ts         # Demo data generator
+│   └── test-api.ts          # API integration test
 ├── src/
 │   ├── backend/
-│   │   ├── models/            # TypeScript interfaces
-│   │   ├── repositories/      # Data access layer
-│   │   ├── services/          # Business logic
-│   │   ├── routes/            # API endpoints
-│   │   └── db.ts              # Database connection
+│   │   ├── models/          # TypeScript interfaces
+│   │   ├── repositories/    # Data access layer (6 repos)
+│   │   ├── services/        # Business logic (7 services)
+│   │   ├── routes/          # API endpoints (8 route groups)
+│   │   ├── middleware/       # Auth + RBAC middleware
+│   │   └── db.ts            # PostgreSQL connection
 │   ├── rules-engine/
-│   │   ├── types.ts           # Validation types
-│   │   ├── validator.ts       # Rule validation logic
-│   │   └── validator.test.ts  # 20 unit tests
-│   └── frontend/              # Next.js 14 app
+│   │   ├── types.ts         # Rule interfaces
+│   │   ├── validator.ts     # 7 built-in validation rules
+│   │   ├── composite.ts     # AND/OR/NOT rule evaluator
+│   │   └── *.test.ts        # Unit tests
+│   └── frontend/            # Next.js 14 app (7 pages)
 ├── tests/
-│   ├── unit/                  # Repository tests
-│   ├── e2e/                   # End-to-end API tests
-│   └── fixtures/              # Test data
-└── data/                      # SQLite database (gitignored)
+│   ├── unit/                # Repository tests
+│   ├── e2e/                 # End-to-end API tests
+│   └── fixtures/            # Test data + helpers
+├── docker-compose.yml       # One-command deployment
+├── openapi.yml              # API specification
+└── Dockerfile
 ```
 
-## Available Scripts
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| DATABASE_URL | Yes | PostgreSQL connection string |
+| JWT_SECRET | Yes | Secret for JWT signing (min 32 chars) |
+| PORT | No | Backend port (default: 3001) |
+| FRONTEND_URL | No | CORS origin (default: http://localhost:3000) |
+
+## Scripts
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start backend + frontend |
 | `npm run dev:backend` | Start backend only (port 3001) |
 | `npm run dev:frontend` | Start frontend only (port 3000) |
-| `npm run test -- --run` | Run all tests |
-| `npm run migrate` | Run database migrations |
-| `npm run type-check` | TypeScript compilation check |
+| `npm run migrate` | Run PostgreSQL migrations |
+| `npx tsx scripts/seed-data.ts` | Load demo data |
+| `npx vitest run` | Run all 65 tests |
+| `npm run type-check` | TypeScript type checking |
 | `npm run lint` | ESLint |
-| `npm run format` | Prettier formatting |
 
-## Documentation
+## License
 
-See project root for detailed docs:
+Business Source License 1.1 — source-available, converts to open source after 4 years.
 
-- `PRD.md` — Product requirements and scope
-- `ARCHITECTURE.md` — System design and data flow
-- `BUILD_PLAN.md` — Implementation phases
-- `DATA_MODEL.md` — Database schema reference
-- `WORKING_RULES.md` — Code conventions
+---
 
-## MVP Scope
-
-This is a simulation-only MVP. Explicitly out of scope: blockchain integration, wallet management, payment processing, token issuance, authentication, and multi-tenancy.
-'@
+Built by [Julian Laycock](https://github.com/julianlaycock)
