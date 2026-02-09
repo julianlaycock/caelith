@@ -80,6 +80,16 @@ export async function findTransfersToInvestor(investorId: string): Promise<Trans
 }
 
 /**
+ * Find all transfers (most recent first)
+ */
+export async function findAllTransfers(): Promise<Transfer[]> {
+  return await query<Transfer>(
+    'SELECT * FROM transfers ORDER BY executed_at DESC',
+    []
+  );
+}
+
+/**
  * Get transfer history with investor names
  */
 export async function getTransferHistory(
