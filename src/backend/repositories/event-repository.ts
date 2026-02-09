@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { query, execute, parseJSON, stringifyJSON } from '../db.js';
 import { Event, CreateEventInput, EventType, EntityType } from '../models/index.js';
+import { dispatchEvent } from '../services/webhook-service.js';
 
 /**
  * Event Repository - Handles all database operations for audit events
@@ -57,6 +58,16 @@ export async function createEvent(input: CreateEventInput): Promise<Event> {
     payload: input.payload,
     timestamp: now,
   };
+
+  // Fire webhooks (non-blocking)
+  dispatchEvent(input.event_type, {
+    ...input.payload,
+    event_id: id,
+    entity_type: input.entity_type,
+    entity_id: input.entity_id,
+  }).catch(() => {
+    // Silently catch — webhook failures should never block operations
+  });
 
   return event;
 }

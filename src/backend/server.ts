@@ -18,6 +18,7 @@ import transferRoutes from './routes/transfer-routes.js';
 import eventRoutes from './routes/event-routes.js';
 import authRoutes from './routes/auth-routes.js';
 import { authenticate, authorize } from './middleware/auth.js';
+import webhookRoutes from './routes/webhook-routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -61,6 +62,7 @@ app.use('/api/holdings', authenticate, holdingRoutes);
 app.use('/api/rules', authenticate, authorize('admin', 'compliance_officer'), rulesRoutes);
 app.use('/api/transfers', authenticate, transferRoutes);
 app.use('/api/events', authenticate, eventRoutes);
+app.use('/api/webhooks', authenticate, authorize('admin'), webhookRoutes);
 
 // 404 handler
 app.use((req, res) => {
