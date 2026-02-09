@@ -87,23 +87,23 @@ export async function getTransferHistory(
 ): Promise<
   Array<{
     id: string;
-    from_investor_name: string;
-    to_investor_name: string;
+    from_name: string;
+    to_name: string;
     units: number;
     executed_at: string;
   }>
 > {
   const results = await query<{
     id: string;
-    from_investor_name: string;
-    to_investor_name: string;
+    from_name: string;
+    to_name: string;
     units: number;
     executed_at: string;
   }>(
     `SELECT 
       t.id,
-      fi.name as from_investor_name,
-      ti.name as to_investor_name,
+      fi.name as from_name,
+      ti.name as to_name,
       t.units,
       t.executed_at
     FROM transfers t

@@ -196,8 +196,8 @@ describe('Happy Path: Full Workflow', () => {
 
   it('should show transfer in history', async () => {
     const history = await api<{
-      from_investor_name: string;
-      to_investor_name: string;
+      from_name: string;
+      to_name: string;
       units: number;
     }[]>(
       `/transfers/history/${assetId}`
@@ -205,8 +205,8 @@ describe('Happy Path: Full Workflow', () => {
 
     expect(history.length).toBeGreaterThanOrEqual(1);
     const latest = history[0];
-    expect(latest.from_investor_name).toBe('Alice Johnson');
-    expect(latest.to_investor_name).toBe('Bob Smith');
+    expect(latest.from_name).toBe('Alice Johnson');
+    expect(latest.to_name).toBe('Bob Smith');
     expect(latest.units).toBe(50000);
   });
 

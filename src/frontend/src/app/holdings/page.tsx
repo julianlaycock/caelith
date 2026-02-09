@@ -31,10 +31,7 @@ export default function HoldingsPage() {
     [selectedAssetId]
   );
   const utilization = useAsync(
-    () =>
-      selectedAssetId
-        ? api.getAssetUtilization(selectedAssetId)
-        : Promise.resolve(null),
+    () => selectedAssetId ? api.getAssetUtilization(selectedAssetId) : Promise.resolve(null),
     [selectedAssetId]
   );
 
@@ -81,9 +78,7 @@ export default function HoldingsPage() {
       <PageHeader
         title="Holdings & Cap Table"
         description="View ownership and allocate units"
-        action={
-          <Button onClick={() => setShowForm(true)}>+ Allocate Units</Button>
-        }
+        action={<Button onClick={() => setShowForm(true)}>+ Allocate Units</Button>}
       />
 
       {successMsg && (
@@ -92,40 +87,14 @@ export default function HoldingsPage() {
         </div>
       )}
 
-      {/* Allocate Modal */}
-      <Modal
-        open={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setFormError(null);
-        }}
-        title="Allocate Units"
-      >
+      <Modal open={showForm} onClose={() => { setShowForm(false); setFormError(null); }} title="Allocate Units">
         <form onSubmit={handleAllocate} className="space-y-4">
           {formError && <Alert variant="error">{formError}</Alert>}
           <Select label="Asset" name="asset_id" options={assetOptions} required />
-          <Select
-            label="Investor"
-            name="investor_id"
-            options={investorOptions}
-            required
-          />
-          <Input
-            label="Units"
-            name="units"
-            type="number"
-            min={1}
-            required
-            placeholder="e.g., 10000"
-          />
+          <Select label="Investor" name="investor_id" options={investorOptions} required />
+          <Input label="Units" name="units" type="number" min={1} required placeholder="e.g., 10000" />
           <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={() => setShowForm(false)}
-            >
-              Cancel
-            </Button>
+            <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
             <Button type="submit">Allocate</Button>
           </div>
         </form>
@@ -142,24 +111,20 @@ export default function HoldingsPage() {
           />
         </div>
 
-        {/* Utilization bar */}
         {utilization.data && (
           <div className="mt-4">
-            <div className="mb-1 flex justify-between text-sm">
-              <span className="text-gray-600">
-                {formatNumber(utilization.data.allocated_units)} /{' '}
-                {formatNumber(utilization.data.total_units)} units allocated
+            <div className="mb-1.5 flex justify-between text-sm">
+              <span className="text-slate-600">
+                {formatNumber(utilization.data.allocated_units)} / {formatNumber(utilization.data.total_units)} units allocated
               </span>
-              <span className="font-medium text-gray-900">
+              <span className="font-medium text-slate-900">
                 {formatPercentage(utilization.data.utilization_percentage)}
               </span>
             </div>
-            <div className="h-3 w-full rounded-full bg-gray-200">
+            <div className="h-1.5 w-full rounded-full bg-slate-200">
               <div
-                className="h-3 rounded-full bg-indigo-600 transition-all"
-                style={{
-                  width: `${Math.min(utilization.data.utilization_percentage, 100)}%`,
-                }}
+                className="h-1.5 rounded-full bg-blue-800 transition-all"
+                style={{ width: `${Math.min(utilization.data.utilization_percentage, 100)}%` }}
               />
             </div>
           </div>
@@ -168,41 +133,32 @@ export default function HoldingsPage() {
 
       {/* Cap Table */}
       {!selectedAssetId ? (
-        <EmptyState
-          title="Select an asset"
-          description="Choose an asset above to view its cap table."
-        />
+        <EmptyState title="Select an asset" description="Choose an asset above to view its cap table." />
       ) : capTable.loading ? (
         <LoadingSpinner />
       ) : capTable.error ? (
         <ErrorMessage message={capTable.error} onRetry={capTable.refetch} />
       ) : capTable.data && capTable.data.length > 0 ? (
-        <Card className="overflow-hidden p-0">
+        <Card padding={false}>
           <table className="w-full text-left text-sm">
-            <thead className="border-b bg-gray-50 text-xs uppercase text-gray-500">
+            <thead className="border-b border-slate-200">
               <tr>
-                <th className="px-6 py-3">Investor</th>
-                <th className="px-6 py-3 text-right">Units</th>
-                <th className="px-6 py-3 text-right">Ownership %</th>
-                <th className="px-6 py-3">Visual</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Investor</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Units</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Ownership %</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Distribution</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {capTable.data.map((entry) => (
-                <tr key={entry.investor_id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {entry.investor_name}
-                  </td>
-                  <td className="px-6 py-4 text-right text-gray-700">
-                    {formatNumber(entry.units)}
-                  </td>
-                  <td className="px-6 py-4 text-right font-medium text-gray-900">
-                    {formatPercentage(entry.percentage)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-2 w-full max-w-[120px] rounded-full bg-gray-200">
+                <tr key={entry.investor_id} className="transition-colors hover:bg-slate-50">
+                  <td className="px-5 py-3 font-medium text-slate-900">{entry.investor_name}</td>
+                  <td className="px-5 py-3 text-right font-mono text-slate-700">{formatNumber(entry.units)}</td>
+                  <td className="px-5 py-3 text-right font-mono font-medium text-slate-900">{formatPercentage(entry.percentage)}</td>
+                  <td className="px-5 py-3">
+                    <div className="h-1.5 w-full max-w-[120px] rounded-full bg-slate-200">
                       <div
-                        className="h-2 rounded-full bg-indigo-500"
+                        className="h-1.5 rounded-full bg-blue-700"
                         style={{ width: `${Math.min(entry.percentage, 100)}%` }}
                       />
                     </div>
@@ -216,9 +172,7 @@ export default function HoldingsPage() {
         <EmptyState
           title="No holdings"
           description="No units have been allocated for this asset yet."
-          action={
-            <Button onClick={() => setShowForm(true)}>+ Allocate Units</Button>
-          }
+          action={<Button onClick={() => setShowForm(true)}>+ Allocate Units</Button>}
         />
       )}
     </div>
