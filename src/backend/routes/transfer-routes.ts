@@ -10,6 +10,7 @@ import {
   executeTransfer,
 } from '../services/index.js';
 import {
+  findAllTransfers,
   findTransfersByAsset,
   getTransferHistory,
 } from '../repositories/index.js';
@@ -100,15 +101,11 @@ router.post('/', async (req, res): Promise<void> => {
 router.get('/', async (req, res): Promise<void> => {
   try {
     const { assetId } = req.query;
-
     if (!assetId) {
-      res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: 'Required query parameter: assetId',
-      });
+      const all = await findAllTransfers();
+      res.json(all);
       return;
     }
-
     const transfers = await findTransfersByAsset(assetId as string);
     res.json(transfers);
   } catch (error) {
