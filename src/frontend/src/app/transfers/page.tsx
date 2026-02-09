@@ -23,12 +23,9 @@ export default function TransfersPage() {
   const [selectedAssetId, setSelectedAssetId] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [validationResult, setValidationResult] =
-    useState<DetailedValidationResult | null>(null);
+  const [validationResult, setValidationResult] = useState<DetailedValidationResult | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [executing, setExecuting] = useState(false);
-
-  // Current form values for execute after simulate
   const [pendingTransfer, setPendingTransfer] = useState<{
     asset_id: string;
     from_investor_id: string;
@@ -40,10 +37,7 @@ export default function TransfersPage() {
   const assets = useAsync(() => api.getAssets());
   const investors = useAsync(() => api.getInvestors());
   const history = useAsync(
-    () =>
-      selectedAssetId
-        ? api.getTransferHistory(selectedAssetId)
-        : Promise.resolve([]),
+    () => selectedAssetId ? api.getTransferHistory(selectedAssetId) : Promise.resolve([]),
     [selectedAssetId, successMsg]
   );
 
@@ -78,13 +72,7 @@ export default function TransfersPage() {
     setPendingTransfer(null);
 
     const transfer = getFormData(e.currentTarget);
-    if (
-      !transfer.asset_id ||
-      !transfer.from_investor_id ||
-      !transfer.to_investor_id ||
-      !transfer.units ||
-      transfer.units <= 0
-    ) {
+    if (!transfer.asset_id || !transfer.from_investor_id || !transfer.to_investor_id || !transfer.units || transfer.units <= 0) {
       setFormError('All fields are required. Units must be positive.');
       return;
     }
@@ -100,9 +88,7 @@ export default function TransfersPage() {
       setValidationResult(result);
       setPendingTransfer(transfer);
     } catch (err) {
-      setFormError(
-        (err as ApiError).message || 'Failed to simulate transfer'
-      );
+      setFormError((err as ApiError).message || 'Failed to simulate transfer');
     } finally {
       setSimulating(false);
     }
@@ -149,9 +135,7 @@ export default function TransfersPage() {
       <PageHeader
         title="Transfers"
         description="Simulate, execute, and review transfers"
-        action={
-          <Button onClick={() => setShowForm(true)}>+ New Transfer</Button>
-        }
+        action={<Button onClick={() => setShowForm(true)}>+ New Transfer</Button>}
       />
 
       {successMsg && (
@@ -160,60 +144,37 @@ export default function TransfersPage() {
         </div>
       )}
 
-      {/* Transfer Modal */}
       <Modal open={showForm} onClose={resetForm} title="Transfer Units">
         <form onSubmit={handleSimulate} className="space-y-4">
           {formError && <Alert variant="error">{formError}</Alert>}
 
-          <Select
-            label="Asset"
-            name="asset_id"
-            options={assetOptions}
-            required
-          />
-          <Select
-            label="From (Sender)"
-            name="from_investor_id"
-            options={investorOptions}
-            required
-          />
-          <Select
-            label="To (Receiver)"
-            name="to_investor_id"
-            options={investorOptions}
-            required
-          />
-          <Input
-            label="Units"
-            name="units"
-            type="number"
-            min={1}
-            required
-            placeholder="e.g., 1000"
-          />
+          <Select label="Asset" name="asset_id" options={assetOptions} required />
+          <Select label="From (Sender)" name="from_investor_id" options={investorOptions} required />
+          <Select label="To (Receiver)" name="to_investor_id" options={investorOptions} required />
+          <Input label="Units" name="units" type="number" min={1} required placeholder="e.g., 1000" />
 
           {/* Validation Result */}
           {validationResult && (
             <div className={`rounded-lg border p-4 ${
-              validationResult.valid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+              validationResult.valid ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'
             }`}>
-              <p className={`mb-1 font-semibold ${
-                validationResult.valid ? 'text-green-800' : 'text-red-800'
+              <p className={`mb-1 text-sm font-semibold ${
+                validationResult.valid ? 'text-emerald-800' : 'text-red-800'
               }`}>
                 {validationResult.valid ? '✓ Validation Passed' : '✗ Validation Failed'}
               </p>
               {validationResult.summary && (
-                <p className="text-sm text-gray-700 mb-2">{validationResult.summary}</p>
+                <p className="mb-2 text-sm text-slate-700">{validationResult.summary}</p>
               )}
               {validationResult.checks && validationResult.checks.length > 0 && (
                 <div className="mt-2 space-y-1">
                   {validationResult.checks.map((check, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
-                      <span className={check.passed ? 'text-green-600' : 'text-red-600'}>
+                      <span className={check.passed ? 'text-emerald-600' : 'text-red-600'}>
                         {check.passed ? '✓' : '✗'}
                       </span>
-                      <span className="font-medium text-gray-800">{check.rule}</span>
-                      <span className="text-gray-500">— {check.message}</span>
+                      <span className="font-medium text-slate-800">{check.rule}</span>
+                      <span className="text-slate-500">— {check.message}</span>
                     </div>
                   ))}
                 </div>
@@ -229,18 +190,12 @@ export default function TransfersPage() {
           )}
 
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={resetForm}>
-              Cancel
-            </Button>
+            <Button variant="secondary" type="button" onClick={resetForm}>Cancel</Button>
             <Button type="submit" disabled={simulating}>
               {simulating ? 'Simulating...' : 'Simulate'}
             </Button>
             {validationResult?.valid && (
-              <Button
-                type="button"
-                onClick={handleExecute}
-                disabled={executing}
-              >
+              <Button type="button" onClick={handleExecute} disabled={executing}>
                 {executing ? 'Executing...' : 'Execute Transfer'}
               </Button>
             )}
@@ -262,40 +217,29 @@ export default function TransfersPage() {
 
       {/* Transfer History */}
       {!selectedAssetId ? (
-        <EmptyState
-          title="Select an asset"
-          description="Choose an asset above to view its transfer history."
-        />
+        <EmptyState title="Select an asset" description="Choose an asset above to view its transfer history." />
       ) : history.loading ? (
         <LoadingSpinner />
       ) : history.error ? (
         <ErrorMessage message={history.error} onRetry={history.refetch} />
       ) : history.data && history.data.length > 0 ? (
-        <Card className="overflow-hidden p-0">
+        <Card padding={false}>
           <table className="w-full text-left text-sm">
-            <thead className="border-b bg-gray-50 text-xs uppercase text-gray-500">
+            <thead className="border-b border-slate-200">
               <tr>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">From</th>
-                <th className="px-6 py-3">To</th>
-                <th className="px-6 py-3 text-right">Units</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Date</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">From</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">To</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Units</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {history.data.map((t) => (
-                <tr key={t.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-gray-500">
-                    {formatDateTime(t.executed_at)}
-                  </td>
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {t.from_name}
-                  </td>
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {t.to_name}
-                  </td>
-                  <td className="px-6 py-4 text-right font-medium text-gray-700">
-                    {formatNumber(t.units)}
-                  </td>
+                <tr key={t.id} className="transition-colors hover:bg-slate-50">
+                  <td className="px-5 py-3 text-slate-500">{formatDateTime(t.executed_at)}</td>
+                  <td className="px-5 py-3 font-medium text-slate-900">{t.from_name}</td>
+                  <td className="px-5 py-3 font-medium text-slate-900">{t.to_name}</td>
+                  <td className="px-5 py-3 text-right font-mono font-medium text-slate-700">{formatNumber(t.units)}</td>
                 </tr>
               ))}
             </tbody>
@@ -305,9 +249,7 @@ export default function TransfersPage() {
         <EmptyState
           title="No transfers yet"
           description="No transfers have been executed for this asset."
-          action={
-            <Button onClick={() => setShowForm(true)}>+ New Transfer</Button>
-          }
+          action={<Button onClick={() => setShowForm(true)}>+ New Transfer</Button>}
         />
       )}
     </div>

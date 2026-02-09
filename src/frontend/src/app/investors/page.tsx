@@ -27,6 +27,11 @@ const JURISDICTIONS = [
   { value: 'CA', label: 'Canada (CA)' },
   { value: 'DE', label: 'Germany (DE)' },
   { value: 'FR', label: 'France (FR)' },
+  { value: 'ES', label: 'Spain (ES)' },
+  { value: 'IT', label: 'Italy (IT)' },
+  { value: 'NL', label: 'Netherlands (NL)' },
+  { value: 'IE', label: 'Ireland (IE)' },
+  { value: 'LU', label: 'Luxembourg (LU)' },
   { value: 'JP', label: 'Japan (JP)' },
   { value: 'SG', label: 'Singapore (SG)' },
   { value: 'HK', label: 'Hong Kong (HK)' },
@@ -36,7 +41,6 @@ const JURISDICTIONS = [
   { value: 'BR', label: 'Brazil (BR)' },
   { value: 'IN', label: 'India (IN)' },
   { value: 'CN', label: 'China (CN)' },
-  { value: 'RU', label: 'Russia (RU)' },
 ];
 
 export default function InvestorsPage() {
@@ -82,11 +86,7 @@ export default function InvestorsPage() {
     const accredited = form.get('accredited') === 'on';
 
     try {
-      await api.updateInvestor(editInvestor.id, {
-        name,
-        jurisdiction,
-        accredited,
-      });
+      await api.updateInvestor(editInvestor.id, { name, jurisdiction, accredited });
       setEditInvestor(null);
       setSuccessMsg('Investor updated successfully.');
       investors.refetch();
@@ -100,9 +100,7 @@ export default function InvestorsPage() {
       <PageHeader
         title="Investors"
         description="Manage investor registry"
-        action={
-          <Button onClick={() => setShowForm(true)}>+ Add Investor</Button>
-        }
+        action={<Button onClick={() => setShowForm(true)}>+ Add Investor</Button>}
       />
 
       {successMsg && (
@@ -111,124 +109,63 @@ export default function InvestorsPage() {
         </div>
       )}
 
-      {/* Create Modal */}
-      <Modal
-        open={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setFormError(null);
-        }}
-        title="Add Investor"
-      >
+      <Modal open={showForm} onClose={() => { setShowForm(false); setFormError(null); }} title="Add Investor">
         <form onSubmit={handleCreate} className="space-y-4">
           {formError && <Alert variant="error">{formError}</Alert>}
           <Input label="Name" name="name" required placeholder="e.g., Jane Smith" />
-          <Select
-            label="Jurisdiction"
-            name="jurisdiction"
-            options={JURISDICTIONS}
-            required
-          />
+          <Select label="Jurisdiction" name="jurisdiction" options={JURISDICTIONS} required />
           <Checkbox label="Accredited Investor" name="accredited" />
           <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={() => setShowForm(false)}
-            >
-              Cancel
-            </Button>
+            <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
             <Button type="submit">Create</Button>
           </div>
         </form>
       </Modal>
 
-      {/* Edit Modal */}
-      <Modal
-        open={editInvestor !== null}
-        onClose={() => {
-          setEditInvestor(null);
-          setFormError(null);
-        }}
-        title="Edit Investor"
-      >
+      <Modal open={editInvestor !== null} onClose={() => { setEditInvestor(null); setFormError(null); }} title="Edit Investor">
         {editInvestor && (
           <form onSubmit={handleUpdate} className="space-y-4">
             {formError && <Alert variant="error">{formError}</Alert>}
-            <Input
-              label="Name"
-              name="name"
-              required
-              defaultValue={editInvestor.name}
-            />
-            <Select
-              label="Jurisdiction"
-              name="jurisdiction"
-              options={JURISDICTIONS}
-              defaultValue={editInvestor.jurisdiction}
-              required
-            />
-            <Checkbox
-              label="Accredited Investor"
-              name="accredited"
-              defaultChecked={editInvestor.accredited}
-            />
+            <Input label="Name" name="name" required defaultValue={editInvestor.name} />
+            <Select label="Jurisdiction" name="jurisdiction" options={JURISDICTIONS} defaultValue={editInvestor.jurisdiction} required />
+            <Checkbox label="Accredited Investor" name="accredited" defaultChecked={editInvestor.accredited} />
             <div className="flex justify-end gap-3 pt-2">
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => setEditInvestor(null)}
-              >
-                Cancel
-              </Button>
+              <Button variant="secondary" type="button" onClick={() => setEditInvestor(null)}>Cancel</Button>
               <Button type="submit">Update</Button>
             </div>
           </form>
         )}
       </Modal>
 
-      {/* Investor Table */}
       {investors.loading ? (
         <LoadingSpinner />
       ) : investors.error ? (
         <ErrorMessage message={investors.error} onRetry={investors.refetch} />
       ) : investors.data && investors.data.length > 0 ? (
-        <Card className="overflow-hidden p-0">
+        <Card padding={false}>
           <table className="w-full text-left text-sm">
-            <thead className="border-b bg-gray-50 text-xs uppercase text-gray-500">
+            <thead className="border-b border-slate-200">
               <tr>
-                <th className="px-6 py-3">Name</th>
-                <th className="px-6 py-3">Jurisdiction</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Created</th>
-                <th className="px-6 py-3 text-right">Actions</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Name</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Jurisdiction</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Status</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Created</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {investors.data.map((inv) => (
-                <tr key={inv.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {inv.name}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {inv.jurisdiction}
-                  </td>
-                  <td className="px-6 py-4">
+                <tr key={inv.id} className="transition-colors hover:bg-slate-50">
+                  <td className="px-5 py-3 font-medium text-slate-900">{inv.name}</td>
+                  <td className="px-5 py-3 text-slate-600">{inv.jurisdiction}</td>
+                  <td className="px-5 py-3">
                     <Badge variant={inv.accredited ? 'green' : 'yellow'}>
                       {inv.accredited ? 'Accredited' : 'Non-Accredited'}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-gray-500">
-                    {formatDate(inv.created_at)}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setEditInvestor(inv)}
-                    >
-                      Edit
-                    </Button>
+                  <td className="px-5 py-3 text-slate-500">{formatDate(inv.created_at)}</td>
+                  <td className="px-5 py-3 text-right">
+                    <Button variant="ghost" size="sm" onClick={() => setEditInvestor(inv)}>Edit</Button>
                   </td>
                 </tr>
               ))}
@@ -239,9 +176,7 @@ export default function InvestorsPage() {
         <EmptyState
           title="No investors yet"
           description="Add your first investor to get started."
-          action={
-            <Button onClick={() => setShowForm(true)}>+ Add Investor</Button>
-          }
+          action={<Button onClick={() => setShowForm(true)}>+ Add Investor</Button>}
         />
       )}
     </div>

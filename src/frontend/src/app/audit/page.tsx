@@ -27,18 +27,24 @@ const EVENT_TYPE_OPTIONS = [
   { value: 'rules.updated', label: 'Rules Updated' },
   { value: 'transfer.executed', label: 'Transfer Executed' },
   { value: 'transfer.rejected', label: 'Transfer Rejected' },
+  { value: 'composite_rule.created', label: 'Custom Rule Created' },
+  { value: 'composite_rule.updated', label: 'Custom Rule Updated' },
+  { value: 'composite_rule.deleted', label: 'Custom Rule Deleted' },
 ];
 
 const EVENT_BADGE_COLORS: Record<string, 'green' | 'blue' | 'yellow' | 'red' | 'gray'> = {
   'asset.created': 'blue',
   'investor.created': 'blue',
-  'investor.updated': 'yellow',
+  'investor.updated': 'gray',
   'holding.allocated': 'green',
-  'holding.updated': 'yellow',
+  'holding.updated': 'gray',
   'rules.created': 'blue',
   'rules.updated': 'yellow',
   'transfer.executed': 'green',
   'transfer.rejected': 'red',
+  'composite_rule.created': 'yellow',
+  'composite_rule.updated': 'yellow',
+  'composite_rule.deleted': 'red',
 };
 
 export default function AuditPage() {
@@ -47,12 +53,11 @@ export default function AuditPage() {
   const [limit, setLimit] = useState(50);
 
   const events = useAsync(
-    () =>
-      api.getEvents({
-        eventType: eventType || undefined,
-        entityId: entityId || undefined,
-        limit,
-      }),
+    () => api.getEvents({
+      eventType: eventType || undefined,
+      entityId: entityId || undefined,
+      limit,
+    }),
     [eventType, entityId, limit]
   );
 
@@ -93,13 +98,9 @@ export default function AuditPage() {
             />
           </div>
           <Button
-            variant="secondary"
+            variant="ghost"
             size="sm"
-            onClick={() => {
-              setEventType('');
-              setEntityId('');
-              setLimit(50);
-            }}
+            onClick={() => { setEventType(''); setEntityId(''); setLimit(50); }}
           >
             Reset
           </Button>
@@ -112,45 +113,36 @@ export default function AuditPage() {
       ) : events.error ? (
         <ErrorMessage message={events.error} onRetry={events.refetch} />
       ) : events.data && events.data.length > 0 ? (
-        <div className="space-y-2">
-          {events.data.map((event) => (
-            <Card key={event.id} className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <Badge
-                    variant={EVENT_BADGE_COLORS[event.event_type] ?? 'gray'}
-                  >
-                    {event.event_type}
-                  </Badge>
-                  <span className="text-sm text-gray-600">
-                    {event.entity_type}
-                  </span>
+        <Card padding={false}>
+          <div className="divide-y divide-slate-100">
+            {events.data.map((event) => (
+              <div key={event.id} className="px-5 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge variant={EVENT_BADGE_COLORS[event.event_type] ?? 'gray'}>
+                      {event.event_type}
+                    </Badge>
+                    <span className="text-sm text-slate-600">{event.entity_type}</span>
+                  </div>
+                  <span className="text-xs text-slate-400">{formatDateTime(event.timestamp)}</span>
                 </div>
-                <span className="text-xs text-gray-400">
-                  {formatDateTime(event.timestamp)}
-                </span>
+                <div className="mt-1.5 flex items-center gap-4">
+                  <span className="font-mono text-xs text-slate-400">{event.entity_id}</span>
+                  <details>
+                    <summary className="cursor-pointer text-xs font-medium text-blue-800 hover:text-blue-900">
+                      View payload
+                    </summary>
+                    <pre className="mt-2 max-h-40 overflow-auto rounded-md border border-slate-200 bg-slate-50 p-3 font-mono text-xs text-slate-700">
+                      {JSON.stringify(event.payload, null, 2)}
+                    </pre>
+                  </details>
+                </div>
               </div>
-              <div className="mt-2">
-                <p className="text-xs text-gray-400">
-                  Entity: {event.entity_id}
-                </p>
-                <details className="mt-1">
-                  <summary className="cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-800">
-                    View payload
-                  </summary>
-                  <pre className="mt-2 max-h-40 overflow-auto rounded bg-gray-50 p-3 text-xs text-gray-700">
-                    {JSON.stringify(event.payload, null, 2)}
-                  </pre>
-                </details>
-              </div>
-            </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Card>
       ) : (
-        <EmptyState
-          title="No events found"
-          description="No events match the current filters."
-        />
+        <EmptyState title="No events found" description="No events match the current filters." />
       )}
     </div>
   );
