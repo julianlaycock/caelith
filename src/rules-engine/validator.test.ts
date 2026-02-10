@@ -11,6 +11,12 @@ describe('Rules Engine - Transfer Validation', () => {
       name: 'Alice',
       jurisdiction: 'US',
       accredited: true,
+      investor_type: 'professional' as const,
+      kyc_status: 'verified' as const,
+      kyc_expiry: null,
+      tax_id: null,
+      lei: null,
+      email: null,
       created_at: '2024-01-01T00:00:00.000Z',
       updated_at: '2024-01-01T00:00:00.000Z',
     };
@@ -20,6 +26,12 @@ describe('Rules Engine - Transfer Validation', () => {
       name: 'Bob',
       jurisdiction: 'US',
       accredited: true,
+      investor_type: 'professional' as const,
+      kyc_status: 'verified' as const,
+      kyc_expiry: null,
+      tax_id: null,
+      lei: null,
+      email: null,
       created_at: '2024-01-01T00:00:00.000Z',
       updated_at: '2024-01-01T00:00:00.000Z',
     };
@@ -42,6 +54,11 @@ describe('Rules Engine - Transfer Validation', () => {
       lockup_days: 0,
       jurisdiction_whitelist: [],
       transfer_whitelist: null,
+      investor_type_whitelist: null,
+      minimum_investment: null,
+      maximum_investors: null,
+      concentration_limit_pct: null,
+      kyc_required: false,
       created_at: '2024-01-01T00:00:00.000Z',
     };
 

@@ -20,7 +20,7 @@ const router = express.Router();
  */
 router.post('/', async (req, res): Promise<void> => {
   try {
-    const { name, jurisdiction, accredited } = req.body;
+    const { name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email } = req.body;
 
     // Validate request body
     if (!name || !jurisdiction || accredited === undefined) {
@@ -31,11 +31,7 @@ router.post('/', async (req, res): Promise<void> => {
       return;
     }
 
-    const investor = await createInvestor({
-      name,
-      jurisdiction,
-      accredited: Boolean(accredited),
-    });
+    const investor = await createInvestor({ name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email });
 
     res.status(201).json(investor);
   } catch (error) {

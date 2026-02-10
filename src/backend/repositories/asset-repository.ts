@@ -13,10 +13,13 @@ export async function createAsset(input: CreateAssetInput): Promise<Asset> {
   const id = randomUUID();
   const now = new Date().toISOString();
 
+  const fund_structure_id = input.fund_structure_id ?? null;
+  const unit_price = input.unit_price ?? null;
+
   await execute(
-    `INSERT INTO assets (id, name, asset_type, total_units, created_at)
-     VALUES (?, ?, ?, ?, ?)`,
-    [id, input.name, input.asset_type, input.total_units, now]
+    `INSERT INTO assets (id, name, asset_type, total_units, fund_structure_id, unit_price, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, input.name, input.asset_type, input.total_units, fund_structure_id, unit_price, now]
   );
 
   const asset: Asset = {
@@ -24,6 +27,8 @@ export async function createAsset(input: CreateAssetInput): Promise<Asset> {
     name: input.name,
     asset_type: input.asset_type,
     total_units: input.total_units,
+    fund_structure_id,
+    unit_price,
     created_at: now,
   };
 

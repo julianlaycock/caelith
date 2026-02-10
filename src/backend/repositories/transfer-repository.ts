@@ -33,6 +33,7 @@ export async function createTransfer(input: CreateTransferInput): Promise<Transf
     from_investor_id: input.from_investor_id,
     to_investor_id: input.to_investor_id,
     units: input.units,
+    decision_record_id: null,
     executed_at: input.executed_at,
     created_at: now,
   };

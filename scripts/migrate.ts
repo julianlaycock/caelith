@@ -1,13 +1,36 @@
-import initSqlJs from 'sql.js';
+/**
+ * Database Migration Runner - PostgreSQL
+ *
+ * Replaces the original sql.js migration runner.
+ * Uses pg Pool from db.ts to run .sql files from migrations/ folder.
+ *
+ * Usage: npx tsx scripts/migrate.ts
+ *
+ * Behavior:
+ * - Creates a `migrations` table if it doesn't exist
+ * - Reads all .sql files from migrations/ sorted by number prefix
+ * - Skips already-applied migrations
+ * - Applies pending migrations in a transaction (each migration individually)
+ * - Records applied migrations with timestamp
+ * - Skips 001_initial_schema.sql (SQLite) automatically
+ */
+
+import { Pool } from 'pg';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DB_PATH = path.join(__dirname, '../data/registry.db');
 const MIGRATIONS_DIR = path.join(__dirname, '../migrations');
+
+// SQLite migrations to skip (not compatible with PostgreSQL)
+const SKIP_MIGRATIONS = new Set(['001_initial_schema.sql']);
 
 interface Migration {
   filename: string;
@@ -16,52 +39,39 @@ interface Migration {
 }
 
 async function runMigrations(): Promise<void> {
-  console.log('🔄 Starting database migrations...\n');
+  console.log('🔄 Starting PostgreSQL migrations...\n');
+
+  const pool = new Pool({
+    connectionString:
+      process.env.DATABASE_URL ||
+      'postgresql://codex:codex@localhost:5432/codex',
+  });
+
+  const client = await pool.connect();
 
   try {
-    // Initialize sql.js
-    const SQL = await initSqlJs();
-
-    // Check if database exists
-    let db: initSqlJs.Database;
-    const dbExists = fs.existsSync(DB_PATH);
-
-    if (dbExists) {
-      console.log('📂 Loading existing database...');
-      const buffer = fs.readFileSync(DB_PATH);
-      db = new SQL.Database(buffer);
-    } else {
-      console.log('📂 Creating new database...');
-      // Ensure data directory exists
-      const dataDir = path.dirname(DB_PATH);
-      if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-      }
-      db = new SQL.Database();
-    }
-
     // Create migrations tracking table if it doesn't exist
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS migrations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        filename TEXT NOT NULL UNIQUE,
-        applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+        id SERIAL PRIMARY KEY,
+        filename VARCHAR(255) NOT NULL UNIQUE,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
 
     // Get already applied migrations
-    const appliedMigrations = new Set<string>();
-    const result = db.exec('SELECT filename FROM migrations');
-    if (result.length > 0 && result[0].values.length > 0) {
-      result[0].values.forEach((row) => {
-        appliedMigrations.add(row[0] as string);
-      });
-    }
+    const appliedResult = await client.query(
+      'SELECT filename FROM migrations ORDER BY id'
+    );
+    const appliedMigrations = new Set(
+      appliedResult.rows.map((row: { filename: string }) => row.filename)
+    );
 
     // Read migration files
     const files = fs.readdirSync(MIGRATIONS_DIR);
     const migrations: Migration[] = files
       .filter((f) => f.endsWith('.sql'))
+      .filter((f) => !SKIP_MIGRATIONS.has(f))
       .map((filename) => {
         const match = filename.match(/^(\d+)_/);
         const number = match ? parseInt(match[1], 10) : 0;
@@ -89,35 +99,44 @@ async function runMigrations(): Promise<void> {
       console.log(`🔄 Applying ${migration.filename}...`);
 
       try {
-        // Execute migration SQL
-        db.run(migration.sql);
+        // Run each migration in its own transaction
+        await client.query('BEGIN');
+
+        // Strip commented-out rollback section to avoid accidental execution
+        const cleanSql = migration.sql
+          .split('\n')
+          .filter((line) => !line.trimStart().startsWith('--'))
+          .join('\n');
+
+        await client.query(cleanSql);
 
         // Record migration
-        const stmt = db.prepare(
-          'INSERT INTO migrations (filename) VALUES (?)'
+        await client.query(
+          'INSERT INTO migrations (filename) VALUES ($1)',
+          [migration.filename]
         );
-        stmt.run([migration.filename]);
-        stmt.free();
 
+        await client.query('COMMIT');
         console.log(`✅ ${migration.filename} applied successfully`);
         appliedCount++;
       } catch (error) {
+        await client.query('ROLLBACK');
         console.error(`❌ Error applying ${migration.filename}:`, error);
         throw error;
       }
     }
 
-    // Save database to file
-    const data = db.export();
-    fs.writeFileSync(DB_PATH, data);
-    db.close();
-
     console.log(`\n✨ Migration complete!`);
     console.log(`📊 Applied ${appliedCount} new migration(s)`);
-    console.log(`📁 Database: ${DB_PATH}\n`);
+    console.log(
+      `📋 Total migrations: ${migrations.length} (${migrations.length - appliedCount} previously applied)\n`
+    );
   } catch (error) {
     console.error('❌ Migration failed:', error);
     process.exit(1);
+  } finally {
+    client.release();
+    await pool.end();
   }
 }
 
