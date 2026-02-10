@@ -94,6 +94,10 @@ app.use('/api/nl-rules', authenticate, authorize('admin', 'compliance_officer'),
 
 // Test-only: reset database
 app.post('/api/reset', async (_req, res): Promise<void> => {
+  if (process.env.NODE_ENV === 'production') {
+    res.status(403).json({ error: 'FORBIDDEN', message: 'Reset not available in production' });
+    return;
+  }
   try {
     // Delete in FK-safe order (children before parents)
     const tables = [
