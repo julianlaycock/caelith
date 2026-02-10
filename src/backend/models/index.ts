@@ -247,6 +247,8 @@ export interface RegulatoryDocument {
 export type EventType =
   // Original events
   | 'asset.created'
+  | 'asset.updated'
+  | 'asset.deleted'
   | 'investor.created'
   | 'investor.updated'
   | 'holding.allocated'
@@ -392,6 +394,12 @@ export interface CreateOnboardingRecordInput {
 // ============================================================================
 // UPDATE INPUT TYPES
 // ============================================================================
+
+export interface UpdateAssetInput {
+  name?: string;
+  asset_type?: string;
+  total_units?: number;
+}
 
 export interface UpdateInvestorInput {
   name?: string;

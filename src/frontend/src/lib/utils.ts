@@ -29,3 +29,21 @@ export function formatPercentage(n: number): string {
 export function classNames(...classes: (string | false | undefined)[]): string {
   return classes.filter(Boolean).join(' ');
 }
+
+export function formatCompactNumber(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  return String(n);
+}
+
+const INVESTOR_TYPE_LABELS: Record<string, string> = {
+  institutional: 'Institutional',
+  professional: 'Professional',
+  semi_professional: 'Semi-Professional',
+  well_informed: 'Well-Informed',
+  retail: 'Retail',
+};
+
+export function formatInvestorType(type: string): string {
+  return INVESTOR_TYPE_LABELS[type] || type;
+}

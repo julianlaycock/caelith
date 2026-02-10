@@ -14,7 +14,14 @@
       "Bash(docker-compose up:*)",
       "Bash(timeout:*)",
       "Bash(powershell:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(powershell.exe -NoProfile -Command 'Get-NetTCPConnection -LocalPort 3000,3001 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; Write-Host \"\"Done\"\"')",
+      "Bash(npx next build:*)",
+      "Bash(Remove-Item -Recurse -Force \"c:\\\\Users\\\\julia\\\\projects\\\\private-asset-registry_Caelith_v2\\\\src\\\\frontend\\\\.next\")",
+      "Bash(powershell.exe -NoProfile -Command:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsx --eval \"import ''./scripts/seed-showcase.ts''; console.log\\(''Syntax OK''\\)\")",
+      "Bash(npx tsx:*)"
     ]
   }
 }

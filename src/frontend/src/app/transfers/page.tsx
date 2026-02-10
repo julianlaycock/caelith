@@ -156,25 +156,25 @@ export default function TransfersPage() {
           {/* Validation Result */}
           {validationResult && (
             <div className={`rounded-lg border p-4 ${
-              validationResult.valid ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'
+              validationResult.valid ? 'border-brand-200 bg-brand-50' : 'border-red-200 bg-red-50'
             }`}>
               <p className={`mb-1 text-sm font-semibold ${
-                validationResult.valid ? 'text-emerald-800' : 'text-red-800'
+                validationResult.valid ? 'text-brand-800' : 'text-red-800'
               }`}>
                 {validationResult.valid ? '✓ Validation Passed' : '✗ Validation Failed'}
               </p>
               {validationResult.summary && (
-                <p className="mb-2 text-sm text-slate-700">{validationResult.summary}</p>
+                <p className="mb-2 text-sm text-ink-secondary">{validationResult.summary}</p>
               )}
               {validationResult.checks && validationResult.checks.length > 0 && (
                 <div className="mt-2 space-y-1">
                   {validationResult.checks.map((check, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
-                      <span className={check.passed ? 'text-emerald-600' : 'text-red-600'}>
+                      <span className={check.passed ? 'text-brand-600' : 'text-red-600'}>
                         {check.passed ? '✓' : '✗'}
                       </span>
-                      <span className="font-medium text-slate-800">{check.rule}</span>
-                      <span className="text-slate-500">— {check.message}</span>
+                      <span className="font-medium text-ink">{check.rule}</span>
+                      <span className="text-ink-tertiary">— {check.message}</span>
                     </div>
                   ))}
                 </div>
@@ -225,21 +225,21 @@ export default function TransfersPage() {
       ) : history.data && history.data.length > 0 ? (
         <Card padding={false}>
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200">
+            <thead className="border-b border-edge">
               <tr>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Date</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">From</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">To</th>
-                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Units</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Date</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">From</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">To</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Units</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-edge-subtle">
               {history.data.map((t) => (
-                <tr key={t.id} className="transition-colors hover:bg-slate-50">
-                  <td className="px-5 py-3 text-slate-500">{formatDateTime(t.executed_at)}</td>
-                  <td className="px-5 py-3 font-medium text-slate-900">{t.from_name}</td>
-                  <td className="px-5 py-3 font-medium text-slate-900">{t.to_name}</td>
-                  <td className="px-5 py-3 text-right font-mono font-medium text-slate-700">{formatNumber(t.units)}</td>
+                <tr key={t.id} className="transition-colors hover:bg-surface-subtle">
+                  <td className="px-5 py-3 text-ink-tertiary">{formatDateTime(t.executed_at)}</td>
+                  <td className="px-5 py-3 font-medium text-ink">{t.from_name}</td>
+                  <td className="px-5 py-3 font-medium text-ink">{t.to_name}</td>
+                  <td className="px-5 py-3 text-right font-mono font-medium text-ink-secondary">{formatNumber(t.units)}</td>
                 </tr>
               ))}
             </tbody>

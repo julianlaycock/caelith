@@ -16,6 +16,26 @@ html {
 }
 
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #F8FAF9;
+  color: #0F1D18;
+}
+
+/* Scrollbar styling for sidebar and main content */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #A3BBAF;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7A9488;
+}
+
+/* Tabular numbers for data tables */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

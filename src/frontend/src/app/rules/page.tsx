@@ -224,14 +224,14 @@ export default function RulesPage() {
           <Checkbox label="Require accredited investor status" checked={qualRequired} onChange={(e) => setQualRequired(e.target.checked)} />
           <Input label="Lockup Period (days)" type="number" min={0} value={lockupDays} onChange={(e) => setLockupDays(e.target.value)} />
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">Jurisdiction Whitelist</p>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Jurisdiction Whitelist</p>
             <div className="flex flex-wrap gap-1.5">
               {ALL_JURISDICTIONS.map((code) => (
                 <button key={code} type="button" onClick={() => toggleJurisdiction(code)}
                   className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
                     selectedJurisdictions.includes(code)
-                      ? 'border-blue-600 bg-blue-50 text-blue-800'
-                      : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
+                      ? 'border-brand-600 bg-brand-50 text-brand-600'
+                      : 'border-edge bg-white text-ink-secondary hover:bg-surface-subtle'
                   }`}>{code}</button>
               ))}
             </div>
@@ -264,24 +264,24 @@ export default function RulesPage() {
           ]} value={crOperator} onChange={(e) => setCrOperator(e.target.value as 'AND' | 'OR' | 'NOT')} />
 
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">Conditions</p>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Conditions</p>
             {crConditions.map((c, i) => (
               <div key={i} className="mb-2 flex items-end gap-2">
                 <div className="flex-1">
                   <select value={c.field} onChange={(e) => updateCondition(i, 'field', e.target.value)}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                     {CONDITION_FIELDS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
                   </select>
                 </div>
                 <div className="w-36">
                   <select value={c.operator} onChange={(e) => updateCondition(i, 'operator', e.target.value)}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                     {CONDITION_OPERATORS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
                 <div className="flex-1">
                   <input value={c.value} onChange={(e) => updateCondition(i, 'value', e.target.value)}
-                    placeholder="Value" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    placeholder="Value" className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500" />
                 </div>
                 {crConditions.length > 1 && (
                   <button type="button" onClick={() => removeCondition(i)}
@@ -294,7 +294,7 @@ export default function RulesPage() {
               </div>
             ))}
             <button type="button" onClick={addCondition}
-              className="mt-1 text-sm font-medium text-blue-800 hover:text-blue-900">+ Add condition</button>
+              className="mt-1 text-sm font-medium text-brand-600 hover:text-brand-700">+ Add condition</button>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
@@ -323,7 +323,7 @@ export default function RulesPage() {
             <Card>
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-slate-900">Built-in Rules</h3>
+                  <h3 className="text-sm font-semibold text-ink">Built-in Rules</h3>
                   <Badge variant="blue">v{rules.data.version}</Badge>
                 </div>
                 <div className="flex gap-2">
@@ -335,18 +335,18 @@ export default function RulesPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <span className="text-sm text-slate-600">Qualification Required</span>
+                <div className="flex items-center justify-between border-b border-edge-subtle pb-3">
+                  <span className="text-sm text-ink-secondary">Qualification Required</span>
                   <Badge variant={rules.data.qualification_required ? 'green' : 'gray'}>
                     {rules.data.qualification_required ? 'Yes' : 'No'}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <span className="text-sm text-slate-600">Lockup Period</span>
-                  <span className="text-sm font-medium text-slate-900">{rules.data.lockup_days} days</span>
+                <div className="flex items-center justify-between border-b border-edge-subtle pb-3">
+                  <span className="text-sm text-ink-secondary">Lockup Period</span>
+                  <span className="text-sm font-medium text-ink">{rules.data.lockup_days} days</span>
                 </div>
-                <div className="border-b border-slate-100 pb-3">
-                  <span className="text-sm text-slate-600">Jurisdiction Whitelist</span>
+                <div className="border-b border-edge-subtle pb-3">
+                  <span className="text-sm text-ink-secondary">Jurisdiction Whitelist</span>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {rules.data.jurisdiction_whitelist.map((j: string) => (
                       <Badge key={j} variant="blue">{j}</Badge>
@@ -354,15 +354,15 @@ export default function RulesPage() {
                   </div>
                 </div>
                 <div>
-                  <span className="text-sm text-slate-600">Transfer Whitelist</span>
-                  <p className="mt-1 text-sm font-medium text-slate-900">
+                  <span className="text-sm text-ink-secondary">Transfer Whitelist</span>
+                  <p className="mt-1 text-sm font-medium text-ink">
                     {rules.data.transfer_whitelist === null
                       ? 'Unrestricted (any investor)'
                       : `${rules.data.transfer_whitelist.length} investor(s) whitelisted`}
                   </p>
                 </div>
               </div>
-              <p className="mt-4 text-xs text-slate-400">Created {formatDate(rules.data.created_at)}</p>
+              <p className="mt-4 text-xs text-ink-tertiary">Created {formatDate(rules.data.created_at)}</p>
             </Card>
           ) : (
             <Card>
@@ -374,18 +374,18 @@ export default function RulesPage() {
           {/* Version History */}
           {showVersions && (
             <Card>
-              <h3 className="mb-4 text-sm font-semibold text-slate-900">Rule Version History</h3>
+              <h3 className="mb-4 text-sm font-semibold text-ink">Rule Version History</h3>
               {versions.loading ? <LoadingSpinner /> : versions.data && versions.data.length > 0 ? (
                 <div className="space-y-3">
                   {versions.data.map((v) => {
                     const config = v.config as Record<string, unknown>;
                     return (
-                      <div key={v.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                      <div key={v.id} className="rounded-lg border border-edge bg-surface-subtle p-4">
                         <div className="mb-2 flex items-center justify-between">
-                          <span className="text-sm font-medium text-slate-900">Version {v.version}</span>
-                          <span className="text-xs text-slate-500">{formatDateTime(v.created_at)}</span>
+                          <span className="text-sm font-medium text-ink">Version {v.version}</span>
+                          <span className="text-xs text-ink-tertiary">{formatDateTime(v.created_at)}</span>
                         </div>
-                        <div className="space-y-1 text-xs text-slate-600">
+                        <div className="space-y-1 text-xs text-ink-secondary">
                           <p>Qualification: {config.qualification_required ? 'required' : 'not required'}</p>
                           <p>Lockup: {String(config.lockup_days)} days</p>
                           <p>Jurisdictions: {Array.isArray(config.jurisdiction_whitelist) ? (config.jurisdiction_whitelist as string[]).join(', ') : 'none'}</p>
@@ -396,7 +396,7 @@ export default function RulesPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-slate-500">No version history available.</p>
+                <p className="text-sm text-ink-tertiary">No version history available.</p>
               )}
             </Card>
           )}
@@ -404,42 +404,42 @@ export default function RulesPage() {
           {/* Composite Rules */}
           <Card>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-900">Custom Compliance Rules</h3>
+              <h3 className="text-sm font-semibold text-ink">Custom Compliance Rules</h3>
               <Button size="sm" onClick={() => setShowCompositeForm(true)}>+ Add Rule</Button>
             </div>
 
             {compositeRules.loading ? <LoadingSpinner /> : compositeRules.data && compositeRules.data.length > 0 ? (
               <div className="space-y-3">
                 {compositeRules.data.map((rule) => (
-                  <div key={rule.id} className={`rounded-lg border p-4 ${rule.enabled ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 opacity-60'}`}>
+                  <div key={rule.id} className={`rounded-lg border p-4 ${rule.enabled ? 'border-edge bg-white' : 'border-edge-subtle bg-surface-subtle opacity-60'}`}>
                     <div className="mb-2 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-slate-900">{rule.name}</span>
+                        <span className="text-sm font-medium text-ink">{rule.name}</span>
                         <Badge variant={rule.enabled ? 'green' : 'gray'}>{rule.enabled ? 'Active' : 'Disabled'}</Badge>
                         <Badge variant="blue">{rule.operator}</Badge>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => handleToggleCompositeRule(rule)}
-                          className="text-xs font-medium text-blue-800 hover:text-blue-900">
+                          className="text-xs font-medium text-brand-600 hover:text-brand-700">
                           {rule.enabled ? 'Disable' : 'Enable'}
                         </button>
                         <button onClick={() => handleDeleteCompositeRule(rule.id)}
                           className="text-xs font-medium text-red-600 hover:text-red-700">Delete</button>
                       </div>
                     </div>
-                    {rule.description && <p className="mb-2 text-sm text-slate-600">{rule.description}</p>}
+                    {rule.description && <p className="mb-2 text-sm text-ink-secondary">{rule.description}</p>}
                     <div className="space-y-1">
                       {rule.conditions.map((c, i) => (
                         <div key={i} className="flex items-center gap-2 text-xs">
-                          <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-slate-700">{c.field}</span>
-                          <span className="text-slate-500">{c.operator}</span>
-                          <span className="rounded bg-blue-50 px-2 py-0.5 font-mono text-blue-800">
+                          <span className="rounded bg-surface-subtle px-2 py-0.5 font-mono text-ink-secondary">{c.field}</span>
+                          <span className="text-ink-tertiary">{c.operator}</span>
+                          <span className="rounded bg-brand-50 px-2 py-0.5 font-mono text-brand-600">
                             {Array.isArray(c.value) ? (c.value as string[]).join(', ') : String(c.value)}
                           </span>
                         </div>
                       ))}
                     </div>
-                    <p className="mt-2 text-xs text-slate-400">Created {formatDate(rule.created_at)}</p>
+                    <p className="mt-2 text-xs text-ink-tertiary">Created {formatDate(rule.created_at)}</p>
                   </div>
                 ))}
               </div>

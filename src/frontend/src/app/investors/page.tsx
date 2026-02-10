@@ -144,26 +144,26 @@ export default function InvestorsPage() {
       ) : investors.data && investors.data.length > 0 ? (
         <Card padding={false}>
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200">
+            <thead className="border-b border-edge">
               <tr>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Name</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Jurisdiction</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Status</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Created</th>
-                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Actions</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Name</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Jurisdiction</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Status</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Created</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-edge-subtle">
               {investors.data.map((inv) => (
-                <tr key={inv.id} className="transition-colors hover:bg-slate-50">
-                  <td className="px-5 py-3 font-medium text-slate-900">{inv.name}</td>
-                  <td className="px-5 py-3 text-slate-600">{inv.jurisdiction}</td>
+                <tr key={inv.id} className="transition-colors hover:bg-surface-subtle">
+                  <td className="px-5 py-3 font-medium text-ink">{inv.name}</td>
+                  <td className="px-5 py-3 text-ink-secondary">{inv.jurisdiction}</td>
                   <td className="px-5 py-3">
                     <Badge variant={inv.accredited ? 'green' : 'yellow'}>
                       {inv.accredited ? 'Accredited' : 'Non-Accredited'}
                     </Badge>
                   </td>
-                  <td className="px-5 py-3 text-slate-500">{formatDate(inv.created_at)}</td>
+                  <td className="px-5 py-3 text-ink-secondary">{formatDate(inv.created_at)}</td>
                   <td className="px-5 py-3 text-right">
                     <Button variant="ghost" size="sm" onClick={() => setEditInvestor(inv)}>Edit</Button>
                   </td>
