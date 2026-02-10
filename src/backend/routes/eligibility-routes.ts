@@ -1,7 +1,47 @@
 import { Router, Request, Response } from 'express';
 import { checkEligibility } from '../services/eligibility-service.js';
+import { createEligibilityCriteria } from '../repositories/eligibility-criteria-repository.js';
 
 const router = Router();
+
+/**
+ * POST /api/eligibility/criteria
+ *
+ * Create a new eligibility criteria record for a fund structure.
+ */
+router.post('/criteria', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { fund_structure_id, investor_type, jurisdiction, minimum_investment,
+            suitability_required, source_reference, effective_date,
+            maximum_allocation_pct, documentation_required } = req.body;
+
+    if (!fund_structure_id || !investor_type || !jurisdiction) {
+      res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        message: 'fund_structure_id, investor_type, and jurisdiction are required',
+      });
+      return;
+    }
+
+    const criteria = await createEligibilityCriteria({
+      fund_structure_id,
+      investor_type,
+      jurisdiction,
+      minimum_investment: minimum_investment ?? 0,
+      suitability_required,
+      source_reference,
+      effective_date: effective_date ?? new Date().toISOString().slice(0, 10),
+      maximum_allocation_pct,
+      documentation_required,
+    });
+
+    res.status(201).json(criteria);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('Create eligibility criteria error:', err);
+    res.status(500).json({ error: 'INTERNAL_ERROR', message });
+  }
+});
 
 /**
  * POST /api/eligibility/check
