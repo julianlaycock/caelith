@@ -31,6 +31,7 @@ import eligibilityRoutes from './routes/eligibility-routes.js';
 import decisionRecordRoutes from './routes/decision-record-routes.js';
 import nlRulesRoutes from './routes/nl-rules-routes.js';
 import onboardingRoutes from './routes/onboarding-routes.js';
+import complianceReportRoutes from './routes/compliance-report-routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -91,6 +92,7 @@ app.use('/api/onboarding', authenticate, onboardingRoutes);
 app.use('/api/eligibility', authenticate, eligibilityRoutes);
 app.use('/api/decisions', authenticate, decisionRecordRoutes);
 app.use('/api/nl-rules', authenticate, authorize('admin', 'compliance_officer'), nlRulesRoutes);
+app.use('/api/reports', authenticate, complianceReportRoutes);
 
 // Test-only: reset database
 app.post('/api/reset', async (_req, res): Promise<void> => {
