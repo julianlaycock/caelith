@@ -24,7 +24,7 @@ import { authenticate, authorize } from './middleware/auth.js';
 import webhookRoutes from './routes/webhook-routes.js';
 import compositeRulesRoutes from './routes/composite-rules-routes.js';
 import templateRoutes from './routes/template-routes.js';
-import { securityHeaders, apiRateLimit, authRateLimit, sanitizeInput, exportRateLimit } from './middleware/security.js';
+import { securityHeaders, apiRateLimit, authRateLimit, sanitizeInput, exportRateLimit, clearRateLimits } from './middleware/security.js';
 import { generateCapTablePdf } from './services/cap-table-pdf.js';
 import fundStructureRoutes from './routes/fund-structure-routes.js';
 import eligibilityRoutes from './routes/eligibility-routes.js';
@@ -99,11 +99,13 @@ app.post('/api/reset', async (_req, res): Promise<void> => {
     await dbExecute('DELETE FROM composite_rules');
     await dbExecute('DELETE FROM rule_versions');
     await dbExecute('DELETE FROM events');
+    await dbExecute('DELETE FROM decision_records');
     await dbExecute('DELETE FROM transfers');
     await dbExecute('DELETE FROM holdings');
     await dbExecute('DELETE FROM rules');
     await dbExecute('DELETE FROM investors');
     await dbExecute('DELETE FROM assets');
+    clearRateLimits();
     res.json({ status: 'reset' });
   } catch (error) {
     res.status(500).json({ error: 'RESET_FAILED' });

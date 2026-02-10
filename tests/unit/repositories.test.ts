@@ -21,6 +21,7 @@ async function cleanDb(): Promise<void> {
   await execute('DELETE FROM composite_rules');
   await execute('DELETE FROM rule_versions');
   await execute('DELETE FROM events');
+  await execute('DELETE FROM decision_records');
   await execute('DELETE FROM transfers');
   await execute('DELETE FROM holdings');
   await execute('DELETE FROM rules');
