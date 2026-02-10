@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { query, execute, boolToInt, intToBool, parseJSON, stringifyJSON } from '../db.js';
-import { RuleSet, CreateRuleSetInput } from '../models/index.js';
+import { RuleSet, CreateRuleSetInput, InvestorType } from '../models/index.js';
 
 /**
  * Rules Repository - Handles all database operations for rule sets
@@ -14,6 +14,11 @@ interface RuleSetRow {
   lockup_days: number;
   jurisdiction_whitelist: string;
   transfer_whitelist: string | null;
+  investor_type_whitelist: string | null;
+  minimum_investment: number | null;
+  maximum_investors: number | null;
+  concentration_limit_pct: number | null;
+  kyc_required: number;
   created_at: string;
 }
 
@@ -29,6 +34,11 @@ function rowToRuleSet(row: RuleSetRow): RuleSet {
     lockup_days: row.lockup_days,
     jurisdiction_whitelist: parseJSON<string[]>(row.jurisdiction_whitelist) || [],
     transfer_whitelist: parseJSON<string[]>(row.transfer_whitelist),
+    investor_type_whitelist: parseJSON<InvestorType[]>(row.investor_type_whitelist) ?? null,
+    minimum_investment: row.minimum_investment ?? null,
+    maximum_investors: row.maximum_investors ?? null,
+    concentration_limit_pct: row.concentration_limit_pct ?? null,
+    kyc_required: intToBool(row.kyc_required),
     created_at: row.created_at,
   };
 }
@@ -49,9 +59,15 @@ export async function createRuleSet(input: CreateRuleSetInput): Promise<RuleSet>
     await execute('DELETE FROM rules WHERE asset_id = ?', [input.asset_id]);
   }
 
+  const investor_type_whitelist = input.investor_type_whitelist ?? null;
+  const minimum_investment = input.minimum_investment ?? null;
+  const maximum_investors = input.maximum_investors ?? null;
+  const concentration_limit_pct = input.concentration_limit_pct ?? null;
+  const kyc_required = input.kyc_required ?? false;
+
   await execute(
-    `INSERT INTO rules (id, asset_id, version, qualification_required, lockup_days, jurisdiction_whitelist, transfer_whitelist, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO rules (id, asset_id, version, qualification_required, lockup_days, jurisdiction_whitelist, transfer_whitelist, investor_type_whitelist, minimum_investment, maximum_investors, concentration_limit_pct, kyc_required, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       input.asset_id,
@@ -60,6 +76,11 @@ export async function createRuleSet(input: CreateRuleSetInput): Promise<RuleSet>
       input.lockup_days,
       stringifyJSON(input.jurisdiction_whitelist),
       input.transfer_whitelist ? stringifyJSON(input.transfer_whitelist) : null,
+      investor_type_whitelist ? stringifyJSON(investor_type_whitelist) : null,
+      minimum_investment,
+      maximum_investors,
+      concentration_limit_pct,
+      boolToInt(kyc_required),
       now,
     ]
   );
@@ -72,6 +93,11 @@ export async function createRuleSet(input: CreateRuleSetInput): Promise<RuleSet>
     lockup_days: input.lockup_days,
     jurisdiction_whitelist: input.jurisdiction_whitelist,
     transfer_whitelist: input.transfer_whitelist,
+    investor_type_whitelist,
+    minimum_investment,
+    maximum_investors,
+    concentration_limit_pct,
+    kyc_required,
     created_at: now,
   };
 

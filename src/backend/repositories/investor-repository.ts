@@ -6,6 +6,40 @@ import { Investor, CreateInvestorInput, UpdateInvestorInput } from '../models/in
  * Investor Repository - Handles all database operations for investors
  */
 
+/** Raw row shape returned by SQLite (booleans stored as 0/1 integers) */
+interface InvestorRow {
+  id: string;
+  name: string;
+  jurisdiction: string;
+  accredited: number;
+  investor_type: string;
+  kyc_status: string;
+  kyc_expiry: string | null;
+  tax_id: string | null;
+  lei: string | null;
+  email: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Map a DB row to the domain Investor model */
+function rowToInvestor(row: InvestorRow): Investor {
+  return {
+    id: row.id,
+    name: row.name,
+    jurisdiction: row.jurisdiction,
+    accredited: intToBool(row.accredited),
+    investor_type: row.investor_type as Investor['investor_type'],
+    kyc_status: row.kyc_status as Investor['kyc_status'],
+    kyc_expiry: row.kyc_expiry,
+    tax_id: row.tax_id,
+    lei: row.lei,
+    email: row.email,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
 /**
  * Create a new investor
  */
@@ -13,17 +47,31 @@ export async function createInvestor(input: CreateInvestorInput): Promise<Invest
   const id = randomUUID();
   const now = new Date().toISOString();
 
+  const accredited = input.accredited ?? false;
+  const investor_type = input.investor_type ?? 'professional';
+  const kyc_status = input.kyc_status ?? 'pending';
+  const kyc_expiry = input.kyc_expiry ?? null;
+  const tax_id = input.tax_id ?? null;
+  const lei = input.lei ?? null;
+  const email = input.email ?? null;
+
   await execute(
-    `INSERT INTO investors (id, name, jurisdiction, accredited, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [id, input.name, input.jurisdiction, boolToInt(input.accredited), now, now]
+    `INSERT INTO investors (id, name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, input.name, input.jurisdiction, boolToInt(accredited), investor_type, kyc_status, kyc_expiry, tax_id, lei, email, now, now]
   );
 
   const investor: Investor = {
     id,
     name: input.name,
     jurisdiction: input.jurisdiction,
-    accredited: input.accredited,
+    accredited,
+    investor_type,
+    kyc_status,
+    kyc_expiry,
+    tax_id,
+    lei,
+    email,
     created_at: now,
     updated_at: now,
   };
@@ -35,51 +83,27 @@ export async function createInvestor(input: CreateInvestorInput): Promise<Invest
  * Find investor by ID
  */
 export async function findInvestorById(id: string): Promise<Investor | null> {
-  const results = await query<{
-    id: string;
-    name: string;
-    jurisdiction: string;
-    accredited: number;
-    created_at: string;
-    updated_at: string;
-  }>('SELECT * FROM investors WHERE id = ?', [id]);
+  const results = await query<InvestorRow>(
+    'SELECT * FROM investors WHERE id = ?',
+    [id]
+  );
 
   if (results.length === 0) {
     return null;
   }
 
-  const row = results[0];
-  return {
-    id: row.id,
-    name: row.name,
-    jurisdiction: row.jurisdiction,
-    accredited: intToBool(row.accredited),
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-  };
+  return rowToInvestor(results[0]);
 }
 
 /**
  * Find all investors
  */
 export async function findAllInvestors(): Promise<Investor[]> {
-  const results = await query<{
-    id: string;
-    name: string;
-    jurisdiction: string;
-    accredited: number;
-    created_at: string;
-    updated_at: string;
-  }>('SELECT * FROM investors ORDER BY created_at DESC');
+  const results = await query<InvestorRow>(
+    'SELECT * FROM investors ORDER BY created_at DESC'
+  );
 
-  return results.map((row) => ({
-    id: row.id,
-    name: row.name,
-    jurisdiction: row.jurisdiction,
-    accredited: intToBool(row.accredited),
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-  }));
+  return results.map(rowToInvestor);
 }
 
 /**
@@ -95,7 +119,7 @@ export async function updateInvestor(
   }
 
   const updates: string[] = [];
-  const params: (string | number)[] = [];
+  const params: (string | number | boolean | null)[] = [];
 
   if (input.name !== undefined) {
     updates.push('name = ?');
@@ -110,6 +134,36 @@ export async function updateInvestor(
   if (input.accredited !== undefined) {
     updates.push('accredited = ?');
     params.push(boolToInt(input.accredited));
+  }
+
+  if (input.investor_type !== undefined) {
+    updates.push('investor_type = ?');
+    params.push(input.investor_type);
+  }
+
+  if (input.kyc_status !== undefined) {
+    updates.push('kyc_status = ?');
+    params.push(input.kyc_status);
+  }
+
+  if (input.kyc_expiry !== undefined) {
+    updates.push('kyc_expiry = ?');
+    params.push(input.kyc_expiry);
+  }
+
+  if (input.tax_id !== undefined) {
+    updates.push('tax_id = ?');
+    params.push(input.tax_id);
+  }
+
+  if (input.lei !== undefined) {
+    updates.push('lei = ?');
+    params.push(input.lei);
+  }
+
+  if (input.email !== undefined) {
+    updates.push('email = ?');
+    params.push(input.email);
   }
 
   if (updates.length === 0) {
@@ -148,23 +202,10 @@ export async function investorExists(id: string): Promise<boolean> {
 export async function findInvestorsByJurisdiction(
   jurisdiction: string
 ): Promise<Investor[]> {
-  const results = await query<{
-    id: string;
-    name: string;
-    jurisdiction: string;
-    accredited: number;
-    created_at: string;
-    updated_at: string;
-  }>('SELECT * FROM investors WHERE jurisdiction = ? ORDER BY created_at DESC', [
-    jurisdiction,
-  ]);
+  const results = await query<InvestorRow>(
+    'SELECT * FROM investors WHERE jurisdiction = ? ORDER BY created_at DESC',
+    [jurisdiction]
+  );
 
-  return results.map((row) => ({
-    id: row.id,
-    name: row.name,
-    jurisdiction: row.jurisdiction,
-    accredited: intToBool(row.accredited),
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-  }));
+  return results.map(rowToInvestor);
 }

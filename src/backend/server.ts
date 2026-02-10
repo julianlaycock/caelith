@@ -26,6 +26,9 @@ import compositeRulesRoutes from './routes/composite-rules-routes.js';
 import templateRoutes from './routes/template-routes.js';
 import { securityHeaders, apiRateLimit, authRateLimit, sanitizeInput, exportRateLimit } from './middleware/security.js';
 import { generateCapTablePdf } from './services/cap-table-pdf.js';
+import fundStructureRoutes from './routes/fund-structure-routes.js';
+import eligibilityRoutes from './routes/eligibility-routes.js';
+import decisionRecordRoutes from './routes/decision-record-routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -81,8 +84,10 @@ app.use('/api/transfers', authenticate, transferRoutes);
 app.use('/api/events', authenticate, eventRoutes);
 app.use('/api/webhooks', authenticate, authorize('admin'), webhookRoutes);
 app.use('/api/composite-rules', authenticate, authorize('admin', 'compliance_officer'), compositeRulesRoutes);
-
 app.use('/api/templates', authenticate, templateRoutes);
+app.use('/api/fund-structures', fundStructureRoutes);
+app.use('/api/eligibility', eligibilityRoutes);
+app.use('/api/decisions', decisionRecordRoutes);
 
 import { execute as dbExecute } from './db.js';
 
