@@ -85,9 +85,9 @@ app.use('/api/events', authenticate, eventRoutes);
 app.use('/api/webhooks', authenticate, authorize('admin'), webhookRoutes);
 app.use('/api/composite-rules', authenticate, authorize('admin', 'compliance_officer'), compositeRulesRoutes);
 app.use('/api/templates', authenticate, templateRoutes);
-app.use('/api/fund-structures', fundStructureRoutes);
-app.use('/api/eligibility', eligibilityRoutes);
-app.use('/api/decisions', decisionRecordRoutes);
+app.use('/api/fund-structures', authenticate, fundStructureRoutes);
+app.use('/api/eligibility', authenticate, eligibilityRoutes);
+app.use('/api/decisions', authenticate, decisionRecordRoutes);
 
 import { execute as dbExecute } from './db.js';
 
