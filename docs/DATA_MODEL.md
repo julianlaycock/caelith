@@ -440,7 +440,7 @@ EVENTS (append-only log)                                               │
     "jurisdiction": "LU",
     "investor_type": "semi_professional",
     "minimum_investment": 12500000,
-    "source_reference": "CSSF Circular 15/633, Section 4.2"
+    "source_reference": "SIF Law 13 Feb 2007, Art. 2"
   },
   "composite_rules": [ ... ]
 }
@@ -454,7 +454,7 @@ EVENTS (append-only log)                                               │
     { "rule": "positive_units", "passed": true, "message": "Transfer units (50000) > 0" },
     { "rule": "sufficient_units", "passed": true, "message": "Sender holds 200000 units, transferring 50000" },
     { "rule": "investor_type_eligible", "passed": true, "message": "semi_professional is in allowed types [professional, semi_professional, institutional]" },
-    { "rule": "minimum_investment_met", "passed": false, "message": "Transfer value €100,000 is below minimum €125,000 for semi_professional investors in LU (CSSF Circular 15/633)" },
+    { "rule": "minimum_investment_met", "passed": false, "message": "Transfer value €100,000 is below minimum €125,000 for semi_professional investors in LU (SIF Law 13 Feb 2007)" },
     { "rule": "kyc_valid", "passed": true, "message": "Receiver KYC verified, expires 2027-01-15" },
     { "rule": "lockup_period", "passed": true, "message": "Acquired 180 days ago, lockup is 90 days" },
     { "rule": "jurisdiction_whitelist", "passed": true, "message": "LU is in allowed jurisdictions" }
