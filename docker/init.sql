@@ -1,123 +1,5 @@
--- Auto-generated from migrations/ on 2026-02-10T17:49:25Z
--- DO NOT EDIT � regenerate with PowerShell
--- ============================================
--- 001_initial_schema.sql
--- ============================================
-
--- Migration 001: Initial Schema
--- Date: 2026-02-07
--- Description: Create core tables for Private Asset Registry
-
--- Enable foreign keys (SQLite specific)
-PRAGMA foreign_keys = ON;
-
--- ============================================================================
--- ASSETS TABLE
--- ============================================================================
-CREATE TABLE IF NOT EXISTS assets (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    asset_type TEXT NOT NULL,
-    total_units INTEGER NOT NULL CHECK (total_units > 0),
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
-CREATE INDEX idx_assets_created_at ON assets(created_at);
-
--- ============================================================================
--- INVESTORS TABLE
--- ============================================================================
-CREATE TABLE IF NOT EXISTS investors (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    jurisdiction TEXT NOT NULL,
-    accredited INTEGER NOT NULL CHECK (accredited IN (0, 1)),
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
-CREATE INDEX idx_investors_jurisdiction ON investors(jurisdiction);
-CREATE INDEX idx_investors_created_at ON investors(created_at);
-
--- ============================================================================
--- HOLDINGS TABLE
--- ============================================================================
-CREATE TABLE IF NOT EXISTS holdings (
-    id TEXT PRIMARY KEY,
-    investor_id TEXT NOT NULL,
-    asset_id TEXT NOT NULL,
-    units INTEGER NOT NULL CHECK (units >= 0),
-    acquired_at TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (investor_id) REFERENCES investors(id) ON DELETE RESTRICT,
-    FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT,
-    UNIQUE(investor_id, asset_id)
-);
-
-CREATE INDEX idx_holdings_asset_id ON holdings(asset_id);
-CREATE INDEX idx_holdings_investor_id ON holdings(investor_id);
-CREATE INDEX idx_holdings_acquired_at ON holdings(acquired_at);
-
--- ============================================================================
--- RULES TABLE
--- ============================================================================
-CREATE TABLE IF NOT EXISTS rules (
-    id TEXT PRIMARY KEY,
-    asset_id TEXT NOT NULL UNIQUE,
-    version INTEGER NOT NULL,
-    qualification_required INTEGER NOT NULL CHECK (qualification_required IN (0, 1)),
-    lockup_days INTEGER NOT NULL CHECK (lockup_days >= 0),
-    jurisdiction_whitelist TEXT NOT NULL, -- JSON array stored as TEXT
-    transfer_whitelist TEXT, -- JSON array stored as TEXT, NULL = unrestricted
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT
-);
-
-CREATE UNIQUE INDEX idx_rules_asset_id ON rules(asset_id);
-CREATE INDEX idx_rules_created_at ON rules(created_at);
-
--- ============================================================================
--- TRANSFERS TABLE
--- ============================================================================
-CREATE TABLE IF NOT EXISTS transfers (
-    id TEXT PRIMARY KEY,
-    asset_id TEXT NOT NULL,
-    from_investor_id TEXT NOT NULL,
-    to_investor_id TEXT NOT NULL,
-    units INTEGER NOT NULL CHECK (units > 0),
-    executed_at TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT,
-    FOREIGN KEY (from_investor_id) REFERENCES investors(id) ON DELETE RESTRICT,
-    FOREIGN KEY (to_investor_id) REFERENCES investors(id) ON DELETE RESTRICT,
-    CHECK (from_investor_id != to_investor_id)
-);
-
-CREATE INDEX idx_transfers_asset_id_executed_at ON transfers(asset_id, executed_at DESC);
-CREATE INDEX idx_transfers_from_investor_id ON transfers(from_investor_id);
-CREATE INDEX idx_transfers_to_investor_id ON transfers(to_investor_id);
-CREATE INDEX idx_transfers_executed_at ON transfers(executed_at DESC);
-
--- ============================================================================
--- EVENTS TABLE (Audit Trail)
--- ============================================================================
-CREATE TABLE IF NOT EXISTS events (
-    id TEXT PRIMARY KEY,
-    event_type TEXT NOT NULL,
-    entity_type TEXT NOT NULL,
-    entity_id TEXT NOT NULL,
-    payload TEXT NOT NULL, -- JSON stored as TEXT
-    timestamp TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
-CREATE INDEX idx_events_timestamp ON events(timestamp DESC);
-CREATE INDEX idx_events_entity_type_entity_id ON events(entity_type, entity_id);
-CREATE INDEX idx_events_event_type ON events(event_type);
-
--- ============================================================================
--- END OF MIGRATION 001
--- ============================================================================
+﻿-- Auto-generated from migrations/ on 2026-02-10T19:16:25Z
+-- Skips 001_initial_schema.sql (SQLite only)
 
 -- ============================================
 -- 002_postgresql_schema.sql
@@ -429,7 +311,7 @@ CREATE INDEX IF NOT EXISTS idx_investors_kyc_status ON investors(kyc_status);
 
 -- ============================================================================
 -- DATA MIGRATION
--- Existing investors: accredited=true → professional, accredited=false → retail
+-- Existing investors: accredited=true â†’ professional, accredited=false â†’ retail
 -- All existing investors get kyc_status='verified' to avoid breaking validation
 -- ============================================================================
 UPDATE investors SET investor_type = 'professional' WHERE accredited = true;
@@ -597,10 +479,10 @@ VALUES (
 
 -- ============================================================================
 -- PRE-POPULATE: Eligibility criteria for 3 jurisdictions
--- Amounts in cents (smallest currency unit). €125,000 = 12500000.
+-- Amounts in cents (smallest currency unit). â‚¬125,000 = 12500000.
 -- ============================================================================
 
--- ── Luxembourg SIF ──────────────────────────────────────────────────────────
+-- â”€â”€ Luxembourg SIF â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 INSERT INTO eligibility_criteria
     (fund_structure_id, jurisdiction, investor_type, minimum_investment, documentation_required, source_reference, effective_date)
 VALUES
@@ -610,12 +492,12 @@ VALUES
      'CSSF Circular 15/633', '2015-08-17'),
     ('00000000-0000-0000-0000-000000000001', '*', 'semi_professional', 12500000,
      '["risk_declaration"]',
-     'CSSF Circular 15/633, Section 4.2 — €125,000 minimum', '2015-08-17'),
+     'CSSF Circular 15/633, Section 4.2 â€” â‚¬125,000 minimum', '2015-08-17'),
     ('00000000-0000-0000-0000-000000000001', '*', 'well_informed', 12500000,
      '["risk_declaration", "professional_certification"]',
      'CSSF Circular 15/633, Section 4.2', '2015-08-17');
 
--- ── Luxembourg RAIF ─────────────────────────────────────────────────────────
+-- â”€â”€ Luxembourg RAIF â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 INSERT INTO eligibility_criteria
     (fund_structure_id, jurisdiction, investor_type, minimum_investment, documentation_required, source_reference, effective_date)
 VALUES
@@ -625,9 +507,9 @@ VALUES
      'Law of 23 July 2016, Art. 2', '2016-07-23'),
     ('00000000-0000-0000-0000-000000000002', '*', 'semi_professional', 12500000,
      '["risk_declaration"]',
-     'Law of 23 July 2016, Art. 2 — €125,000 minimum', '2016-07-23');
+     'Law of 23 July 2016, Art. 2 â€” â‚¬125,000 minimum', '2016-07-23');
 
--- ── ELTIF 2.0 (EU-wide) ────────────────────────────────────────────────────
+-- â”€â”€ ELTIF 2.0 (EU-wide) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 INSERT INTO eligibility_criteria
     (fund_structure_id, jurisdiction, investor_type, minimum_investment, suitability_required, documentation_required, source_reference, effective_date)
 VALUES
@@ -637,29 +519,29 @@ VALUES
      'Reg 2023/606', '2024-01-10'),
     ('00000000-0000-0000-0000-000000000003', '*', 'retail', 1000000, true,
      '["suitability_assessment"]',
-     'Reg 2023/606, Art. 30(1) — €10,000 minimum, suitability required', '2024-01-10');
+     'Reg 2023/606, Art. 30(1) â€” â‚¬10,000 minimum, suitability required', '2024-01-10');
 
--- ── German Spezial-AIF ──────────────────────────────────────────────────────
+-- â”€â”€ German Spezial-AIF â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 INSERT INTO eligibility_criteria
     (fund_structure_id, jurisdiction, investor_type, minimum_investment, documentation_required, source_reference, effective_date)
 VALUES
     ('00000000-0000-0000-0000-000000000004', 'DE', 'institutional', 0, '[]',
-     'KAGB §1(6)', '2013-07-22'),
+     'KAGB Â§1(6)', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000004', 'DE', 'professional', 0, '[]',
-     'KAGB §1(6)', '2013-07-22'),
+     'KAGB Â§1(6)', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000004', 'DE', 'semi_professional', 20000000,
      '["risk_declaration", "investment_advisory_confirmation"]',
-     'KAGB §1(19) Nr. 33 — €200,000 minimum', '2013-07-22'),
+     'KAGB Â§1(19) Nr. 33 â€” â‚¬200,000 minimum', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000004', 'AT', 'institutional', 0, '[]',
-     'KAGB §1(6) — Austrian institutional via AIFMD passport', '2013-07-22'),
+     'KAGB Â§1(6) â€” Austrian institutional via AIFMD passport', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000004', 'AT', 'professional', 0, '[]',
-     'KAGB §1(6) — Austrian professional via AIFMD passport', '2013-07-22'),
+     'KAGB Â§1(6) â€” Austrian professional via AIFMD passport', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000004', 'CH', 'institutional', 0, '[]',
-     'KAGB §1(6) — Swiss institutional via bilateral agreement', '2013-07-22'),
+     'KAGB Â§1(6) â€” Swiss institutional via bilateral agreement', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000004', 'CH', 'professional', 0, '[]',
-     'KAGB §1(6) — Swiss professional via bilateral agreement', '2013-07-22');
+     'KAGB Â§1(6) â€” Swiss professional via bilateral agreement', '2013-07-22');
 
--- ── Irish QIAIF ─────────────────────────────────────────────────────────────
+-- â”€â”€ Irish QIAIF â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 INSERT INTO eligibility_criteria
     (fund_structure_id, jurisdiction, investor_type, minimum_investment, documentation_required, source_reference, effective_date)
 VALUES
@@ -667,9 +549,9 @@ VALUES
      'CBI AIF Rulebook, Chapter 2', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000005', '*', 'professional', 10000000,
      '["qualifying_investor_declaration"]',
-     'CBI AIF Rulebook, Chapter 2 — €100,000 minimum qualifying investor', '2013-07-22');
+     'CBI AIF Rulebook, Chapter 2 â€” â‚¬100,000 minimum qualifying investor', '2013-07-22');
 
--- ── Irish RIAIF ─────────────────────────────────────────────────────────────
+-- â”€â”€ Irish RIAIF â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 INSERT INTO eligibility_criteria
     (fund_structure_id, jurisdiction, investor_type, minimum_investment, suitability_required, documentation_required, source_reference, effective_date)
 VALUES
@@ -679,7 +561,7 @@ VALUES
      'CBI AIF Rulebook, Chapter 3', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000006', '*', 'retail', 0, true,
      '["suitability_assessment", "risk_warning_acknowledgment"]',
-     'CBI AIF Rulebook, Chapter 3 — No minimum, suitability required', '2013-07-22');
+     'CBI AIF Rulebook, Chapter 3 â€” No minimum, suitability required', '2013-07-22');
 
 -- ============================================================================
 -- DOWN (rollback)
@@ -746,7 +628,7 @@ CREATE INDEX IF NOT EXISTS idx_dr_subject ON decision_records(subject_id);
 CREATE INDEX IF NOT EXISTS idx_dr_decided_at ON decision_records(decided_at DESC);
 
 -- ============================================================================
--- EXTEND TRANSFERS TABLE — link to decision record
+-- EXTEND TRANSFERS TABLE â€” link to decision record
 -- ============================================================================
 ALTER TABLE transfers ADD COLUMN IF NOT EXISTS decision_record_id UUID REFERENCES decision_records(id) ON DELETE SET NULL;
 
@@ -770,7 +652,7 @@ CREATE INDEX IF NOT EXISTS idx_transfers_decision_record ON transfers(decision_r
 -- Migration 012: Onboarding Records
 -- Date: 2026-02-10
 -- Description: Investor onboarding workflow tracking. Lifecycle:
---              applied → eligible/ineligible → approved/rejected → allocated
+--              applied â†’ eligible/ineligible â†’ approved/rejected â†’ allocated
 --              Links to decision_records for automated eligibility checks
 --              and manual approval decisions.
 
@@ -824,14 +706,14 @@ CREATE INDEX IF NOT EXISTS idx_ob_applied_at ON onboarding_records(applied_at DE
 --              is created without the embedding column and vector index.
 
 -- ============================================================================
--- ENABLE PGVECTOR (optional — fails gracefully if not installed)
+-- ENABLE PGVECTOR (optional â€” fails gracefully if not installed)
 -- ============================================================================
 DO $$
 BEGIN
     CREATE EXTENSION IF NOT EXISTS vector;
     RAISE NOTICE 'pgvector extension enabled';
 EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'pgvector extension not available — embedding column will be skipped';
+    RAISE NOTICE 'pgvector extension not available â€” embedding column will be skipped';
 END
 $$;
 
@@ -866,7 +748,7 @@ BEGIN
             USING hnsw (embedding vector_cosine_ops);
         RAISE NOTICE 'embedding column and HNSW index created';
     ELSE
-        RAISE NOTICE 'Skipping embedding column — install pgvector to enable semantic search';
+        RAISE NOTICE 'Skipping embedding column â€” install pgvector to enable semantic search';
     END IF;
 END
 $$;
@@ -889,24 +771,24 @@ $$;
 -- Description: Corrections found by cross-referencing seed data against
 --              uploaded regulatory documents.
 --
--- ERROR 1: RAIF semi_professional minimum was €125,000 (12500000 cents).
---          Law of 23 July 2016, Art. 2(1)(b)(i) states €100,000.
+-- ERROR 1: RAIF semi_professional minimum was â‚¬125,000 (12500000 cents).
+--          Law of 23 July 2016, Art. 2(1)(b)(i) states â‚¬100,000.
 --
--- ERROR 2: ELTIF retail minimum was €10,000 (1000000 cents).
---          Reg 2023/606 (ELTIF 2.0), Recital 47 removed the €10,000 minimum.
+-- ERROR 2: ELTIF retail minimum was â‚¬10,000 (1000000 cents).
+--          Reg 2023/606 (ELTIF 2.0), Recital 47 removed the â‚¬10,000 minimum.
 --          Retail investors can invest any amount, subject to suitability.
 
--- Fix 1: RAIF semi_professional — €125,000 → €100,000
+-- Fix 1: RAIF semi_professional â€” â‚¬125,000 â†’ â‚¬100,000
 UPDATE eligibility_criteria
 SET minimum_investment = 10000000,
-    source_reference = 'Law of 23 July 2016, Art. 2(1)(b)(i) — €100,000 minimum'
+    source_reference = 'Law of 23 July 2016, Art. 2(1)(b)(i) â€” â‚¬100,000 minimum'
 WHERE fund_structure_id = '00000000-0000-0000-0000-000000000002'
   AND investor_type = 'semi_professional';
 
--- Fix 2: ELTIF retail — €10,000 → €0 (removed by ELTIF 2.0 reform)
+-- Fix 2: ELTIF retail â€” â‚¬10,000 â†’ â‚¬0 (removed by ELTIF 2.0 reform)
 UPDATE eligibility_criteria
 SET minimum_investment = 0,
-    source_reference = 'Reg 2023/606, Recital 47 + Art. 30 — minimum removed, suitability required'
+    source_reference = 'Reg 2023/606, Recital 47 + Art. 30 â€” minimum removed, suitability required'
 WHERE fund_structure_id = '00000000-0000-0000-0000-000000000003'
   AND investor_type = 'retail';
 
@@ -915,13 +797,13 @@ WHERE fund_structure_id = '00000000-0000-0000-0000-000000000003'
 -- ============================================================================
 -- UPDATE eligibility_criteria
 -- SET minimum_investment = 12500000,
---     source_reference = 'Law of 23 July 2016, Art. 2 — €125,000 minimum'
+--     source_reference = 'Law of 23 July 2016, Art. 2 â€” â‚¬125,000 minimum'
 -- WHERE fund_structure_id = '00000000-0000-0000-0000-000000000002'
 --   AND investor_type = 'semi_professional';
 --
 -- UPDATE eligibility_criteria
 -- SET minimum_investment = 1000000,
---     source_reference = 'Reg 2023/606, Art. 30(1) — €10,000 minimum, suitability required'
+--     source_reference = 'Reg 2023/606, Art. 30(1) â€” â‚¬10,000 minimum, suitability required'
 -- WHERE fund_structure_id = '00000000-0000-0000-0000-000000000003'
 --   AND investor_type = 'retail';
 
@@ -964,4 +846,3 @@ COMMIT;
 -- UPDATE eligibility_criteria SET source_reference = 'CSSF Circular 15/633, Section 4.2' WHERE fund_structure_id = '00000000-0000-0000-0000-000000000001' AND investor_type = 'semi_professional';
 -- UPDATE eligibility_criteria SET source_reference = 'CSSF Circular 15/633' WHERE fund_structure_id = '00000000-0000-0000-0000-000000000001' AND investor_type = 'professional';
 -- UPDATE eligibility_criteria SET source_reference = 'CSSF Circular 15/633' WHERE fund_structure_id = '00000000-0000-0000-0000-000000000001' AND investor_type = 'institutional';
-

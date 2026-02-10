@@ -23,8 +23,8 @@ export default function LoginPage() {
       } else {
         result = await api.login(email, password);
       }
-      localStorage.setItem('codex_token', result.token);
-      localStorage.setItem('codex_user', JSON.stringify(result.user));
+      localStorage.setItem('caelith_token', result.token);
+      localStorage.setItem('caelith_user', JSON.stringify(result.user));
       window.location.href = '/';
     } catch (err) {
       setError((err as { message?: string }).message || 'Authentication failed');
@@ -38,7 +38,7 @@ export default function LoginPage() {
       {/* Left Panel */}
       <div className="hidden w-1/2 flex-col justify-between bg-slate-900 p-12 lg:flex">
         <div>
-          <span className="text-lg font-bold tracking-tight text-white">Codex</span>
+          <span className="text-lg font-bold tracking-tight text-white">Caelith</span>
           <span className="ml-2 rounded bg-blue-600/20 px-1.5 py-0.5 text-[10px] font-medium text-blue-400">BETA</span>
         </div>
         <div>
@@ -56,14 +56,14 @@ export default function LoginPage() {
       <div className="flex w-full flex-col items-center justify-center px-8 lg:w-1/2">
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
-            <span className="text-lg font-bold tracking-tight text-slate-900">Codex</span>
+            <span className="text-lg font-bold tracking-tight text-slate-900">Caelith</span>
           </div>
 
           <h2 className="text-xl font-semibold tracking-tight text-slate-900">
             {isRegister ? 'Create an account' : 'Sign in'}
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            {isRegister ? 'Get started with Codex' : 'Welcome back'}
+            {isRegister ? 'Get started with Caelith' : 'Welcome back'}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">

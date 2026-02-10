@@ -52,7 +52,7 @@ export function Sidebar() {
     <aside className="flex h-screen w-56 flex-col bg-slate-900">
       {/* Brand */}
       <div className="flex h-14 items-center px-5">
-        <span className="text-base font-bold tracking-tight text-white">Codex</span>
+        <span className="text-base font-bold tracking-tight text-white">Caelith</span>
         <span className="ml-2 rounded bg-blue-600/20 px-1.5 py-0.5 text-[10px] font-medium text-blue-400">BETA</span>
       </div>
 

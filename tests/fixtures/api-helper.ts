@@ -21,7 +21,7 @@ export async function ensureAuth(): Promise<void> {
     const result = await api<{ token: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify({
-        email: 'test@codex.dev',
+        email: 'test@caelith.dev',
         password: 'test12345',
         name: 'Test Admin',
         role: 'admin',
@@ -32,7 +32,7 @@ export async function ensureAuth(): Promise<void> {
     const result = await api<{ token: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({
-        email: 'test@codex.dev',
+        email: 'test@caelith.dev',
         password: 'test12345',
       }),
     });

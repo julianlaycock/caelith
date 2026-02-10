@@ -3,7 +3,7 @@ import './globals.css';
 import { AuthLayout } from '../components/auth-layout';
 
 export const metadata: Metadata = {
-  title: 'Codex — Compliance Engine',
+  title: 'Caelith — Compliance Engine',
   description: 'Compliance infrastructure for tokenized assets',
 };
 

@@ -186,8 +186,8 @@ async function deliverWebhook(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Codex-Signature': signature,
-        'X-Codex-Event': JSON.parse(body).event_type,
+        'X-Caelith-Signature': signature,
+        'X-Caelith-Event': JSON.parse(body).event_type,
       },
       body,
       signal: controller.signal,

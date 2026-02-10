@@ -10,8 +10,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Restore token on mount
-    const token = localStorage.getItem('codex_token');
-    const stored = localStorage.getItem('codex_user');
+    const token = localStorage.getItem('caelith_token');
+    const stored = localStorage.getItem('caelith_user');
     if (token && stored) {
       api.setToken(token);
       setUser(JSON.parse(stored));
@@ -20,8 +20,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for expired sessions
     const handler = () => {
-      localStorage.removeItem('codex_token');
-      localStorage.removeItem('codex_user');
+      localStorage.removeItem('caelith_token');
+      localStorage.removeItem('caelith_user');
       setUser(null);
       window.location.href = '/login';
     };
@@ -49,12 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth(): { user: User | null; logout: () => void } {
   const logout = () => {
     api.logout();
-    localStorage.removeItem('codex_token');
-    localStorage.removeItem('codex_user');
+    localStorage.removeItem('caelith_token');
+    localStorage.removeItem('caelith_user');
     window.location.href = '/login';
   };
 
-  const stored = typeof window !== 'undefined' ? localStorage.getItem('codex_user') : null;
+  const stored = typeof window !== 'undefined' ? localStorage.getItem('caelith_user') : null;
   const user = stored ? JSON.parse(stored) : null;
 
   return { user, logout };
