@@ -25,7 +25,7 @@ export async function createEligibilityCriteria(input: CreateEligibilityCriteria
     ]
   );
 
-  return rowToCriteria(result[0]);
+  return rowToEligibilityCriteria(result[0]);
 }
 
 /**
@@ -59,7 +59,7 @@ export async function findApplicableCriteria(
     [fundStructureId, investorType, investorJurisdiction]
   );
 
-  return result[0] ? rowToCriteria(result[0]) : null;
+  return result[0] ? rowToEligibilityCriteria(result[0]) : null;
 }
 
 /**
@@ -74,7 +74,7 @@ export async function findCriteriaByFundStructure(fundStructureId: string): Prom
     [fundStructureId]
   );
 
-  return result.map(rowToCriteria);
+  return result.map(rowToEligibilityCriteria);
 }
 
 /**
@@ -87,7 +87,7 @@ export async function supersedeCriteria(id: string): Promise<void> {
   );
 }
 
-function rowToCriteria(row: any): EligibilityCriteria {
+function rowToEligibilityCriteria(row: any): EligibilityCriteria {
   return {
     id: row.id,
     fund_structure_id: row.fund_structure_id,
