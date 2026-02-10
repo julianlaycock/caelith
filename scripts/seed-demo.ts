@@ -10,6 +10,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import bcrypt from 'bcrypt';
 import { query, execute, closeDb } from '../src/backend/db.js';
 
 // ---------------------------------------------------------------------------
@@ -25,6 +26,23 @@ async function exists(table: string, id: string): Promise<boolean> {
 
 async function seed() {
   console.log('Seeding demo data for Luxembourg SIF/RAIF workflow...\n');
+
+  // =========================================================================
+  // 0. Admin User
+  // =========================================================================
+  console.log('[Users]');
+  const existingUser = await query('SELECT 1 FROM users WHERE email = $1', ['admin@caelith.dev']);
+  if (existingUser.length > 0) {
+    console.log('  → admin@caelith.dev already exists');
+  } else {
+    const passwordHash = await bcrypt.hash('admin1234', 10);
+    await execute(
+      `INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, true, now(), now())`,
+      ['admin@caelith.dev', passwordHash, 'System Admin', 'admin']
+    );
+    console.log('  ✓ Created admin@caelith.dev (password: admin1234)');
+  }
 
   // =========================================================================
   // 1. Fund Structures (fixed UUIDs — direct SQL)
