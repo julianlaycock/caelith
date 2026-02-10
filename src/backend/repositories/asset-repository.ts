@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { query, execute } from '../db.js';
-import { Asset, CreateAssetInput } from '../models/index.js';
+import { Asset, CreateAssetInput, UpdateAssetInput } from '../models/index.js';
 
 /**
  * Asset Repository - Handles all database operations for assets
@@ -78,4 +78,36 @@ export async function getTotalAllocatedUnits(assetId: string): Promise<number> {
   return results.length > 0 && results[0].total !== null
     ? results[0].total
     : 0;
+}
+
+/**
+ * Delete an asset by ID
+ */
+export async function deleteAsset(id: string): Promise<void> {
+  await execute('DELETE FROM assets WHERE id = ?', [id]);
+}
+
+/**
+ * Update an asset (only non-undefined fields)
+ */
+export async function updateAsset(id: string, input: UpdateAssetInput): Promise<Asset | null> {
+  const sets: string[] = [];
+  const params: (string | number)[] = [];
+
+  if (input.name !== undefined) { sets.push('name = ?'); params.push(input.name); }
+  if (input.asset_type !== undefined) { sets.push('asset_type = ?'); params.push(input.asset_type); }
+  if (input.total_units !== undefined) { sets.push('total_units = ?'); params.push(input.total_units); }
+
+  if (sets.length === 0) {
+    return findAssetById(id);
+  }
+
+  params.push(id);
+
+  await execute(
+    `UPDATE assets SET ${sets.join(', ')} WHERE id = ?`,
+    params
+  );
+
+  return findAssetById(id);
 }

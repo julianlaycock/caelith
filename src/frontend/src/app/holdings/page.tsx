@@ -123,16 +123,16 @@ export default function HoldingsPage() {
         {utilization.data && (
           <div className="mt-4">
             <div className="mb-1.5 flex justify-between text-sm">
-              <span className="text-slate-600">
+              <span className="text-ink-secondary">
                 {formatNumber(utilization.data.allocated_units)} / {formatNumber(utilization.data.total_units)} units allocated
               </span>
-              <span className="font-medium text-slate-900">
+              <span className="font-medium text-ink">
                 {formatPercentage(utilization.data.utilization_percentage)}
               </span>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-slate-200">
+            <div className="h-1.5 w-full rounded-full bg-surface-subtle">
               <div
-                className="h-1.5 rounded-full bg-blue-800 transition-all"
+                className="h-1.5 rounded-full bg-brand-500 transition-all"
                 style={{ width: `${Math.min(utilization.data.utilization_percentage, 100)}%` }}
               />
             </div>
@@ -150,24 +150,24 @@ export default function HoldingsPage() {
       ) : capTable.data && capTable.data.length > 0 ? (
         <Card padding={false}>
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200">
+            <thead className="border-b border-edge">
               <tr>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Investor</th>
-                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Units</th>
-                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Ownership %</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Distribution</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Investor</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Units</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Ownership %</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Distribution</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-edge-subtle">
               {capTable.data.map((entry) => (
-                <tr key={entry.investor_id} className="transition-colors hover:bg-slate-50">
-                  <td className="px-5 py-3 font-medium text-slate-900">{entry.investor_name}</td>
-                  <td className="px-5 py-3 text-right font-mono text-slate-700">{formatNumber(entry.units)}</td>
-                  <td className="px-5 py-3 text-right font-mono font-medium text-slate-900">{formatPercentage(entry.percentage)}</td>
+                <tr key={entry.investor_id} className="transition-colors hover:bg-surface-subtle">
+                  <td className="px-5 py-3 font-medium text-ink">{entry.investor_name}</td>
+                  <td className="px-5 py-3 text-right font-mono text-ink-secondary">{formatNumber(entry.units)}</td>
+                  <td className="px-5 py-3 text-right font-mono font-medium text-ink">{formatPercentage(entry.percentage)}</td>
                   <td className="px-5 py-3">
-                    <div className="h-1.5 w-full max-w-[120px] rounded-full bg-slate-200">
+                    <div className="h-1.5 w-full max-w-[120px] rounded-full bg-surface-subtle">
                       <div
-                        className="h-1.5 rounded-full bg-blue-700"
+                        className="h-1.5 rounded-full bg-brand-500"
                         style={{ width: `${Math.min(entry.percentage, 100)}%` }}
                       />
                     </div>

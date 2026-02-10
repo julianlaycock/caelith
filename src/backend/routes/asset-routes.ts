@@ -10,6 +10,8 @@ import {
   getAsset,
   getAllAssets,
   getAssetUtilization,
+  deleteAsset,
+  updateAsset,
 } from '../services/index.js';
 
 const router = express.Router();
@@ -110,6 +112,73 @@ router.get('/:id/utilization', async (req, res): Promise<void> => {
     res.status(500).json({
       error: 'INTERNAL_ERROR',
       message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * DELETE /assets/:id
+ * Delete an asset (fails if holdings exist)
+ */
+router.delete('/:id', async (req, res): Promise<void> => {
+  try {
+    await deleteAsset(req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+
+    if (message === 'Cannot delete asset with existing holdings') {
+      res.status(409).json({
+        error: 'CONFLICT',
+        message,
+      });
+      return;
+    }
+
+    if (message.startsWith('Asset not found')) {
+      res.status(404).json({
+        error: 'NOT_FOUND',
+        message,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message,
+    });
+  }
+});
+
+/**
+ * PATCH /assets/:id
+ * Update an asset (partial update)
+ */
+router.patch('/:id', async (req, res): Promise<void> => {
+  try {
+    const { name, asset_type, total_units } = req.body;
+
+    const updated = await updateAsset(req.params.id, {
+      name,
+      asset_type,
+      total_units: total_units !== undefined ? Number(total_units) : undefined,
+    });
+
+    res.json(updated);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+
+    if (message.startsWith('Asset not found')) {
+      res.status(404).json({
+        error: 'NOT_FOUND',
+        message,
+      });
+      return;
+    }
+
+    res.status(422).json({
+      error: 'BUSINESS_LOGIC_ERROR',
+      message,
     });
   }
 });

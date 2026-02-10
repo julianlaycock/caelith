@@ -114,7 +114,7 @@ export default function AuditPage() {
         <ErrorMessage message={events.error} onRetry={events.refetch} />
       ) : events.data && events.data.length > 0 ? (
         <Card padding={false}>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-edge-subtle">
             {events.data.map((event) => (
               <div key={event.id} className="px-5 py-3">
                 <div className="flex items-center justify-between">
@@ -122,17 +122,17 @@ export default function AuditPage() {
                     <Badge variant={EVENT_BADGE_COLORS[event.event_type] ?? 'gray'}>
                       {event.event_type}
                     </Badge>
-                    <span className="text-sm text-slate-600">{event.entity_type}</span>
+                    <span className="text-sm text-ink-secondary">{event.entity_type}</span>
                   </div>
-                  <span className="text-xs text-slate-400">{formatDateTime(event.timestamp)}</span>
+                  <span className="text-xs text-ink-tertiary">{formatDateTime(event.timestamp)}</span>
                 </div>
                 <div className="mt-1.5 flex items-center gap-4">
-                  <span className="font-mono text-xs text-slate-400">{event.entity_id}</span>
+                  <span className="font-mono text-xs text-ink-tertiary">{event.entity_id}</span>
                   <details>
-                    <summary className="cursor-pointer text-xs font-medium text-blue-800 hover:text-blue-900">
+                    <summary className="cursor-pointer text-xs font-medium text-brand-600 hover:text-brand-700">
                       View payload
                     </summary>
-                    <pre className="mt-2 max-h-40 overflow-auto rounded-md border border-slate-200 bg-slate-50 p-3 font-mono text-xs text-slate-700">
+                    <pre className="mt-2 max-h-40 overflow-auto rounded-md border border-edge bg-surface-subtle p-3 font-mono text-xs text-ink-secondary">
                       {JSON.stringify(event.payload, null, 2)}
                     </pre>
                   </details>

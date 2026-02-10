@@ -32,14 +32,14 @@ export default function AssetsPage() {
   const [showForm, setShowForm] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [formSuccess, setFormSuccess] = useState(false);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
   const assets = useAsync(() => api.getAssets());
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError(null);
-    setFormSuccess(false);
+    setFormSuccess(null);
 
     const form = new FormData(e.currentTarget);
     const name = form.get('name') as string;
@@ -53,12 +53,17 @@ export default function AssetsPage() {
 
     try {
       await api.createAsset({ name, asset_type, total_units });
-      setFormSuccess(true);
+      setFormSuccess('Asset created successfully.');
       setShowForm(false);
       assets.refetch();
     } catch (err) {
       setFormError((err as ApiError).message || 'Failed to create asset');
     }
+  };
+
+  const handleAssetChanged = () => {
+    setSelectedAsset(null);
+    assets.refetch();
   };
 
   return (
@@ -73,7 +78,7 @@ export default function AssetsPage() {
 
       {formSuccess && (
         <div className="mb-4">
-          <Alert variant="success">Asset created successfully.</Alert>
+          <Alert variant="success">{formSuccess}</Alert>
         </div>
       )}
 
@@ -107,7 +112,12 @@ export default function AssetsPage() {
       </Modal>
 
       {selectedAsset && (
-        <AssetDetailModal assetId={selectedAsset} onClose={() => setSelectedAsset(null)} />
+        <AssetDetailModal
+          assetId={selectedAsset}
+          onClose={() => setSelectedAsset(null)}
+          onDeleted={() => { setFormSuccess('Asset deleted successfully.'); handleAssetChanged(); }}
+          onUpdated={() => { setFormSuccess('Asset updated successfully.'); handleAssetChanged(); }}
+        />
       )}
 
       {assets.loading ? (
@@ -120,14 +130,14 @@ export default function AssetsPage() {
             <Card key={asset.id} className="cursor-pointer transition-shadow hover:shadow-md">
               <div onClick={() => setSelectedAsset(asset.id)}>
                 <div className="flex items-start justify-between">
-                  <h3 className="text-sm font-semibold text-slate-900">{asset.name}</h3>
+                  <h3 className="text-sm font-semibold text-ink">{asset.name}</h3>
                   <Badge variant="blue">{asset.asset_type}</Badge>
                 </div>
-                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-ink">
                   {formatNumber(asset.total_units)}
                 </p>
-                <p className="text-xs text-slate-500">total units</p>
-                <p className="mt-3 text-xs text-slate-400">
+                <p className="text-xs text-ink-tertiary">total units</p>
+                <p className="mt-3 text-xs text-ink-tertiary">
                   Created {formatDate(asset.created_at)}
                 </p>
               </div>
@@ -148,12 +158,118 @@ export default function AssetsPage() {
 function AssetDetailModal({
   assetId,
   onClose,
+  onDeleted,
+  onUpdated,
 }: {
   assetId: string;
   onClose: () => void;
+  onDeleted: () => void;
+  onUpdated: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const asset = useAsync(() => api.getAsset(assetId), [assetId]);
   const utilization = useAsync(() => api.getAssetUtilization(assetId), [assetId]);
+
+  const handleDelete = async () => {
+    setError(null);
+    try {
+      await api.deleteAsset(assetId);
+      onDeleted();
+    } catch (err) {
+      setError((err as ApiError).message || 'Failed to delete asset');
+      setDeleting(false);
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+
+    const form = new FormData(e.currentTarget);
+    const name = form.get('name') as string;
+    const asset_type = form.get('asset_type') as string;
+    const total_units = Number(form.get('total_units'));
+
+    if (!name || !asset_type || !total_units || total_units <= 0) {
+      setError('All fields are required. Total units must be positive.');
+      return;
+    }
+
+    try {
+      await api.updateAsset(assetId, { name, asset_type, total_units });
+      onUpdated();
+    } catch (err) {
+      setError((err as ApiError).message || 'Failed to update asset');
+    }
+  };
+
+  if (deleting) {
+    return (
+      <Modal open={true} onClose={() => setDeleting(false)} title="Delete Asset">
+        <div className="space-y-4">
+          {error && <Alert variant="error">{error}</Alert>}
+          <p className="text-sm text-ink-secondary">
+            Are you sure you want to delete <strong className="text-ink">{asset.data?.name}</strong>?
+            This action cannot be undone.
+          </p>
+          {utilization.data && utilization.data.allocated_units > 0 && (
+            <Alert variant="error">
+              This asset has {formatNumber(utilization.data.allocated_units)} allocated units.
+              Remove all holdings before deleting.
+            </Alert>
+          )}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setDeleting(false)}>Cancel</Button>
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              disabled={!!utilization.data && utilization.data.allocated_units > 0}
+            >
+              Delete Asset
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
+  if (editing && asset.data) {
+    return (
+      <Modal open={true} onClose={() => setEditing(false)} title="Edit Asset">
+        <form onSubmit={handleUpdate} className="space-y-4">
+          {error && <Alert variant="error">{error}</Alert>}
+          <Input
+            label="Asset Name"
+            name="name"
+            required
+            defaultValue={asset.data.name}
+          />
+          <Select
+            label="Asset Type"
+            name="asset_type"
+            options={ASSET_TYPES}
+            required
+            defaultValue={asset.data.asset_type}
+          />
+          <Input
+            label="Total Units"
+            name="total_units"
+            type="number"
+            min={1}
+            required
+            defaultValue={asset.data.total_units}
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" type="button" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button type="submit">Save Changes</Button>
+          </div>
+        </form>
+      </Modal>
+    );
+  }
 
   return (
     <Modal open={true} onClose={onClose} title="Asset Details">
@@ -165,41 +281,50 @@ function AssetDetailModal({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Name</p>
-              <p className="mt-0.5 text-sm font-medium text-slate-900">{asset.data.name}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-ink-tertiary">Name</p>
+              <p className="mt-0.5 text-sm font-medium text-ink">{asset.data.name}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Type</p>
-              <p className="mt-0.5 text-sm font-medium text-slate-900">{asset.data.asset_type}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-ink-tertiary">Type</p>
+              <p className="mt-0.5 text-sm font-medium text-ink">{asset.data.asset_type}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Total Units</p>
-              <p className="mt-0.5 text-sm font-medium text-slate-900">{formatNumber(asset.data.total_units)}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-ink-tertiary">Total Units</p>
+              <p className="mt-0.5 text-sm font-medium text-ink">{formatNumber(asset.data.total_units)}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Created</p>
-              <p className="mt-0.5 text-sm font-medium text-slate-900">{formatDate(asset.data.created_at)}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-ink-tertiary">Created</p>
+              <p className="mt-0.5 text-sm font-medium text-ink">{formatDate(asset.data.created_at)}</p>
             </div>
           </div>
 
           {utilization.data && (
-            <div className="border-t border-slate-200 pt-4">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">Utilization</p>
-              <div className="mb-2 h-1.5 w-full rounded-full bg-slate-200">
+            <div className="border-t border-edge pt-4">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Utilization</p>
+              <div className="mb-2 h-1.5 w-full rounded-full bg-surface-subtle">
                 <div
-                  className="h-1.5 rounded-full bg-blue-800"
+                  className="h-1.5 rounded-full bg-brand-500"
                   style={{ width: `${Math.min(utilization.data.utilization_percentage, 100)}%` }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-slate-500">
+              <div className="flex justify-between text-xs text-ink-tertiary">
                 <span>{formatNumber(utilization.data.allocated_units)} allocated</span>
                 <span>{formatNumber(utilization.data.available_units)} available</span>
               </div>
             </div>
           )}
 
-          <div className="border-t border-slate-200 pt-4">
-            <p className="font-mono text-xs text-slate-400">ID: {asset.data.id}</p>
+          <div className="border-t border-edge pt-4">
+            <p className="font-mono text-xs text-ink-tertiary">ID: {asset.data.id}</p>
+          </div>
+
+          <div className="flex justify-end gap-3 border-t border-edge pt-4">
+            <Button variant="ghost" size="sm" onClick={() => setDeleting(true)}>
+              Delete
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+              Edit
+            </Button>
           </div>
         </div>
       ) : null}

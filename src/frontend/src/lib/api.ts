@@ -20,6 +20,14 @@ import type {
   CompositeRule,
   CreateCompositeRuleRequest,
   RuleVersion,
+  FundStructure,
+  CreateFundStructureRequest,
+  ComplianceReport,
+  EligibilityResult,
+  OnboardingRecord,
+  OnboardingEligibilityResult,
+  OnboardingReviewResult,
+  DecisionRecord,
 } from './types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -134,6 +142,17 @@ class ApiClient {
     return this.request<AssetUtilization>(`/assets/${id}/utilization`);
   }
 
+  async updateAsset(id: string, data: { name?: string; asset_type?: string; total_units?: number }): Promise<Asset> {
+    return this.request<Asset>(`/assets/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAsset(id: string): Promise<void> {
+    await this.request(`/assets/${id}`, { method: 'DELETE' });
+  }
+
   // ── Investors ─────────────────────────────────────────
 
   async createInvestor(data: CreateInvestorRequest): Promise<Investor> {
@@ -196,7 +215,7 @@ class ApiClient {
     return this.request<RuleVersion[]>(`/rules/${assetId}/versions`);
   }
 
-// ── Composite Rules ─────────────────────────────────
+  // ── Composite Rules ─────────────────────────────────
 
   async getCompositeRules(assetId: string): Promise<CompositeRule[]> {
     return this.request<CompositeRule[]>(`/composite-rules?assetId=${assetId}`);
@@ -260,6 +279,92 @@ class ApiClient {
     if (params?.limit) searchParams.set('limit', String(params.limit));
     const query = searchParams.toString();
     return this.request<Event[]>(`/events${query ? `?${query}` : ''}`);
+  }
+
+  // ── Fund Structures ───────────────────────────────────
+
+  async getFundStructures(): Promise<FundStructure[]> {
+    return this.request<FundStructure[]>('/fund-structures');
+  }
+
+  async getFundStructure(id: string): Promise<FundStructure> {
+    return this.request<FundStructure>(`/fund-structures/${id}`);
+  }
+
+  async createFundStructure(data: CreateFundStructureRequest): Promise<FundStructure> {
+    return this.request<FundStructure>('/fund-structures', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ── Compliance Reports ─────────────────────────────────
+
+  async getComplianceReport(fundStructureId: string): Promise<ComplianceReport> {
+    return this.request<ComplianceReport>(`/reports/compliance/${fundStructureId}`);
+  }
+
+  // ── Eligibility ────────────────────────────────────────
+
+  async checkEligibility(data: { investor_id: string; fund_structure_id: string; investment_amount?: number }): Promise<EligibilityResult> {
+    return this.request<EligibilityResult>('/eligibility/check', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ── Onboarding ─────────────────────────────────────────
+
+  async getOnboardingRecords(params?: { asset_id?: string; investor_id?: string }): Promise<OnboardingRecord[]> {
+    const searchParams = new URLSearchParams();
+    if (params?.asset_id) searchParams.set('asset_id', params.asset_id);
+    if (params?.investor_id) searchParams.set('investor_id', params.investor_id);
+    const query = searchParams.toString();
+    return this.request<OnboardingRecord[]>(`/onboarding${query ? `?${query}` : ''}`);
+  }
+
+  async getOnboardingRecord(id: string): Promise<OnboardingRecord> {
+    return this.request<OnboardingRecord>(`/onboarding/${id}`);
+  }
+
+  async applyToFund(data: { investor_id: string; asset_id: string; requested_units: number }): Promise<OnboardingRecord> {
+    return this.request<OnboardingRecord>('/onboarding', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async checkOnboardingEligibility(id: string): Promise<OnboardingEligibilityResult> {
+    return this.request<OnboardingEligibilityResult>(`/onboarding/${id}/check-eligibility`, {
+      method: 'POST',
+    });
+  }
+
+  async reviewOnboarding(id: string, data: { decision: 'approved' | 'rejected'; rejection_reasons?: string[] }): Promise<OnboardingReviewResult> {
+    return this.request<OnboardingReviewResult>(`/onboarding/${id}/review`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async allocateOnboarding(id: string): Promise<OnboardingRecord> {
+    return this.request<OnboardingRecord>(`/onboarding/${id}/allocate`, {
+      method: 'POST',
+    });
+  }
+
+  // ── Decision Records ───────────────────────────────────
+
+  async getDecisionsByAsset(assetId: string): Promise<DecisionRecord[]> {
+    return this.request<DecisionRecord[]>(`/decisions/asset/${assetId}`);
+  }
+
+  async getDecisionsByInvestor(investorId: string): Promise<DecisionRecord[]> {
+    return this.request<DecisionRecord[]>(`/decisions/investor/${investorId}`);
+  }
+
+  async getDecision(id: string): Promise<DecisionRecord> {
+    return this.request<DecisionRecord>(`/decisions/${id}`);
   }
 }
 
