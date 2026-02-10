@@ -30,6 +30,7 @@ import fundStructureRoutes from './routes/fund-structure-routes.js';
 import eligibilityRoutes from './routes/eligibility-routes.js';
 import decisionRecordRoutes from './routes/decision-record-routes.js';
 import nlRulesRoutes from './routes/nl-rules-routes.js';
+import onboardingRoutes from './routes/onboarding-routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -87,6 +88,7 @@ app.use('/api/webhooks', authenticate, authorize('admin'), webhookRoutes);
 app.use('/api/composite-rules', authenticate, authorize('admin', 'compliance_officer'), compositeRulesRoutes);
 app.use('/api/templates', authenticate, templateRoutes);
 app.use('/api/fund-structures', authenticate, fundStructureRoutes);
+app.use('/api/onboarding', authenticate, onboardingRoutes);
 app.use('/api/eligibility', authenticate, eligibilityRoutes);
 app.use('/api/decisions', authenticate, decisionRecordRoutes);
 app.use('/api/nl-rules', authenticate, authorize('admin', 'compliance_officer'), nlRulesRoutes);
