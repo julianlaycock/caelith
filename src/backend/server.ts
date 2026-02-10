@@ -7,7 +7,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { closeDb } from './db.js';
+import { closeDb, execute as dbExecute } from './db.js';
 import swaggerUi from 'swagger-ui-express';
 import { readFileSync } from 'fs';
 import { parse } from 'yaml';
@@ -38,7 +38,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
 // Middleware
 app.use(securityHeaders);
 app.use(cors());
@@ -93,22 +92,19 @@ app.use('/api/eligibility', authenticate, eligibilityRoutes);
 app.use('/api/decisions', authenticate, decisionRecordRoutes);
 app.use('/api/nl-rules', authenticate, authorize('admin', 'compliance_officer'), nlRulesRoutes);
 
-import { execute as dbExecute } from './db.js';
-
 // Test-only: reset database
 app.post('/api/reset', async (_req, res): Promise<void> => {
   try {
-    await dbExecute('DELETE FROM webhook_deliveries');
-    await dbExecute('DELETE FROM webhooks');
-    await dbExecute('DELETE FROM composite_rules');
-    await dbExecute('DELETE FROM rule_versions');
-    await dbExecute('DELETE FROM events');
-    await dbExecute('DELETE FROM decision_records');
-    await dbExecute('DELETE FROM transfers');
-    await dbExecute('DELETE FROM holdings');
-    await dbExecute('DELETE FROM rules');
-    await dbExecute('DELETE FROM investors');
-    await dbExecute('DELETE FROM assets');
+    // Delete in FK-safe order (children before parents)
+    const tables = [
+      'webhook_deliveries', 'webhooks', 'composite_rules', 'rule_versions',
+      'onboarding_records', 'transfers', 'decision_records', 'eligibility_criteria',
+      'events', 'holdings', 'rules', 'assets', 'fund_structures',
+      'regulatory_documents', 'investors',
+    ];
+    for (const table of tables) {
+      await dbExecute(`DELETE FROM ${table}`).catch(() => {});
+    }
     clearRateLimits();
     res.json({ status: 'reset' });
   } catch (error) {

@@ -13,7 +13,8 @@
       "Bash(docker ps:*)",
       "Bash(docker-compose up:*)",
       "Bash(timeout:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(git add:*)"
     ]
   }
 }

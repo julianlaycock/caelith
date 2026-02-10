@@ -30,7 +30,7 @@ router.post('/check', async (req: Request, res: Response) => {
 
     if (!investor_id || !fund_structure_id) {
       return res.status(400).json({
-        error: 'Bad Request',
+        error: 'VALIDATION_ERROR',
         message: 'investor_id and fund_structure_id are required',
       });
     }
@@ -41,14 +41,14 @@ router.post('/check', async (req: Request, res: Response) => {
       investment_amount: investment_amount ? Number(investment_amount) : undefined,
     });
 
-    const status = result.eligible ? 200 : 200; // Always 200 — rejection is a valid business result
-    return res.status(status).json(result);
-  } catch (err: any) {
-    if (err.message?.includes('not found')) {
-      return res.status(404).json({ error: 'Not Found', message: err.message });
+    return res.json(result);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    if (message.includes('not found')) {
+      return res.status(404).json({ error: 'NOT_FOUND', message });
     }
     console.error('Eligibility check error:', err);
-    return res.status(500).json({ error: 'Internal Server Error', message: err.message });
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message });
   }
 });
 

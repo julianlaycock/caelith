@@ -57,7 +57,7 @@ export async function findOnboardingById(
     [id]
   );
   if (results.length === 0) return null;
-  return deserialize(results[0]);
+  return rowToOnboardingRecord(results[0]);
 }
 
 /**
@@ -70,7 +70,7 @@ export async function findOnboardingByAsset(
     'SELECT * FROM onboarding_records WHERE asset_id = $1 ORDER BY applied_at DESC',
     [assetId]
   );
-  return results.map(deserialize);
+  return results.map(rowToOnboardingRecord);
 }
 
 /**
@@ -83,7 +83,7 @@ export async function findOnboardingByInvestor(
     'SELECT * FROM onboarding_records WHERE investor_id = $1 ORDER BY applied_at DESC',
     [investorId]
   );
-  return results.map(deserialize);
+  return results.map(rowToOnboardingRecord);
 }
 
 /**
@@ -135,9 +135,9 @@ export async function updateOnboardingRecord(
 }
 
 /**
- * Deserialize DB row → OnboardingRecord
+ * Map DB row → OnboardingRecord
  */
-function deserialize(row: any): OnboardingRecord {
+function rowToOnboardingRecord(row: any): OnboardingRecord {
   return {
     id: row.id,
     investor_id: row.investor_id,
