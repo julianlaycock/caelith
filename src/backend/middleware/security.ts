@@ -32,6 +32,13 @@ interface RateLimitEntry {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
+/**
+ * Clear all rate limit entries (used by test reset endpoint)
+ */
+export function clearRateLimits(): void {
+  rateLimitStore.clear();
+}
+
 // Clean up expired entries every 5 minutes
 setInterval(() => {
   const now = Date.now();

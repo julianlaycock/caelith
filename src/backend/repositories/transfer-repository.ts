@@ -9,19 +9,23 @@ import { Transfer, CreateTransferInput } from '../models/index.js';
 /**
  * Create a new transfer record
  */
-export async function createTransfer(input: CreateTransferInput): Promise<Transfer> {
+export async function createTransfer(
+  input: CreateTransferInput & { decision_record_id?: string | null }
+): Promise<Transfer> {
   const id = randomUUID();
   const now = new Date().toISOString();
+  const decision_record_id = input.decision_record_id ?? null;
 
   await execute(
-    `INSERT INTO transfers (id, asset_id, from_investor_id, to_investor_id, units, executed_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO transfers (id, asset_id, from_investor_id, to_investor_id, units, decision_record_id, executed_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       input.asset_id,
       input.from_investor_id,
       input.to_investor_id,
       input.units,
+      decision_record_id,
       input.executed_at,
       now,
     ]
@@ -33,7 +37,7 @@ export async function createTransfer(input: CreateTransferInput): Promise<Transf
     from_investor_id: input.from_investor_id,
     to_investor_id: input.to_investor_id,
     units: input.units,
-    decision_record_id: null,
+    decision_record_id,
     executed_at: input.executed_at,
     created_at: now,
   };
@@ -42,18 +46,11 @@ export async function createTransfer(input: CreateTransferInput): Promise<Transf
 }
 
 /**
- * Find transfer by ID
+ * Find transfers by asset
  */
-export async function findTransferById(id: string): Promise<Transfer | null> {
-  const results = await query<Transfer>('SELECT * FROM transfers WHERE id = ?', [id]);
-
-  return results.length > 0 ? results[0] : null;
-}
-
-/**
- * Find all transfers for an asset
- */
-export async function findTransfersByAsset(assetId: string): Promise<Transfer[]> {
+export async function findTransfersByAsset(
+  assetId: string
+): Promise<Transfer[]> {
   return await query<Transfer>(
     'SELECT * FROM transfers WHERE asset_id = ? ORDER BY executed_at DESC',
     [assetId]
@@ -61,27 +58,20 @@ export async function findTransfersByAsset(assetId: string): Promise<Transfer[]>
 }
 
 /**
- * Find all transfers from an investor
+ * Find a transfer by ID
  */
-export async function findTransfersFromInvestor(investorId: string): Promise<Transfer[]> {
-  return await query<Transfer>(
-    'SELECT * FROM transfers WHERE from_investor_id = ? ORDER BY executed_at DESC',
-    [investorId]
+export async function findTransferById(
+  id: string
+): Promise<Transfer | undefined> {
+  const rows = await query<Transfer>(
+    'SELECT * FROM transfers WHERE id = ?',
+    [id]
   );
+  return rows[0];
 }
 
 /**
- * Find all transfers to an investor
- */
-export async function findTransfersToInvestor(investorId: string): Promise<Transfer[]> {
-  return await query<Transfer>(
-    'SELECT * FROM transfers WHERE to_investor_id = ? ORDER BY executed_at DESC',
-    [investorId]
-  );
-}
-
-/**
- * Find all transfers (most recent first)
+ * Find all transfers
  */
 export async function findAllTransfers(): Promise<Transfer[]> {
   return await query<Transfer>(
@@ -91,39 +81,30 @@ export async function findAllTransfers(): Promise<Transfer[]> {
 }
 
 /**
- * Get transfer history with investor names
+ * Get detailed transfer history for an asset, including investor names
  */
-export async function getTransferHistory(
-  assetId: string
-): Promise<
-  Array<{
-    id: string;
-    from_name: string;
-    to_name: string;
-    units: number;
-    executed_at: string;
-  }>
+export async function getTransferHistory(assetId: string): Promise<
+  (Transfer & { from_name: string; to_name: string })[]
 > {
-  const results = await query<{
-    id: string;
-    from_name: string;
-    to_name: string;
-    units: number;
-    executed_at: string;
-  }>(
-    `SELECT 
-      t.id,
-      fi.name as from_name,
-      ti.name as to_name,
-      t.units,
-      t.executed_at
-    FROM transfers t
-    JOIN investors fi ON t.from_investor_id = fi.id
-    JOIN investors ti ON t.to_investor_id = ti.id
-    WHERE t.asset_id = ?
-    ORDER BY t.executed_at DESC`,
+  return await query<Transfer & { from_name: string; to_name: string }>(
+    `SELECT t.*, f.name AS from_name, r.name AS to_name
+     FROM transfers t
+     JOIN investors f ON t.from_investor_id = f.id
+     JOIN investors r ON t.to_investor_id = r.id
+     WHERE t.asset_id = ?
+     ORDER BY t.executed_at DESC`,
     [assetId]
   );
+}
 
-  return results;
+/**
+ * Find transfers by investor (either sender or receiver)
+ */
+export async function findTransfersByInvestor(
+  investorId: string
+): Promise<Transfer[]> {
+  return await query<Transfer>(
+    'SELECT * FROM transfers WHERE from_investor_id = ? OR to_investor_id = ? ORDER BY executed_at DESC',
+    [investorId, investorId]
+  );
 }

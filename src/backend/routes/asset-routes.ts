@@ -20,7 +20,7 @@ const router = express.Router();
  */
 router.post('/', async (req, res): Promise<void> => {
   try {
-    const { name, asset_type, total_units } = req.body;
+    const { name, asset_type, total_units, fund_structure_id, unit_price } = req.body;
 
     // Validate request body
     if (!name || !asset_type || !total_units) {
@@ -35,6 +35,8 @@ router.post('/', async (req, res): Promise<void> => {
       name,
       asset_type,
       total_units: Number(total_units),
+      fund_structure_id, 
+      unit_price
     });
 
     res.status(201).json(asset);
