@@ -44,7 +44,7 @@ async function runMigrations(): Promise<void> {
   const pool = new Pool({
     connectionString:
       process.env.DATABASE_URL ||
-      'postgresql://codex:codex@localhost:5432/codex',
+      'postgresql://caelith:caelith@localhost:5432/caelith',
   });
 
   const client = await pool.connect();

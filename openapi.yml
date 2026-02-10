@@ -1,12 +1,12 @@
 openapi: 3.0.3
 info:
-  title: Codex Compliance Engine API
+  title: Caelith Compliance Engine API
   description: |
     Programmable transfer restriction infrastructure for tokenized assets.
     Source-available compliance engine that works off-chain today and on-chain tomorrow.
   version: 1.0.0
   contact:
-    name: Codex
+    name: Caelith
 servers:
   - url: http://localhost:3001/api
     description: Local development
@@ -444,7 +444,7 @@ paths:
       tags: [Webhooks]
       summary: Register a webhook
       description: |
-        Subscribe to events. Payloads are signed with HMAC-SHA256 (X-Codex-Signature header).
+        Subscribe to events. Payloads are signed with HMAC-SHA256 (X-Caelith-Signature header).
       requestBody:
         required: true
         content:

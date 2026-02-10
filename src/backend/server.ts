@@ -29,6 +29,7 @@ import { generateCapTablePdf } from './services/cap-table-pdf.js';
 import fundStructureRoutes from './routes/fund-structure-routes.js';
 import eligibilityRoutes from './routes/eligibility-routes.js';
 import decisionRecordRoutes from './routes/decision-record-routes.js';
+import nlRulesRoutes from './routes/nl-rules-routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -72,7 +73,7 @@ app.use('/api/auth', authRateLimit, authRoutes);
 const openapiDoc = parse(readFileSync('./openapi.yml', 'utf-8'));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Codex API Documentation',
+  customSiteTitle: 'Caelith API Documentation',
 }));
 
 // Protected routes (auth required)
@@ -88,6 +89,7 @@ app.use('/api/templates', authenticate, templateRoutes);
 app.use('/api/fund-structures', authenticate, fundStructureRoutes);
 app.use('/api/eligibility', authenticate, eligibilityRoutes);
 app.use('/api/decisions', authenticate, decisionRecordRoutes);
+app.use('/api/nl-rules', authenticate, authorize('admin', 'compliance_officer'), nlRulesRoutes);
 
 import { execute as dbExecute } from './db.js';
 

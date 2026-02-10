@@ -1,6 +1,6 @@
 /**
  * Seed Data Script
- * Populates the database with realistic demo data for Codex
+ * Populates the database with realistic demo data for Caelith
  */
 
 const BASE_URL = 'http://localhost:3001/api';
@@ -33,13 +33,13 @@ async function api<T = ApiResponse>(
 }
 
 async function seed(): Promise<void> {
-  console.log('Seeding Codex database...\n');
+  console.log('Seeding Caelith database...\n');
 
   // 0. Authenticate
   console.log('[Auth] Creating admin user...');
   try {
     const auth = await api<{ token: string }>('/auth/register', {
-      email: 'admin@codex.dev',
+      email: 'admin@caelith.dev',
       password: 'admin1234',
       name: 'System Admin',
       role: 'admin',
@@ -47,12 +47,12 @@ async function seed(): Promise<void> {
     authToken = auth.token;
   } catch {
     const auth = await api<{ token: string }>('/auth/login', {
-      email: 'admin@codex.dev',
+      email: 'admin@caelith.dev',
       password: 'admin1234',
     });
     authToken = auth.token;
   }
-  console.log('  OK - Authenticated as admin@codex.dev\n');
+  console.log('  OK - Authenticated as admin@caelith.dev\n');
 
   // 1. Create assets
   console.log('[Assets] Creating funds...');
@@ -204,7 +204,7 @@ async function seed(): Promise<void> {
   // 7. Register a webhook
   console.log('\n[Webhooks] Registering demo webhook...');
   await api('/webhooks', {
-    url: 'https://example.com/codex-webhook',
+    url: 'https://example.com/caelith-webhook',
     event_types: ['transfer.executed', 'transfer.rejected'],
   });
   console.log('  OK - Webhook for transfer events\n');

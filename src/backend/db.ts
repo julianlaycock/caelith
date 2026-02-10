@@ -15,7 +15,7 @@ types.setTypeParser(1700, (val: string) => parseFloat(val));
 
 const pool = new Pool({
   connectionString:
-    process.env.DATABASE_URL || 'postgresql://codex:codex@localhost:5432/codex',
+    process.env.DATABASE_URL || 'postgresql://caelith:caelith@localhost:5432/caelith',
 });
 
 /**
