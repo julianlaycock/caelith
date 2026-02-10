@@ -274,7 +274,7 @@ EVENTS (append-only log)                                               │
 | Value | Jurisdiction | Description |
 |-------|-------------|-------------|
 | `SICAV` | Luxembourg | Société d'Investissement à Capital Variable |
-| `SIF` | Luxembourg | Specialised Investment Fund (CSSF Circular 15/633) |
+| `SIF` | Luxembourg | Specialised Investment Fund (Law of 13 February 2007) |
 | `RAIF` | Luxembourg | Reserved Alternative Investment Fund |
 | `SCSp` | Luxembourg | Société en Commandite Spéciale (limited partnership) |
 | `SCA` | Luxembourg | Société en Commandite par Actions |
@@ -330,7 +330,7 @@ EVENTS (append-only log)                                               │
 | maximum_allocation_pct | DECIMAL(5,2) | NULL | Max % of fund this investor type can hold in aggregate (null = unlimited) |
 | documentation_required | JSONB | NOT NULL, DEFAULT '[]' | Array of required document types (e.g., `["risk_declaration", "suitability_assessment"]`) |
 | suitability_required | BOOLEAN | NOT NULL, DEFAULT false | Whether a suitability assessment is required (ELTIF retail, RIAIF) |
-| source_reference | VARCHAR(500) | NULL | Regulatory citation (e.g., "CSSF Circular 15/633, Section 4.2") |
+| source_reference | VARCHAR(500) | NULL | Regulatory citation (e.g., "SIF Law 13 Feb 2007, Art. 2") |
 | effective_date | DATE | NOT NULL | Date this criterion becomes effective |
 | superseded_at | DATE | NULL | Date this criterion was replaced (NULL = currently active) |
 | created_at | TIMESTAMP | NOT NULL | Record creation |
@@ -351,12 +351,12 @@ EVENTS (append-only log)                                               │
 
 | Fund Type | Jurisdiction | Investor Type | Min Investment | Source |
 |-----------|-------------|---------------|---------------|--------|
-| SIF | LU | semi_professional | €125,000 (12500000 cents) | CSSF Circular 15/633, Section 4.2 |
-| SIF | LU | professional | €0 | CSSF Circular 15/633 |
-| SIF | LU | institutional | €0 | CSSF Circular 15/633 |
-| RAIF | LU | semi_professional | €125,000 | Law of 23 July 2016, Art. 2 |
+| SIF | LU | semi_professional | €125,000 (12500000 cents) | SIF Law 13 Feb 2007, Art. 2 |
+| SIF | LU | professional | €0 | SIF Law 13 Feb 2007 |
+| SIF | LU | institutional | €0 | SIF Law 13 Feb 2007 |
+| RAIF | LU | semi_professional | €100,000 (10000000 cents) | Law of 23 July 2016, Art. 2(1)(b)(i) |
 | RAIF | LU | professional | €0 | Law of 23 July 2016 |
-| ELTIF | * | retail | €10,000 (1000000 cents) | Reg 2023/606, Art. 30(1) — suitability_required = true |
+| ELTIF | * | retail | €0 | Reg 2023/606, Recital 47 + Art. 30 — minimum removed, suitability_required = true |
 | ELTIF | * | professional | €0 | Reg 2023/606 |
 | Spezial_AIF | DE | semi_professional | €200,000 (20000000 cents) | KAGB §1(19) Nr. 33 |
 | Spezial_AIF | DE | professional | €0 | KAGB §1(6) |
@@ -797,22 +797,28 @@ ORDER BY timestamp DESC;
 
 ## Migration Strategy
 
-1. **Migration 001:** Initial schema (existing — already applied)
-2. **Migration 002:** Add `fund_structures` table
-3. **Migration 003:** Extend `investors` — add `investor_type`, `kyc_status`, `kyc_expiry`, `tax_id`, `lei`, `email`. Migrate existing data (`accredited = true` → `professional`, `false` → `retail`; all → `kyc_status = 'verified'`).
-4. **Migration 004:** Extend `assets` — add `fund_structure_id`, `unit_price`
-5. **Migration 005:** Extend `rules` — add `investor_type_whitelist`, `minimum_investment`, `maximum_investors`, `concentration_limit_pct`, `kyc_required`
-6. **Migration 006:** Add `eligibility_criteria` table + pre-populate with 3-jurisdiction data
-7. **Migration 007:** Add `decision_records` table
-8. **Migration 008:** Extend `transfers` — add `decision_record_id`
-9. **Migration 009:** Add `onboarding_records` table
-10. **Migration 010:** Add `regulatory_documents` table (with pgvector extension)
+1. **Migration 001:** Initial schema (SQLite — skipped by PostgreSQL runner)
+2. **Migration 002:** PostgreSQL schema conversion
+3. **Migration 003:** Users + auth + RBAC
+4. **Migration 004:** Rule version history
+5. **Migration 005:** Webhooks
+6. **Migration 006:** Composite rules
+7. **Migration 007:** Add `fund_structures` table + extend `assets` with `fund_structure_id`, `unit_price`
+8. **Migration 008:** Extend `investors` — add `investor_type`, `kyc_status`, `kyc_expiry`, `tax_id`, `lei`, `email`. Migrate existing data (`accredited = true` → `professional`, `false` → `retail`; all → `kyc_status = 'verified'`).
+9. **Migration 009:** Extend `rules` — add `investor_type_whitelist`, `minimum_investment`, `maximum_investors`, `concentration_limit_pct`, `kyc_required`
+10. **Migration 010:** Add `eligibility_criteria` table + pre-populate with 3-jurisdiction data (6 template fund structures, 22 criteria rows)
+11. **Migration 011:** Add `decision_records` table + extend `transfers` with `decision_record_id`
+12. **Migration 012:** Add `onboarding_records` table
+13. **Migration 013:** Add `regulatory_documents` table (with pgvector graceful fallback)
+14. **Migration 014:** Fix eligibility data — RAIF minimum €125K→€100K, ELTIF retail minimum €10K→€0
+15. **Migration 015:** Fix SIF source citations — CSSF Circular 15/633 → SIF Law 13 Feb 2007
 
 **Rules:**
 - Never alter existing migrations
 - Always include rollback SQL
 - Each migration is independently deployable
-- Data migrations (003) include backward-compatible defaults
+- Data migrations (008) include backward-compatible defaults
+- Data corrections (014, 015) fix regulatory source accuracy
 
 ---
 
