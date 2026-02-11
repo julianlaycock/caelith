@@ -191,6 +191,7 @@ export default function OnboardingPage() {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [dragError, setDragError] = useState<string | null>(null);
+  const [pendingDrag, setPendingDrag] = useState<{ record: OnboardingRecord; action: 'check' | 'approve' | 'reject' | 'allocate'; targetCol: string } | null>(null);
 
   // Valid column transitions: source → { targetColumn → action }
   const VALID_MOVES: Record<string, Record<string, 'check' | 'approve' | 'reject' | 'allocate'>> = {
@@ -250,12 +251,20 @@ export default function OnboardingPage() {
     const action = VALID_MOVES[sourceCol]?.[targetCol];
 
     if (!action) {
-      setDragError(`Cannot move from "${sourceCol}" to "${targetCol}".`);
-      setTimeout(() => setDragError(null), 3000);
+      const hints: Record<string, string> = {
+        applied: 'Applied records must first pass eligibility check before advancing.',
+        eligible: 'Eligible records can be approved or rejected.',
+        approved: 'Approved records can only be moved to Allocated.',
+        allocated: 'Allocated records cannot be moved.',
+        closed: 'Closed records cannot be moved.',
+      };
+      setDragError(`Cannot move from "${sourceCol}" to "${targetCol}". ${hints[sourceCol] || ''}`);
+      setTimeout(() => setDragError(null), 5000);
       return;
     }
 
-    await handleAction(action, rec);
+    // Show confirmation modal with compliance guardrails
+    setPendingDrag({ record: rec, action, targetCol });
   };
 
   // Group records into columns
@@ -398,6 +407,95 @@ export default function OnboardingPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Drag Confirmation Modal with Compliance Guardrails */}
+      <Modal
+        open={!!pendingDrag}
+        onClose={() => setPendingDrag(null)}
+        title="Confirm Action"
+      >
+        {pendingDrag && (() => {
+          const { record, action, targetCol } = pendingDrag;
+          const investorName = investorMap[record.investor_id] || record.investor_id.slice(0, 8);
+          const assetName = assetMap[record.asset_id] || record.asset_id.slice(0, 8);
+          const targetLabel = COLUMNS.find(c => c.key === targetCol)?.label || targetCol;
+
+          const guardrails: { label: string; description: string }[] = [];
+          if (action === 'check') {
+            guardrails.push(
+              { label: 'Investor type classification', description: 'Verify investor meets fund type requirements' },
+              { label: 'KYC/AML status', description: 'Confirm KYC status is verified and not expired' },
+              { label: 'Minimum investment threshold', description: 'Check investment meets fund minimum' },
+              { label: 'Jurisdiction eligibility', description: 'Verify investor jurisdiction is permitted' },
+            );
+          } else if (action === 'approve') {
+            guardrails.push(
+              { label: 'Eligibility check passed', description: 'Investor has already passed automated eligibility' },
+              { label: 'Compliance officer review', description: 'Manual review confirms suitability' },
+            );
+          } else if (action === 'allocate') {
+            guardrails.push(
+              { label: 'Approval on file', description: 'Application has been approved by compliance' },
+              { label: 'Unit availability', description: 'Sufficient units available in asset for allocation' },
+              { label: 'Concentration limit', description: 'Allocation does not breach concentration limits' },
+            );
+          } else if (action === 'reject') {
+            guardrails.push(
+              { label: 'Rejection documented', description: 'Reason for rejection will be recorded in audit trail' },
+            );
+          }
+
+          return (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-surface-subtle p-3">
+                <p className="text-sm text-ink">
+                  Move <span className="font-semibold">{investorName}</span> to{' '}
+                  <span className="font-semibold">{targetLabel}</span>
+                </p>
+                <p className="mt-0.5 text-xs text-ink-secondary">
+                  Asset: {assetName} &middot; {formatNumber(record.requested_units)} units
+                </p>
+              </div>
+
+              {guardrails.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-ink-tertiary mb-2">
+                    Compliance checks
+                  </p>
+                  <div className="space-y-1.5">
+                    {guardrails.map((g, i) => (
+                      <div key={i} className="flex items-start gap-2 rounded-md bg-brand-50 px-3 py-2">
+                        <svg className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                        </svg>
+                        <div>
+                          <p className="text-xs font-medium text-brand-800">{g.label}</p>
+                          <p className="text-[11px] text-brand-700">{g.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-edge-subtle">
+                <Button variant="secondary" size="sm" onClick={() => setPendingDrag(null)}>Cancel</Button>
+                <Button
+                  size="sm"
+                  variant={action === 'reject' ? 'danger' : 'primary'}
+                  disabled={!!actionLoading}
+                  onClick={async () => {
+                    await handleAction(action, record);
+                    setPendingDrag(null);
+                  }}
+                >
+                  {actionLoading ? 'Processing...' : `Confirm ${action.charAt(0).toUpperCase() + action.slice(1)}`}
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
 
       {loading ? (

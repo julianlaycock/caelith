@@ -18,8 +18,17 @@ import {
   Badge,
   Alert,
 } from '../../components/ui';
-import { formatDate } from '../../lib/utils';
+import { formatDate, classNames } from '../../lib/utils';
 import type { Investor, ApiError } from '../../lib/types';
+
+function daysUntilExpiry(expiryDate: string | null | undefined) {
+  if (!expiryDate) return null;
+  const days = Math.ceil((new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (days < 0) return { days, label: `${Math.abs(days)}d overdue`, urgency: 'expired' as const };
+  if (days <= 30) return { days, label: `${days}d`, urgency: 'critical' as const };
+  if (days <= 90) return { days, label: `${days}d`, urgency: 'warning' as const };
+  return { days, label: `${days}d`, urgency: 'ok' as const };
+}
 
 const JURISDICTIONS = [
   { value: '', label: 'Select jurisdiction...' },
@@ -202,6 +211,8 @@ function InvestorsContent() {
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Jurisdiction</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Type</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">KYC</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">KYC Expiry</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Days Left</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Status</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Created</th>
                 <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Actions</th>
@@ -219,6 +230,26 @@ function InvestorsContent() {
                     <Badge variant={inv.kyc_status === 'verified' ? 'green' : inv.kyc_status === 'expired' ? 'red' : 'yellow'}>
                       {inv.kyc_status}
                     </Badge>
+                  </td>
+                  <td className="px-5 py-3 text-sm text-ink-secondary">
+                    {inv.kyc_expiry ? formatDate(inv.kyc_expiry) : '—'}
+                  </td>
+                  <td className="px-5 py-3">
+                    {(() => {
+                      const expiry = daysUntilExpiry(inv.kyc_expiry);
+                      if (!expiry) return <span className="text-xs text-ink-tertiary">—</span>;
+                      const colors = {
+                        expired: 'text-red-600 bg-red-50',
+                        critical: 'text-red-600 bg-red-50',
+                        warning: 'text-amber-600 bg-amber-50',
+                        ok: 'text-brand-700 bg-brand-50',
+                      };
+                      return (
+                        <span className={classNames('inline-flex rounded-md px-2 py-0.5 text-xs font-medium', colors[expiry.urgency])}>
+                          {expiry.label}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-5 py-3">
                     <Badge variant={inv.accredited ? 'green' : 'yellow'}>

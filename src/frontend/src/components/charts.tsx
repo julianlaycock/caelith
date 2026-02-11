@@ -139,7 +139,7 @@ interface JurisdictionEntry {
   total_units: number;
 }
 
-export function JurisdictionExposureBar({ data }: { data: JurisdictionEntry[] }) {
+export function JurisdictionExposureBar({ data, onBarClick }: { data: JurisdictionEntry[]; onBarClick?: (jurisdiction: string) => void }) {
   if (!data || data.length === 0) {
     return <EmptyChart label="No jurisdiction data" />;
   }
@@ -157,7 +157,16 @@ export function JurisdictionExposureBar({ data }: { data: JurisdictionEntry[] })
     <ChartCard title="Jurisdiction Exposure" subtitle="Top jurisdictions by allocated units">
       <div style={{ height: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="vertical" margin={{ left: 4, right: 12, top: 4, bottom: 4 }}>
+          <BarChart
+            data={chartData}
+            layout="vertical"
+            margin={{ left: 4, right: 12, top: 4, bottom: 4 }}
+            onClick={onBarClick ? (state) => {
+              const idx = Number(state?.activeTooltipIndex);
+              if (!isNaN(idx) && chartData[idx]?.name) onBarClick(chartData[idx].name);
+            } : undefined}
+            style={onBarClick ? { cursor: 'pointer' } : undefined}
+          >
             <XAxis
               type="number"
               tickFormatter={formatCompactNumber}
