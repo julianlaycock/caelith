@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Seed Demo Data — Luxembourg SIF/RAIF + German Spezial-AIF workflows
  *
  * Usage: npx tsx scripts/seed-demo.ts
@@ -11,7 +11,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import bcrypt from 'bcrypt';
-import { query, execute, closeDb } from '../src/backend/db.js';
+import { query, execute, closeDb, DEFAULT_TENANT_ID } from '../src/backend/db.js';
+import { sealAllUnsealed } from '../src/backend/services/integrity-service.js';
 
 // ---------------------------------------------------------------------------
 // Fixed UUIDs for predictable references
@@ -88,6 +89,13 @@ async function exists(table: string, id: string): Promise<boolean> {
 
 async function seed() {
   console.log('Seeding demo data for Luxembourg SIF/RAIF + German Spezial-AIF workflows...\n');
+
+  await execute(
+    `INSERT INTO tenants (id, name, slug, status)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (id) DO NOTHING`,
+    [DEFAULT_TENANT_ID, 'Caelith Demo', 'demo', 'active']
+  );
 
   // =========================================================================
   // 0. Admin User
@@ -1035,6 +1043,9 @@ async function seed() {
   console.log('  - Isabella Rossi: 30% concentration in SIF Class B');
   console.log('  - Pieter van Dijk: 30% concentration in RAIF Class A');
   console.log('========================================');
+
+  const sealed = await sealAllUnsealed();
+  console.log(`\nSealed ${sealed} decision records`);
 }
 
 seed()

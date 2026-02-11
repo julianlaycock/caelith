@@ -28,6 +28,7 @@ import type {
   OnboardingEligibilityResult,
   OnboardingReviewResult,
   DecisionRecord,
+  DecisionChainVerificationResult,
 } from './types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -390,6 +391,13 @@ class ApiClient {
 
   async getDecision(id: string): Promise<DecisionRecord> {
     return this.request<DecisionRecord>(`/decisions/${id}`);
+  }
+
+  async verifyDecisionChain(limit?: number): Promise<DecisionChainVerificationResult> {
+    const searchParams = new URLSearchParams();
+    if (typeof limit === 'number') searchParams.set('limit', String(limit));
+    const query = searchParams.toString();
+    return this.request<DecisionChainVerificationResult>(`/decisions/verify-chain${query ? `?${query}` : ''}`);
   }
 
   async updateFundStructure(id: string, data: Partial<CreateFundStructureRequest>): Promise<FundStructure> {

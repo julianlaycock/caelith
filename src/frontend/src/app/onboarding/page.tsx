@@ -15,7 +15,7 @@ import {
   Badge,
   Alert,
 } from '../../components/ui';
-import { formatNumber, formatDate, formatDateTime, classNames } from '../../lib/utils';
+import { formatNumber, formatDate, formatDateTime, classNames, getErrorMessage } from '../../lib/utils';
 import type { ApiError, OnboardingRecord } from '../../lib/types';
 
 // ── Column definitions ───────────────────────────────────
@@ -110,7 +110,7 @@ export default function OnboardingPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setRecordsError((err as { message?: string })?.message || 'Failed to load onboarding records');
+          setRecordsError(getErrorMessage(err, 'Failed to load onboarding records'));
         }
       } finally {
         if (!cancelled) setRecordsLoading(false);

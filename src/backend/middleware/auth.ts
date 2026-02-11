@@ -7,6 +7,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, TokenPayload } from '../services/auth-service.js';
+import { DEFAULT_TENANT_ID } from '../db.js';
 
 // Extend Express Request to include user
 declare global {
@@ -38,7 +39,11 @@ export function authenticate(
   const token = header.slice(7);
 
   try {
-    req.user = verifyToken(token);
+    const decoded = verifyToken(token);
+    req.user = {
+      ...decoded,
+      tenantId: decoded.tenantId || DEFAULT_TENANT_ID,
+    };
     next();
   } catch {
     res.status(401).json({

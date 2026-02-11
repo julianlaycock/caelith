@@ -15,6 +15,7 @@ dotenv.config();
 
 import bcrypt from 'bcrypt';
 import { query, execute, closeDb } from '../src/backend/db.js';
+import { sealAllUnsealed } from '../src/backend/services/integrity-service.js';
 
 // ── Fixed UUIDs ──────────────────────────────────────────
 
@@ -547,6 +548,8 @@ async function seed() {
   console.log('║     SIF well-diversified, QIAIF moderate           ║');
   console.log('║                                                    ║');
   console.log('╚══════════════════════════════════════════════════╝');
+  const sealed = await sealAllUnsealed();
+  console.log(`\nSealed ${sealed} decision records`);
   console.log('\nLogin: admin@caelith.com / admin1234');
   console.log('Open http://localhost:3000 to see the dashboard.');
 }

@@ -7,7 +7,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { closeDb, execute as dbExecute } from './db.js';
+import { closeDb, execute as dbExecute, DEFAULT_TENANT_ID } from './db.js';
 import swaggerUi from 'swagger-ui-express';
 import { readFileSync } from 'fs';
 import { parse } from 'yaml';
@@ -32,6 +32,7 @@ import decisionRecordRoutes from './routes/decision-record-routes.js';
 import nlRulesRoutes from './routes/nl-rules-routes.js';
 import onboardingRoutes from './routes/onboarding-routes.js';
 import complianceReportRoutes from './routes/compliance-report-routes.js';
+import tenantRoutes from './routes/tenant-routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -52,7 +53,7 @@ const PORT = process.env.PORT || 3001;
 app.use(securityHeaders);
 const ALLOWED_ORIGINS = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
-  : ['http://localhost:3000', 'http://localhost:3001'];
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -115,6 +116,7 @@ app.use('/api/eligibility', authenticate, eligibilityRoutes);
 app.use('/api/decisions', authenticate, decisionRecordRoutes);
 app.use('/api/nl-rules', authenticate, authorize('admin', 'compliance_officer'), nlRulesRoutes);
 app.use('/api/reports', authenticate, complianceReportRoutes);
+app.use('/api/tenants', authenticate, tenantRoutes);
 
 // Test-only: reset database
 app.post('/api/reset', authenticate, authorize('admin'), async (_req, res): Promise<void> => {
@@ -133,6 +135,7 @@ app.post('/api/reset', authenticate, authorize('admin'), async (_req, res): Prom
     for (const table of tables) {
       await dbExecute(`DELETE FROM ${table}`).catch(() => {});
     }
+    await dbExecute('DELETE FROM tenants WHERE id <> $1', [DEFAULT_TENANT_ID]).catch(() => {});
     clearRateLimits();
     res.json({ status: 'reset' });
   } catch (error) {

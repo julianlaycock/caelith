@@ -4,38 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { PageHeader, Card, Badge, Button, Select, MetricCard, LoadingSpinner, ErrorMessage, EmptyState } from '../../components/ui';
 import { formatDateTime, formatNumber, classNames } from '../../lib/utils';
-import type { DecisionRecord } from '../../lib/types';
+import type { DecisionRecord, DecisionChainVerificationResult } from '../../lib/types';
 
 /* ── SHA-256 hash computation ─────────────────────────── */
-
-async function computeHash(decision: DecisionRecord): Promise<string> {
-  const payload = JSON.stringify({
-    id: decision.id,
-    decision_type: decision.decision_type,
-    subject_id: decision.subject_id,
-    result: decision.result,
-    result_details: decision.result_details,
-    decided_at: decision.decided_at,
-  });
-
-  // Use Web Crypto when available; fall back to deterministic non-cryptographic hash.
-  if (typeof crypto !== 'undefined' && crypto.subtle) {
-    const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
-    return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  let hash = 2166136261;
-  for (let i = 0; i < payload.length; i++) {
-    hash ^= payload.charCodeAt(i);
-    hash +=
-      (hash << 1) +
-      (hash << 4) +
-      (hash << 7) +
-      (hash << 8) +
-      (hash << 24);
-  }
-  return `fallback-${(hash >>> 0).toString(16).padStart(8, '0')}`;
-}
 
 /* ── Filter options ───────────────────────────────────── */
 
@@ -104,9 +75,10 @@ export default function DecisionAuditTrailPage() {
   const [typeFilter, setTypeFilter] = useState('');
   const [resultFilter, setResultFilter] = useState('');
 
-  const [hashes, setHashes] = useState<Record<string, string>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [chainStatus, setChainStatus] = useState<DecisionChainVerificationResult | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
   /* ── Fetch decisions ──────────────────────────────── */
 
@@ -140,24 +112,6 @@ export default function DecisionAuditTrailPage() {
 
   /* ── Compute hashes ───────────────────────────────── */
 
-  useEffect(() => {
-    let cancelled = false;
-    async function computeAll() {
-      const newHashes: Record<string, string> = {};
-      for (const d of decisions) {
-        if (!hashes[d.id]) {
-          newHashes[d.id] = await computeHash(d);
-        }
-      }
-      if (!cancelled && Object.keys(newHashes).length > 0) {
-        setHashes(prev => ({ ...prev, ...newHashes }));
-      }
-    }
-    computeAll();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [decisions]);
-
   /* ── Load more ────────────────────────────────────── */
 
   const handleLoadMore = () => {
@@ -168,8 +122,7 @@ export default function DecisionAuditTrailPage() {
 
   /* ── Copy hash ────────────────────────────────────── */
 
-  const copyHash = async (id: string) => {
-    const hash = hashes[id];
+  const copyHash = async (hash: string | null | undefined, id: string) => {
     if (!hash) return;
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(hash);
@@ -186,6 +139,22 @@ export default function DecisionAuditTrailPage() {
     }
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleVerifyChain = async () => {
+    setVerifying(true);
+    try {
+      const result = await api.verifyDecisionChain();
+      setChainStatus(result);
+    } catch {
+      setChainStatus({
+        valid: false,
+        total_verified: 0,
+        message: 'Verification failed',
+      });
+    } finally {
+      setVerifying(false);
+    }
   };
 
   /* ── Stats ────────────────────────────────────────── */
@@ -205,8 +174,26 @@ export default function DecisionAuditTrailPage() {
       {/* A. Page Header */}
       <PageHeader
         title="Decision Audit Trail"
-        description="Immutable provenance chain — every compliance decision recorded"
+        description="Immutable provenance chain - every compliance decision recorded"
+        action={
+          <Button onClick={handleVerifyChain} disabled={verifying} variant="secondary" size="sm">
+            {verifying ? 'Verifying...' : 'Verify Chain'}
+          </Button>
+        }
       />
+      {chainStatus && (
+        <div
+          className={classNames(
+            'mb-4 rounded-lg border px-4 py-3 text-sm',
+            chainStatus.valid
+              ? 'border-brand-200 bg-brand-50 text-brand-800'
+              : 'border-red-200 bg-red-50 text-red-800'
+          )}
+        >
+          {chainStatus.valid ? 'Valid:' : 'Invalid:'} {chainStatus.message}
+          {chainStatus.valid ? ` (${chainStatus.total_verified} records)` : ''}
+        </div>
+      )}
 
       {/* B. Filter bar */}
       <Card className="mb-6">
@@ -251,9 +238,9 @@ export default function DecisionAuditTrailPage() {
       ) : (
         <div className="space-y-4">
           {decisions.map((d, index) => {
-            const hash = hashes[d.id] || '';
+            const hash = d.integrity_hash || '';
             const isExpanded = expanded[d.id] || false;
-            const seqNumber = String(index + 1).padStart(4, '0');
+            const seqNumber = String(d.sequence_number ?? index + 1).padStart(4, '0');
 
             return (
               <div
@@ -286,7 +273,7 @@ export default function DecisionAuditTrailPage() {
                     {hash ? `${hash.substring(0, 16)}...` : '...'}
                   </span>
                   <button
-                    onClick={() => copyHash(d.id)}
+                    onClick={() => copyHash(hash, d.id)}
                     className="rounded p-0.5 text-ink-tertiary hover:text-ink transition-colors"
                     title="Copy full hash"
                   >
@@ -305,8 +292,8 @@ export default function DecisionAuditTrailPage() {
                 <div className="flex items-center gap-1.5 mt-1">
                   <span className="font-mono text-[10px] text-ink-tertiary">prev:</span>
                   <span className="font-mono text-[10px] text-ink-tertiary">
-                    {index < decisions.length - 1
-                      ? `${(hashes[decisions[index + 1].id] || '').substring(0, 12)}...`
+                    {d.previous_hash && d.previous_hash !== '0000000000000000000000000000000000000000000000000000000000000000'
+                      ? `${d.previous_hash.substring(0, 12)}...`
                       : '000000000000...'}
                   </span>
                 </div>

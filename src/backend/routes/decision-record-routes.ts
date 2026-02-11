@@ -4,7 +4,9 @@ import {
   findDecisionsByAsset,
   findDecisionsBySubject,
 } from '../repositories/decision-record-repository.js';
-import { query } from '../db.js';
+import { query, DEFAULT_TENANT_ID } from '../db.js';
+import { verifyChain, sealAllUnsealed } from '../services/integrity-service.js';
+import { authorize } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -23,6 +25,9 @@ interface DecisionListRow {
   decided_by_email: string | null;
   decided_at: string | Date;
   created_at: string | Date;
+  sequence_number?: number;
+  integrity_hash?: string | null;
+  previous_hash?: string | null;
 }
 
 router.get('/', async (req: Request, res: Response) => {
@@ -34,6 +39,10 @@ router.get('/', async (req: Request, res: Response) => {
     const conditions: string[] = [];
     const params: (string | number)[] = [];
     let paramIndex = 1;
+    const tenantId = req.user?.tenantId || DEFAULT_TENANT_ID;
+
+    conditions.push(`dr.tenant_id = $${paramIndex++}`);
+    params.push(tenantId);
 
     if (decision_type && typeof decision_type === 'string') {
       conditions.push(`dr.decision_type = $${paramIndex++}`);
@@ -79,12 +88,40 @@ router.get('/', async (req: Request, res: Response) => {
       decided_by_email: row.decided_by_email ?? null,
       decided_at: String(row.decided_at),
       created_at: String(row.created_at),
+      sequence_number: row.sequence_number,
+      integrity_hash: row.integrity_hash ?? null,
+      previous_hash: row.previous_hash ?? null,
     }));
 
     return res.json({ decisions, total, limit, offset });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     return res.status(500).json({ error: 'INTERNAL_ERROR', message });
+  }
+});
+
+router.get('/verify-chain', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const limit = req.query.limit ? parseInt(String(req.query.limit), 10) : undefined;
+    const result = await verifyChain(limit);
+    res.json(result);
+  } catch (err: unknown) {
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: err instanceof Error ? err.message : 'Unknown error',
+    });
+  }
+});
+
+router.post('/seal-all', authorize('admin'), async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const count = await sealAllUnsealed();
+    res.json({ sealed: count, message: `Sealed ${count} previously unsealed records.` });
+  } catch (err: unknown) {
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: err instanceof Error ? err.message : 'Unknown error',
+    });
   }
 });
 

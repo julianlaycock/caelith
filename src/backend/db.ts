@@ -8,6 +8,8 @@
 
 import { Pool, types } from 'pg';
 
+export const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000099';
+
 // PostgreSQL BIGINT (OID 20) and NUMERIC (OID 1700) are returned as strings.
 // Parse as Number since our values are within safe integer range.
 types.setTypeParser(20, (val: string) => parseInt(val, 10));
@@ -31,6 +33,23 @@ pool.on('error', (err) => {
 function convertPlaceholders(sql: string): string {
   let index = 0;
   return sql.replace(/\?/g, () => `$${++index}`);
+}
+
+/**
+ * Helper to append tenant scoping to a SQL statement.
+ * Adds `WHERE <tenantColumn> = ?` or `AND <tenantColumn> = ?` as needed.
+ */
+export function withTenant(
+  sql: string,
+  tenantId?: string,
+  tenantColumn = 'tenant_id'
+): { sql: string; params: [string] } {
+  const scopedTenantId = tenantId || DEFAULT_TENANT_ID;
+  const hasWhere = /\bwhere\b/i.test(sql);
+  const scopedSql = hasWhere
+    ? `${sql} AND ${tenantColumn} = ?`
+    : `${sql} WHERE ${tenantColumn} = ?`;
+  return { sql: scopedSql, params: [scopedTenantId] };
 }
 
 /**

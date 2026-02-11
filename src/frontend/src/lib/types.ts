@@ -386,4 +386,17 @@ export interface DecisionRecord {
   decided_by_email?: string | null;
   decided_at: string;
   created_at: string;
+  sequence_number?: number;
+  integrity_hash?: string | null;
+  previous_hash?: string | null;
+}
+
+export interface DecisionChainVerificationResult {
+  valid: boolean;
+  total_verified: number;
+  broken_at_sequence?: number;
+  broken_at_id?: string;
+  expected_hash?: string;
+  actual_hash?: string;
+  message: string;
 }

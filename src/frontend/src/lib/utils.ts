@@ -36,6 +36,16 @@ export function formatCompactNumber(n: number): string {
   return String(n);
 }
 
+/** Extract a human-readable message from an unknown catch error. */
+export function getErrorMessage(err: unknown, fallback = 'An error occurred'): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === 'object' && 'message' in err) {
+    return String((err as Record<string, unknown>).message) || fallback;
+  }
+  if (typeof err === 'string') return err;
+  return fallback;
+}
+
 const INVESTOR_TYPE_LABELS: Record<string, string> = {
   institutional: 'Institutional',
   professional: 'Professional',
