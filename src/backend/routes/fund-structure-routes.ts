@@ -39,7 +39,7 @@ router.get('/', async (_req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const fund = await findFundStructureById(req.params.id);
-    if (!fund) return res.status(404).json({ error: 'NOT_FOUND' });
+    if (!fund) return res.status(404).json({ error: 'NOT_FOUND', message: `Fund structure not found: ${req.params.id}` });
     return res.json(fund);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -50,7 +50,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
     const fund = await updateFundStructure(req.params.id, req.body);
-    if (!fund) return res.status(404).json({ error: 'NOT_FOUND' });
+    if (!fund) return res.status(404).json({ error: 'NOT_FOUND', message: `Fund structure not found: ${req.params.id}` });
     return res.json(fund);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';

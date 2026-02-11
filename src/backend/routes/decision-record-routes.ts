@@ -30,7 +30,7 @@ router.get('/investor/:investorId', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const record = await findDecisionRecordById(req.params.id);
-    if (!record) return res.status(404).json({ error: 'NOT_FOUND' });
+    if (!record) return res.status(404).json({ error: 'NOT_FOUND', message: `Decision record not found: ${req.params.id}` });
     return res.json(record);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';

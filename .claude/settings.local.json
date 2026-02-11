@@ -21,7 +21,11 @@
       "Bash(powershell.exe -NoProfile -Command:*)",
       "Bash(npm install:*)",
       "Bash(npx tsx --eval \"import ''./scripts/seed-showcase.ts''; console.log\\(''Syntax OK''\\)\")",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(npm run:*)",
+      "Bash(curl:*)",
+      "Bash(wc:*)",
+      "Bash(dir:*)"
     ]
   }
 }

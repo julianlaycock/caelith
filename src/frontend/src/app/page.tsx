@@ -196,16 +196,17 @@ export default function DashboardPage() {
           if (asset.holder_count > 0) allAssetIds.add(asset.id);
         }
       }
-      await Promise.all(
+      const capResults = await Promise.allSettled(
         Array.from(allAssetIds).map(async (assetId) => {
-          try {
-            const entries = await api.getCapTable(assetId);
-            capTableMap.set(assetId, entries);
-          } catch {
-            // Skip
-          }
+          const entries = await api.getCapTable(assetId);
+          return { assetId, entries };
         })
       );
+      for (const result of capResults) {
+        if (result.status === 'fulfilled') {
+          capTableMap.set(result.value.assetId, result.value.entries);
+        }
+      }
       setCapTables(capTableMap);
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message || 'Failed to load dashboard data';

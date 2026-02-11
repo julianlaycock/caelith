@@ -14,12 +14,12 @@ import {
   findInvestorById,
   findHoldingByInvestorAndAsset,
   findRuleSetByAsset,
-  updateHoldingByInvestorAndAsset,
-  createHolding,
   createTransfer,
   createEvent,
 } from '../repositories/index.js';
 import { findAssetById } from '../repositories/asset-repository.js';
+import { getPool } from '../db.js';
+import { randomUUID } from 'crypto';
 import { findFundStructureById } from '../repositories/fund-structure-repository.js';
 import { findApplicableCriteria } from '../repositories/eligibility-criteria-repository.js';
 import { createDecisionRecord } from '../repositories/decision-record-repository.js';
@@ -364,38 +364,66 @@ export async function executeTransfer(
       };
     }
 
-    // Execute the transfer (update holdings)
-    const fromHolding = context.fromHolding!;
+    // Execute the transfer atomically within a database transaction
+    const pool = getPool();
+    const client = await pool.connect();
 
-    // Deduct from sender
-    await updateHoldingByInvestorAndAsset(
-      request.from_investor_id,
-      request.asset_id,
-      fromHolding.units - request.units
-    );
+    try {
+      await client.query('BEGIN');
 
-    // Add to receiver
-    const toHolding = await findHoldingByInvestorAndAsset(
-      request.to_investor_id,
-      request.asset_id
-    );
-
-    if (toHolding) {
-      await updateHoldingByInvestorAndAsset(
-        request.to_investor_id,
-        request.asset_id,
-        toHolding.units + request.units
+      // Lock sender's holding row to prevent concurrent modifications
+      const lockResult = await client.query(
+        `SELECT units FROM holdings WHERE investor_id = $1 AND asset_id = $2 FOR UPDATE`,
+        [request.from_investor_id, request.asset_id]
       );
-    } else {
-      await createHolding({
-        investor_id: request.to_investor_id,
-        asset_id: request.asset_id,
-        units: request.units,
-        acquired_at: request.execution_date,
-      });
+
+      if (lockResult.rows.length === 0 || lockResult.rows[0].units < request.units) {
+        await client.query('ROLLBACK');
+        return {
+          success: false,
+          error: 'Insufficient units (concurrent modification detected)',
+          decision_record_id: decisionRecordId,
+        };
+      }
+
+      const currentUnits = lockResult.rows[0].units;
+      const now = new Date().toISOString();
+
+      // Deduct from sender
+      await client.query(
+        `UPDATE holdings SET units = $1, updated_at = $2 WHERE investor_id = $3 AND asset_id = $4`,
+        [currentUnits - request.units, now, request.from_investor_id, request.asset_id]
+      );
+
+      // Add to receiver (lock if exists, insert if not)
+      const receiverResult = await client.query(
+        `SELECT id, units FROM holdings WHERE investor_id = $1 AND asset_id = $2 FOR UPDATE`,
+        [request.to_investor_id, request.asset_id]
+      );
+
+      if (receiverResult.rows.length > 0) {
+        await client.query(
+          `UPDATE holdings SET units = $1, updated_at = $2 WHERE investor_id = $3 AND asset_id = $4`,
+          [receiverResult.rows[0].units + request.units, now, request.to_investor_id, request.asset_id]
+        );
+      } else {
+        const holdingId = randomUUID();
+        await client.query(
+          `INSERT INTO holdings (id, investor_id, asset_id, units, acquired_at, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [holdingId, request.to_investor_id, request.asset_id, request.units, request.execution_date, now, now]
+        );
+      }
+
+      await client.query('COMMIT');
+    } catch (txError) {
+      await client.query('ROLLBACK');
+      throw txError;
+    } finally {
+      client.release();
     }
 
-    // Record the transfer with decision provenance link
+    // Record the transfer with decision provenance link (outside transaction — audit log)
     const transfer = await createTransfer({
       asset_id: request.asset_id,
       from_investor_id: request.from_investor_id,

@@ -2,7 +2,7 @@
  * Database Connection - PostgreSQL
  *
  * Drop-in replacement for the SQLite db.ts.
- * Same API surface: query(), execute(), boolToInt(), intToBool(), parseJSON(), stringifyJSON()
+ * Same API surface: query(), execute(), parseJSON(), stringifyJSON()
  * Repositories require zero changes.
  */
 
@@ -16,6 +16,13 @@ types.setTypeParser(1700, (val: string) => parseFloat(val));
 const pool = new Pool({
   connectionString:
     process.env.DATABASE_URL || 'postgresql://caelith:caelith@localhost:5432/caelith',
+  max: parseInt(process.env.PG_POOL_MAX || '20', 10),
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
+
+pool.on('error', (err) => {
+  console.error('[db] Unexpected pool error:', err.message);
 });
 
 /**
@@ -45,22 +52,6 @@ export async function execute(
   params: (string | number | boolean | null)[] = []
 ): Promise<void> {
   await pool.query(convertPlaceholders(sql), params);
-}
-
-/**
- * Helper: boolean → PostgreSQL compatible value
- * Previously converted to 0/1 for SQLite. Now passes through for PostgreSQL.
- */
-export function boolToInt(value: boolean): boolean {
-  return value;
-}
-
-/**
- * Helper: PostgreSQL value → boolean
- * Handles both number (legacy) and boolean (PostgreSQL native)
- */
-export function intToBool(value: number | boolean): boolean {
-  return Boolean(value);
 }
 
 /**
@@ -98,22 +89,9 @@ export function getPool(): Pool {
  */
 let poolEnded = false;
 
-export function closeDb(): void {
+export async function closeDb(): Promise<void> {
   if (!poolEnded) {
     poolEnded = true;
-    pool.end();
+    await pool.end();
   }
-}
-
-/**
- * Legacy compatibility - no-ops for PostgreSQL
- */
-export async function getDb(): Promise<Pool> {
-  return pool;
-}
-export function saveDb(): void {
-  /* no-op: PostgreSQL persists automatically */
-}
-export function setTestDb(): void {
-  /* no-op: use DATABASE_URL env var for test databases */
 }

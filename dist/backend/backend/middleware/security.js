@@ -1,0 +1,114 @@
+/**
+ * Security Middleware
+ *
+ * Rate limiting, security headers, and input sanitization.
+ */
+// ─── Security Headers ─────────────────────────────────────────
+export function securityHeaders(_req, res, next) {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    if (process.env.NODE_ENV === 'production') {
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    res.removeHeader('X-Powered-By');
+    next();
+}
+const rateLimitStore = new Map();
+/**
+ * Clear all rate limit entries (used by test reset endpoint)
+ */
+export function clearRateLimits() {
+    rateLimitStore.clear();
+}
+// Clean up expired entries every 5 minutes
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimitStore) {
+        if (entry.resetAt <= now) {
+            rateLimitStore.delete(key);
+        }
+    }
+}, 5 * 60 * 1000);
+export function rateLimit(options) {
+    const { windowMs, maxRequests, keyGenerator = (req) => req.ip || req.socket.remoteAddress || 'unknown', message = 'Too many requests, please try again later.', } = options;
+    return (req, res, next) => {
+        const key = keyGenerator(req);
+        const now = Date.now();
+        const entry = rateLimitStore.get(key);
+        if (!entry || entry.resetAt <= now) {
+            rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+            res.setHeader('X-RateLimit-Limit', String(maxRequests));
+            res.setHeader('X-RateLimit-Remaining', String(maxRequests - 1));
+            res.setHeader('X-RateLimit-Reset', String(Math.ceil((now + windowMs) / 1000)));
+            next();
+            return;
+        }
+        entry.count++;
+        const remaining = Math.max(0, maxRequests - entry.count);
+        res.setHeader('X-RateLimit-Limit', String(maxRequests));
+        res.setHeader('X-RateLimit-Remaining', String(remaining));
+        res.setHeader('X-RateLimit-Reset', String(Math.ceil(entry.resetAt / 1000)));
+        if (entry.count > maxRequests) {
+            const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+            res.setHeader('Retry-After', String(retryAfter));
+            res.status(429).json({
+                error: 'RATE_LIMIT_EXCEEDED',
+                message,
+                retryAfter,
+            });
+            return;
+        }
+        next();
+    };
+}
+export const apiRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 200,
+});
+export const authRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 20,
+    message: 'Too many authentication attempts. Please try again later.',
+});
+export const exportRateLimit = rateLimit({
+    windowMs: 60 * 1000,
+    maxRequests: 10,
+    message: 'Export rate limit reached. Please wait before generating another report.',
+});
+// ─── Input Sanitization ───────────────────────────────────────
+export function sanitizeInput(req, _res, next) {
+    if (req.body && typeof req.body === 'object') {
+        sanitizeObject(req.body);
+    }
+    if (req.query && typeof req.query === 'object') {
+        sanitizeObject(req.query);
+    }
+    next();
+}
+function sanitizeObject(obj) {
+    for (const key of Object.keys(obj)) {
+        const value = obj[key];
+        if (typeof value === 'string') {
+            let sanitized = value.replace(/\0/g, '');
+            sanitized = sanitized.trim();
+            if (sanitized.length > 10240) {
+                sanitized = sanitized.substring(0, 10240);
+            }
+            obj[key] = sanitized;
+        }
+        else if (value && typeof value === 'object' && !Array.isArray(value)) {
+            sanitizeObject(value);
+        }
+        else if (Array.isArray(value)) {
+            value.forEach((item, i) => {
+                if (typeof item === 'string') {
+                    value[i] = item.replace(/\0/g, '').trim();
+                }
+            });
+        }
+    }
+}
+//# sourceMappingURL=security.js.map

@@ -1,17 +1,16 @@
 import { randomUUID } from 'crypto';
-import { query, execute, boolToInt, intToBool } from '../db.js';
+import { query, execute } from '../db.js';
 import { Investor, CreateInvestorInput, UpdateInvestorInput } from '../models/index.js';
 
 /**
  * Investor Repository - Handles all database operations for investors
  */
 
-/** Raw row shape returned by SQLite (booleans stored as 0/1 integers) */
 interface InvestorRow {
   id: string;
   name: string;
   jurisdiction: string;
-  accredited: number;
+  accredited: boolean | number;
   investor_type: string;
   kyc_status: string;
   kyc_expiry: string | null;
@@ -28,7 +27,7 @@ function rowToInvestor(row: InvestorRow): Investor {
     id: row.id,
     name: row.name,
     jurisdiction: row.jurisdiction,
-    accredited: intToBool(row.accredited),
+    accredited: Boolean(row.accredited),
     investor_type: row.investor_type as Investor['investor_type'],
     kyc_status: row.kyc_status as Investor['kyc_status'],
     kyc_expiry: row.kyc_expiry,
@@ -58,7 +57,7 @@ export async function createInvestor(input: CreateInvestorInput): Promise<Invest
   await execute(
     `INSERT INTO investors (id, name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, input.name, input.jurisdiction, boolToInt(accredited), investor_type, kyc_status, kyc_expiry, tax_id, lei, email, now, now]
+    [id, input.name, input.jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, now, now]
   );
 
   const investor: Investor = {
@@ -133,7 +132,7 @@ export async function updateInvestor(
 
   if (input.accredited !== undefined) {
     updates.push('accredited = ?');
-    params.push(boolToInt(input.accredited));
+    params.push(input.accredited);
   }
 
   if (input.investor_type !== undefined) {
