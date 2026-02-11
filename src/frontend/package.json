@@ -6,6 +6,7 @@
     "node": ">=20 <21"
   },
   "scripts": {
+    "predev": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
