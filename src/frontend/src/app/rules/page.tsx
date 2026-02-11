@@ -17,7 +17,7 @@ import {
   Alert,
 } from '../../components/ui';
 import { formatDate, formatDateTime } from '../../lib/utils';
-import type { RuleSet, CompositeRule, ApiError } from '../../lib/types';
+import type { RuleSet, CompositeRule, ApiError, Investor } from '../../lib/types';
 
 const ALL_JURISDICTIONS = [
   'US', 'GB', 'CA', 'DE', 'FR', 'ES', 'IT', 'NL', 'IE', 'LU', 'JP', 'SG', 'HK', 'CH', 'AU', 'KR', 'BR', 'IN',
@@ -57,7 +57,7 @@ export default function RulesPage() {
   const [lockupDays, setLockupDays] = useState('0');
   const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([]);
   const [whitelistEnabled, setWhitelistEnabled] = useState(false);
-  const [whitelistIds, setWhitelistIds] = useState('');
+  const [whitelistInvestorIds, setWhitelistInvestorIds] = useState<string[]>([]);
 
   const [crName, setCrName] = useState('');
   const [crDesc, setCrDesc] = useState('');
@@ -67,6 +67,7 @@ export default function RulesPage() {
   ]);
 
   const assets = useAsync(() => api.getAssets());
+  const investors = useAsync(() => api.getInvestors());
   const rules = useAsync(
     () => (selectedAssetId ? api.getRules(selectedAssetId).catch(() => null) : Promise.resolve(null)),
     [selectedAssetId, successMsg]
@@ -101,7 +102,7 @@ export default function RulesPage() {
     if (selectedJurisdictions.length === 0) { setFormError('At least one jurisdiction required.'); return; }
 
     const transfer_whitelist = whitelistEnabled
-      ? whitelistIds.split(',').map((s) => s.trim()).filter(Boolean)
+      ? whitelistInvestorIds
       : null;
 
     setSaving(true);
@@ -129,10 +130,11 @@ export default function RulesPage() {
       setLockupDays(String(existing.lockup_days));
       setSelectedJurisdictions(existing.jurisdiction_whitelist);
       setWhitelistEnabled(existing.transfer_whitelist !== null);
-      setWhitelistIds(existing.transfer_whitelist?.join(', ') ?? '');
+      setWhitelistInvestorIds(existing.transfer_whitelist ?? []);
     } else {
       setQualRequired(false); setLockupDays('0');
-      setSelectedJurisdictions([]); setWhitelistEnabled(false); setWhitelistIds('');
+      setSelectedJurisdictions([]); setWhitelistEnabled(false);
+      setWhitelistInvestorIds([]);
     }
     setFormError(null);
     setShowForm(true);
@@ -248,8 +250,33 @@ export default function RulesPage() {
           <div>
             <Checkbox label="Enable transfer whitelist" checked={whitelistEnabled} onChange={(e) => setWhitelistEnabled(e.target.checked)} />
             {whitelistEnabled && (
-              <div className="mt-2">
-                <Input label="Allowed Investor IDs (comma-separated)" value={whitelistIds} onChange={(e) => setWhitelistIds(e.target.value)} placeholder="uuid1, uuid2, ..." />
+              <div className="mt-2 space-y-2">
+                <p className="text-xs text-ink-secondary">Select investors allowed to receive transfers:</p>
+                <div className="max-h-48 overflow-y-auto border border-edge rounded-lg p-2 space-y-1">
+                  {investors.data && investors.data.length > 0 ? investors.data.map((inv: Investor) => (
+                    <label key={inv.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-subtle cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={whitelistInvestorIds.includes(inv.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setWhitelistInvestorIds([...whitelistInvestorIds, inv.id]);
+                          } else {
+                            setWhitelistInvestorIds(whitelistInvestorIds.filter(id => id !== inv.id));
+                          }
+                        }}
+                        className="rounded border-edge text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="text-sm text-ink">{inv.name}</span>
+                      <span className="text-xs text-ink-tertiary">({inv.jurisdiction})</span>
+                    </label>
+                  )) : (
+                    <p className="text-xs text-ink-tertiary p-2">No investors found.</p>
+                  )}
+                </div>
+                {whitelistInvestorIds.length > 0 && (
+                  <p className="text-xs text-ink-tertiary">{whitelistInvestorIds.length} investor(s) selected</p>
+                )}
               </div>
             )}
           </div>

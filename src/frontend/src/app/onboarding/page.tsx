@@ -52,7 +52,24 @@ export default function OnboardingPage() {
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<OnboardingRecord | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [dragSupported, setDragSupported] = useState(true);
+  const [rejectTarget, setRejectTarget] = useState<{ record: OnboardingRecord; fromDrag?: { targetCol: string } } | null>(null);
+  const [rejectReasons, setRejectReasons] = useState<string[]>([]);
+  const [rejectCustom, setRejectCustom] = useState('');
+  const [eligibilityResult, setEligibilityResult] = useState<{
+    record: OnboardingRecord;
+    eligible: boolean;
+    checks: { rule: string; passed: boolean; message: string }[];
+  } | null>(null);
   const applyFormRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    const supportsDnD =
+      typeof window !== 'undefined' &&
+      typeof window.DragEvent !== 'undefined' &&
+      'draggable' in document.createElement('div');
+    setDragSupported(supportsDnD);
+  }, []);
 
   // All onboarding records aggregated across assets
   const [allRecords, setAllRecords] = useState<OnboardingRecord[]>([]);
@@ -129,6 +146,49 @@ export default function OnboardingPage() {
     ...(investors.data?.map((i) => ({ value: i.id, label: `${i.name} (${i.jurisdiction})` })) ?? []),
   ];
 
+  // ── Standard rejection reason categories ──────────────
+  const REJECTION_REASONS = [
+    'KYC/AML verification failed',
+    'Investor type not eligible for fund',
+    'Jurisdiction not permitted',
+    'Minimum investment threshold not met',
+    'Sanctions or PEP screening flag',
+    'Incomplete documentation',
+    'Suitability assessment not satisfied',
+    'Concentration limit exceeded',
+  ];
+
+  const openRejectModal = (record: OnboardingRecord, fromDrag?: { targetCol: string }) => {
+    setRejectTarget({ record, fromDrag });
+    setRejectReasons([]);
+    setRejectCustom('');
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectTarget) return;
+    const reasons = [...rejectReasons];
+    if (rejectCustom.trim()) reasons.push(rejectCustom.trim());
+    if (reasons.length === 0) {
+      setActionMsg({ type: 'error', text: 'At least one rejection reason is required.' });
+      return;
+    }
+
+    setActionLoading(rejectTarget.record.id + 'reject');
+    setActionMsg(null);
+    try {
+      await api.reviewOnboarding(rejectTarget.record.id, { decision: 'rejected', rejection_reasons: reasons });
+      setActionMsg({ type: 'success', text: 'Application rejected.' });
+      refetchRecords();
+      setSelectedRecord(null);
+    } catch (err) {
+      setActionMsg({ type: 'error', text: (err as ApiError).message || 'Failed to reject' });
+    } finally {
+      setActionLoading(null);
+      setRejectTarget(null);
+      setPendingDrag(null);
+    }
+  };
+
   const handleApply = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError(null);
@@ -162,18 +222,25 @@ export default function OnboardingPage() {
     try {
       if (action === 'check') {
         const result = await api.checkOnboardingEligibility(record.id);
-        setActionMsg({
-          type: result.eligible ? 'success' : 'error',
-          text: result.eligible
-            ? `${investorMap[record.investor_id] || 'Investor'} is eligible. All checks passed.`
-            : `${investorMap[record.investor_id] || 'Investor'} is not eligible. ${result.checks.filter(c => !c.passed).map(c => c.message).join('; ')}`,
-        });
+        if (result.eligible) {
+          setActionMsg({ type: 'success', text: `${investorMap[record.investor_id] || 'Investor'} is eligible. All checks passed.` });
+        } else {
+          // Show results modal instead of silently moving to ineligible
+          setEligibilityResult({
+            record: result.onboarding,
+            eligible: false,
+            checks: result.checks,
+          });
+          setSelectedRecord(null);
+          refetchRecords();
+          return;
+        }
       } else if (action === 'approve') {
         await api.reviewOnboarding(record.id, { decision: 'approved' });
         setActionMsg({ type: 'success', text: 'Application approved.' });
       } else if (action === 'reject') {
-        await api.reviewOnboarding(record.id, { decision: 'rejected', rejection_reasons: ['Manual rejection'] });
-        setActionMsg({ type: 'success', text: 'Application rejected.' });
+        openRejectModal(record);
+        return; // handled by rejection modal
       } else if (action === 'allocate') {
         await api.allocateOnboarding(record.id);
         setActionMsg({ type: 'success', text: 'Units allocated successfully.' });
@@ -202,6 +269,13 @@ export default function OnboardingPage() {
 
   const getRecordColumn = (rec: OnboardingRecord): string => {
     return COLUMNS.find(c => c.statuses.includes(rec.status))?.key || 'applied';
+  };
+
+  const getQuickActions = (rec: OnboardingRecord): Array<'check' | 'approve' | 'reject' | 'allocate'> => {
+    if (rec.status === 'applied') return ['check', 'reject'];
+    if (rec.status === 'eligible') return ['approve', 'reject'];
+    if (rec.status === 'approved') return ['allocate'];
+    return [];
   };
 
   const isValidDrop = (recordId: string, targetCol: string): boolean => {
@@ -263,7 +337,13 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Show confirmation modal with compliance guardrails
+    // Rejections go through the rejection reasons modal
+    if (action === 'reject') {
+      openRejectModal(rec, { targetCol });
+      return;
+    }
+
+    // Other actions show the compliance guardrails confirmation
     setPendingDrag({ record: rec, action, targetCol });
   };
 
@@ -294,6 +374,14 @@ export default function OnboardingPage() {
       {dragError && (
         <div className="mb-4">
           <Alert variant="error">{dragError}</Alert>
+        </div>
+      )}
+
+      {!dragSupported && (
+        <div className="mb-4">
+          <Alert variant="info">
+            Drag and drop is unavailable in this browser. Use the action buttons on each card to advance onboarding.
+          </Alert>
         </div>
       )}
 
@@ -367,16 +455,26 @@ export default function OnboardingPage() {
 
             <div className="flex justify-end gap-2 pt-2 border-t border-edge-subtle">
               {selectedRecord.status === 'applied' && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={actionLoading === selectedRecord.id + 'check'}
-                  onClick={() => handleAction('check', selectedRecord)}
-                >
-                  {actionLoading === selectedRecord.id + 'check' ? 'Checking...' : 'Check Eligibility'}
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    disabled={!!actionLoading}
+                    onClick={() => handleAction('reject', selectedRecord)}
+                  >
+                    Reject
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={actionLoading === selectedRecord.id + 'check'}
+                    onClick={() => handleAction('check', selectedRecord)}
+                  >
+                    {actionLoading === selectedRecord.id + 'check' ? 'Checking...' : 'Check Eligibility'}
+                  </Button>
+                </>
               )}
-              {(selectedRecord.status === 'eligible' || selectedRecord.status === 'applied') && (
+              {selectedRecord.status === 'eligible' && (
                 <>
                   <Button
                     size="sm"
@@ -498,6 +596,145 @@ export default function OnboardingPage() {
         })()}
       </Modal>
 
+      {/* Eligibility Check Results Modal */}
+      <Modal
+        open={!!eligibilityResult}
+        onClose={() => { setEligibilityResult(null); refetchRecords(); }}
+        title="Eligibility Check Results"
+      >
+        {eligibilityResult && (
+          <div className="space-y-4">
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                <p className="text-sm font-semibold text-red-800">Investor does not meet eligibility requirements</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wider text-ink-tertiary">Check Results</p>
+              {eligibilityResult.checks.map((check, i) => (
+                <div key={i} className={classNames(
+                  'flex items-start gap-2 rounded-lg px-3 py-2',
+                  check.passed ? 'bg-brand-50 border border-brand-200' : 'bg-red-50 border border-red-200'
+                )}>
+                  {check.passed ? (
+                    <svg className="h-4 w-4 mt-0.5 text-brand-600 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                  ) : (
+                    <svg className="h-4 w-4 mt-0.5 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                  <div>
+                    <p className={classNames('text-sm font-medium', check.passed ? 'text-brand-800' : 'text-red-800')}>
+                      {check.rule.replace(/_/g, ' ')}
+                    </p>
+                    <p className={classNames('text-xs', check.passed ? 'text-brand-700' : 'text-red-700')}>
+                      {check.message}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-edge-subtle">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => { setEligibilityResult(null); refetchRecords(); }}
+              >
+                Close
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => {
+                  const record = eligibilityResult.record;
+                  setEligibilityResult(null);
+                  openRejectModal(record);
+                }}
+              >
+                Reject with Reasons
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Rejection Reasons Modal */}
+      <Modal
+        open={!!rejectTarget}
+        onClose={() => setRejectTarget(null)}
+        title="Reject Application"
+      >
+        {rejectTarget && (
+          <div className="space-y-4">
+            <div className="rounded-lg bg-surface-subtle p-3">
+              <p className="text-sm text-ink">
+                Rejecting <span className="font-semibold">{investorMap[rejectTarget.record.investor_id] || rejectTarget.record.investor_id.slice(0, 8)}</span>
+              </p>
+              <p className="mt-0.5 text-xs text-ink-secondary">
+                Asset: {assetMap[rejectTarget.record.asset_id] || rejectTarget.record.asset_id.slice(0, 8)} &middot; {formatNumber(rejectTarget.record.requested_units)} units
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Reason(s) for rejection</p>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {REJECTION_REASONS.map((reason) => (
+                  <label key={reason} className="flex items-start gap-2 cursor-pointer rounded-md px-3 py-2 hover:bg-surface-subtle transition-colors">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 rounded border-edge text-brand-600 focus:ring-brand-500"
+                      checked={rejectReasons.includes(reason)}
+                      onChange={(e) => {
+                        setRejectReasons(prev =>
+                          e.target.checked ? [...prev, reason] : prev.filter(r => r !== reason)
+                        );
+                      }}
+                    />
+                    <span className="text-sm text-ink">{reason}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">
+                Additional details (optional)
+              </label>
+              <textarea
+                className="w-full rounded-lg border border-edge px-3 py-2 text-sm text-ink placeholder:text-ink-tertiary focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                rows={3}
+                placeholder="Provide additional context for the audit trail..."
+                value={rejectCustom}
+                onChange={(e) => setRejectCustom(e.target.value)}
+              />
+            </div>
+
+            {rejectReasons.length === 0 && !rejectCustom.trim() && (
+              <p className="text-xs text-amber-600">Select at least one reason or provide details to proceed.</p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-edge-subtle">
+              <Button variant="secondary" size="sm" onClick={() => setRejectTarget(null)}>Cancel</Button>
+              <Button
+                size="sm"
+                variant="danger"
+                disabled={!!actionLoading || (rejectReasons.length === 0 && !rejectCustom.trim())}
+                onClick={handleRejectSubmit}
+              >
+                {actionLoading ? 'Rejecting...' : 'Confirm Rejection'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {loading ? (
         <LoadingSpinner />
       ) : recordsError ? (
@@ -524,11 +761,11 @@ export default function OnboardingPage() {
                 key={col.key}
                 className={classNames(
                   'flex flex-col rounded-lg transition-colors',
-                  dropTarget === col.key && 'ring-2 ring-brand-500 bg-brand-50/30',
+                  dragSupported && dropTarget === col.key && 'ring-2 ring-brand-500 bg-brand-50/30',
                 )}
-                onDragOver={(e) => handleDragOver(e, col.key)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, col.key)}
+                onDragOver={dragSupported ? (e) => handleDragOver(e, col.key) : undefined}
+                onDragLeave={dragSupported ? handleDragLeave : undefined}
+                onDrop={dragSupported ? (e) => handleDrop(e, col.key) : undefined}
               >
                 {/* Column Header */}
                 <div className={classNames('mb-3 flex items-center justify-between rounded-lg border border-edge border-t-[3px] bg-white px-3 py-2', col.color)}>
@@ -553,12 +790,13 @@ export default function OnboardingPage() {
                   {columnRecords[col.key].map((rec) => (
                     <div
                       key={rec.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, rec.id)}
-                      onDragEnd={handleDragEnd}
+                      draggable={dragSupported}
+                      onDragStart={dragSupported ? (e) => handleDragStart(e, rec.id) : undefined}
+                      onDragEnd={dragSupported ? handleDragEnd : undefined}
                       onClick={() => setSelectedRecord(rec)}
                       className={classNames(
-                        'w-full rounded-lg border border-edge bg-white p-3 text-left shadow-sm transition-all hover:shadow-md hover:border-navy-300 cursor-grab active:cursor-grabbing',
+                        'w-full rounded-lg border border-edge bg-white p-3 text-left shadow-sm transition-all hover:shadow-md hover:border-navy-300 cursor-pointer',
+                        dragSupported && 'cursor-grab active:cursor-grabbing',
                         draggedId === rec.id && 'opacity-40 scale-95',
                       )}
                     >
@@ -583,6 +821,25 @@ export default function OnboardingPage() {
                         <p className="mt-1.5 truncate rounded bg-red-50 px-1.5 py-0.5 text-[10px] text-red-600">
                           {rec.rejection_reasons[0]}
                         </p>
+                      )}
+
+                      {getQuickActions(rec).length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5 border-t border-edge-subtle pt-2">
+                          {getQuickActions(rec).map((action) => (
+                            <Button
+                              key={action}
+                              size="sm"
+                              variant={action === 'reject' ? 'danger' : action === 'check' ? 'secondary' : 'primary'}
+                              disabled={!!actionLoading}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleAction(action, rec);
+                              }}
+                            >
+                              {action === 'check' ? 'Check' : action === 'approve' ? 'Approve' : action === 'allocate' ? 'Allocate' : 'Reject'}
+                            </Button>
+                          ))}
+                        </div>
                       )}
                     </div>
                   ))}

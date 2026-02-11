@@ -382,6 +382,8 @@ export interface DecisionRecord {
     violation_count: number;
   };
   decided_by: string | null;
+  decided_by_name?: string | null;
+  decided_by_email?: string | null;
   decided_at: string;
   created_at: string;
 }

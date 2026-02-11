@@ -86,6 +86,14 @@ router.get('/compliance/:fundStructureId/pdf', async (req: Request, res: Respons
 
     // Title
     let y = 100;
+    const TOP_Y = 50;
+    const BOTTOM_Y = 760;
+    const ensureSpace = (neededHeight: number): void => {
+      if (y + neededHeight > BOTTOM_Y) {
+        doc.addPage();
+        y = TOP_Y;
+      }
+    };
     doc.fontSize(18).fillColor(C.ink).text(report.fund.name, L, y);
     y += 26;
     doc.fontSize(9).fillColor(C.inkSec).text(
@@ -113,29 +121,42 @@ router.get('/compliance/:fundStructureId/pdf', async (req: Request, res: Respons
     // Risk Flags
     if (report.risk_flags.length > 0) {
       y += 30;
+      ensureSpace(32);
       doc.fontSize(11).fillColor(C.ink).text('Risk Flags', L, y);
       y += 18;
       for (const flag of report.risk_flags) {
-        if (y > 750) { doc.addPage(); y = 50; }
+        const flagText = `[${flag.severity.toUpperCase()}] ${flag.message}`;
+        const lineHeight = doc.heightOfString(flagText, { width: 470 });
+        ensureSpace(lineHeight + 8);
         const color = flag.severity === 'high' ? C.red : flag.severity === 'medium' ? C.amber : C.brand500;
         doc.circle(58, y + 4, 3).fill(color);
-        doc.fontSize(8).fillColor(C.ink).text(`[${flag.severity.toUpperCase()}] ${flag.message}`, 68, y, { width: 470 });
-        y += 18;
+        doc.fontSize(8).fillColor(C.ink).text(flagText, 68, y, { width: 470 });
+        y += lineHeight + 6;
       }
     }
 
     // Assets Table
+    const drawAssetTableHeader = (): void => {
+      ensureSpace(28);
+      doc.fontSize(7).fillColor(C.inkTert);
+      doc.text('Asset', L, y);
+      doc.text('Type', 220, y);
+      doc.text('Total', 300, y);
+      doc.text('Allocated', 380, y);
+      doc.text('Util %', 460, y);
+      y += 12;
+      doc.moveTo(L, y).lineTo(L + W, y).strokeColor(C.edge).lineWidth(0.5).stroke();
+      y += 8;
+    };
+
     y += 20;
-    if (y > 650) { doc.addPage(); y = 50; }
+    ensureSpace(40);
     doc.fontSize(11).fillColor(C.ink).text('Asset Breakdown', L, y);
     y += 18;
-    doc.fontSize(7).fillColor(C.inkTert);
-    doc.text('Asset', L, y); doc.text('Type', 220, y); doc.text('Total', 300, y); doc.text('Allocated', 380, y); doc.text('Util %', 460, y);
-    y += 12;
-    doc.moveTo(L, y).lineTo(L + W, y).strokeColor(C.edge).lineWidth(0.5).stroke();
-    y += 8;
+    drawAssetTableHeader();
     for (const asset of report.fund.assets) {
-      if (y > 750) { doc.addPage(); y = 50; }
+      ensureSpace(20);
+      if (y === TOP_Y) drawAssetTableHeader();
       const utilPct = asset.total_units > 0 ? ((asset.allocated_units / asset.total_units) * 100).toFixed(1) : '0.0';
       doc.fontSize(8).fillColor(C.ink);
       doc.text(asset.name, L, y, { width: 165 }); doc.text(asset.asset_type, 220, y);
@@ -145,18 +166,28 @@ router.get('/compliance/:fundStructureId/pdf', async (req: Request, res: Respons
     }
 
     // Eligibility Criteria
-    if (report.eligibility_criteria.length > 0) {
-      y += 20;
-      if (y > 650) { doc.addPage(); y = 50; }
-      doc.fontSize(11).fillColor(C.ink).text('Eligibility Criteria', L, y);
-      y += 18;
+    const drawEligibilityTableHeader = (): void => {
+      ensureSpace(28);
       doc.fontSize(7).fillColor(C.inkTert);
-      doc.text('Type', L, y); doc.text('Jurisdiction', 140, y); doc.text('Min (EUR)', 230, y); doc.text('Suitability', 320, y); doc.text('Source', 400, y);
+      doc.text('Type', L, y);
+      doc.text('Jurisdiction', 140, y);
+      doc.text('Min (EUR)', 230, y);
+      doc.text('Suitability', 320, y);
+      doc.text('Source', 400, y);
       y += 12;
       doc.moveTo(L, y).lineTo(L + W, y).strokeColor(C.edge).lineWidth(0.5).stroke();
       y += 8;
+    };
+
+    if (report.eligibility_criteria.length > 0) {
+      y += 20;
+      ensureSpace(40);
+      doc.fontSize(11).fillColor(C.ink).text('Eligibility Criteria', L, y);
+      y += 18;
+      drawEligibilityTableHeader();
       for (const c of report.eligibility_criteria) {
-        if (y > 750) { doc.addPage(); y = 50; }
+        ensureSpace(20);
+        if (y === TOP_Y) drawEligibilityTableHeader();
         doc.fontSize(8).fillColor(C.ink);
         doc.text(c.investor_type.replace('_', ' '), L, y, { width: 85 });
         doc.text(c.jurisdiction === '*' ? 'All' : c.jurisdiction, 140, y);
@@ -168,29 +199,47 @@ router.get('/compliance/:fundStructureId/pdf', async (req: Request, res: Respons
     }
 
     // Investor Breakdown
+    const writeInvestorSection = (heading: string, rows: string[]): void => {
+      if (rows.length === 0) return;
+      ensureSpace(20);
+      doc.fontSize(8).fillColor(C.inkTert).text(heading, L, y);
+      y += 14;
+
+      for (const row of rows) {
+        const lineHeight = doc.heightOfString(row, { width: W - 10 });
+        if (y + lineHeight + 4 > BOTTOM_Y) {
+          doc.addPage();
+          y = TOP_Y;
+          doc.fontSize(8).fillColor(C.inkTert).text(`${heading} (cont.)`, L, y);
+          y += 14;
+        }
+        doc.fontSize(8).fillColor(C.ink).text(row, L + 10, y, { width: W - 10 });
+        y += lineHeight + 4;
+      }
+    };
+
     y += 20;
-    if (y > 600) { doc.addPage(); y = 50; }
+    ensureSpace(36);
     doc.fontSize(11).fillColor(C.ink).text('Investor Breakdown', L, y);
     y += 18;
-    if (report.investor_breakdown.by_type.length > 0) {
-      doc.fontSize(8).fillColor(C.inkTert).text('By Type:', L, y);
-      y += 14;
-      for (const t of report.investor_breakdown.by_type) {
-        doc.fontSize(8).fillColor(C.ink).text(`${t.type.replace('_', ' ')} — ${t.count} investor(s), ${t.total_units.toLocaleString()} units`, L + 10, y);
-        y += 14;
-      }
-    }
-    if (report.investor_breakdown.by_jurisdiction.length > 0) {
+
+    writeInvestorSection(
+      'By Type:',
+      report.investor_breakdown.by_type.map(
+        (t) => `${t.type.replace('_', ' ')} - ${t.count} investor(s), ${t.total_units.toLocaleString()} units`
+      )
+    );
+
+    if (report.investor_breakdown.by_type.length > 0 && report.investor_breakdown.by_jurisdiction.length > 0) {
       y += 6;
-      doc.fontSize(8).fillColor(C.inkTert).text('By Jurisdiction:', L, y);
-      y += 14;
-      for (const j of report.investor_breakdown.by_jurisdiction) {
-        if (y > 750) { doc.addPage(); y = 50; }
-        doc.fontSize(8).fillColor(C.ink).text(`${j.jurisdiction} — ${j.count} investor(s), ${j.total_units.toLocaleString()} units`, L + 10, y);
-        y += 14;
-      }
     }
 
+    writeInvestorSection(
+      'By Jurisdiction:',
+      report.investor_breakdown.by_jurisdiction.map(
+        (j) => `${j.jurisdiction} - ${j.count} investor(s), ${j.total_units.toLocaleString()} units`
+      )
+    );
     // Disclaimer
     y += 20;
     if (y < 720) {
@@ -227,3 +276,4 @@ router.get('/compliance/:fundStructureId/pdf', async (req: Request, res: Respons
 });
 
 export default router;
+

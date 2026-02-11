@@ -93,17 +93,17 @@ async function seed() {
   // 0. Admin User
   // =========================================================================
   console.log('[Users]');
-  const existingUser = await query('SELECT 1 FROM users WHERE email = $1', ['admin@caelith.dev']);
+  const existingUser = await query('SELECT 1 FROM users WHERE email = $1', ['admin@caelith.com']);
   if (existingUser.length > 0) {
-    console.log('  → admin@caelith.dev already exists');
+    console.log('  → admin@caelith.com already exists');
   } else {
     const passwordHash = await bcrypt.hash('admin1234', 10);
     await execute(
       `INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
        VALUES (gen_random_uuid(), $1, $2, $3, $4, true, now(), now())`,
-      ['admin@caelith.dev', passwordHash, 'System Admin', 'admin']
+      ['admin@caelith.com', passwordHash, 'System Admin', 'admin']
     );
-    console.log('  ✓ Created admin@caelith.dev (password: admin1234)');
+    console.log('  ✓ Created admin@caelith.com (password: admin1234)');
   }
 
   // =========================================================================

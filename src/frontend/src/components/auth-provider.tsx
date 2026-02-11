@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { api } from '../lib/api';
 import type { User } from '../lib/types';
 
@@ -9,6 +9,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     // Restore token on mount
@@ -44,10 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Not logged in and not on login page
-  if (!user && typeof window !== 'undefined' && window.location.pathname !== '/login') {
+  // Not logged in and not on login page — redirect to login
+  if (!user && pathname !== '/login') {
     router.push('/login');
-    return null;
+    return (
+      <div className="flex h-screen items-center justify-center bg-surface-muted">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-edge border-t-brand-500" />
+      </div>
+    );
   }
 
   return <>{children}</>;

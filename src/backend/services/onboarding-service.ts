@@ -305,8 +305,13 @@ export async function checkEligibility(
 // ── Step 3: Approve / Reject ────────────────────────────────
 
 /**
- * Compliance officer approves or rejects an eligible application.
- * Only works on 'eligible' status. Creates a decision record.
+ * Compliance officer approves or rejects an application.
+ *
+ * - Approval requires status 'eligible' (automated checks must pass first).
+ * - Rejection is allowed from 'applied' or 'eligible' so officers can
+ *   fast-track obvious disqualifiers without running automated checks.
+ *
+ * Creates a decision record for the audit trail.
  */
 export async function reviewApplication(
   onboardingId: string,
@@ -320,8 +325,13 @@ export async function reviewApplication(
       return { success: false, error: `Onboarding record not found: ${onboardingId}` };
     }
 
-    if (onboarding.status !== 'eligible') {
-      return { success: false, error: `Cannot review: status is '${onboarding.status}', expected 'eligible'` };
+    const allowedStatuses = decision === 'rejected'
+      ? ['eligible', 'applied']
+      : ['eligible'];
+
+    if (!allowedStatuses.includes(onboarding.status)) {
+      const expected = allowedStatuses.join("' or '");
+      return { success: false, error: `Cannot ${decision === 'rejected' ? 'reject' : 'approve'}: status is '${onboarding.status}', expected '${expected}'` };
     }
 
     if (decision === 'rejected' && (!rejectionReasons || rejectionReasons.length === 0)) {

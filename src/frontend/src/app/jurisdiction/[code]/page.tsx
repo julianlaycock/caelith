@@ -184,13 +184,24 @@ function BookIcon() {
 export default function JurisdictionPage() {
   const params = useParams();
   const router = useRouter();
-  const code = (params.code as string).toUpperCase();
+  const rawCode = typeof params.code === 'string' ? params.code : '';
+  const code = rawCode.toUpperCase();
+  const isValidCode = /^[A-Z]{2}$/.test(code);
+  const info = isValidCode ? JURISDICTION_INFO[code] ?? null : null;
+  const isSupportedJurisdiction = !!info;
 
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isSupportedJurisdiction) {
+      setInvestors([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -216,13 +227,36 @@ export default function JurisdictionPage() {
     return () => {
       cancelled = true;
     };
-  }, [code]);
+  }, [code, isSupportedJurisdiction]);
 
-  const info = JURISDICTION_INFO[code] ?? null;
   const countryName = info?.name ?? 'Unknown Jurisdiction';
   const regulator = info?.regulator ?? null;
   const framework = info?.framework ?? null;
   const legislation = info?.key_legislation ?? [];
+
+  if (!isSupportedJurisdiction) {
+    return (
+      <div>
+        <PageHeader
+          title="404 - Jurisdiction Not Found"
+          description={`No page is available for jurisdiction code "${code || rawCode || 'unknown'}"`}
+          action={
+            <Button variant="secondary" size="sm" onClick={() => router.push('/')}>
+              Back to Dashboard
+            </Button>
+          }
+        />
+        <Card>
+          <div className="py-8 text-center">
+            <p className="text-sm font-medium text-ink">Unsupported jurisdiction code</p>
+            <p className="mt-1 text-sm text-ink-secondary">
+              Use a supported ISO-2 jurisdiction from the dashboard exposure chart.
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -256,8 +290,7 @@ export default function JurisdictionPage() {
       />
 
       {/* ── Regulatory Context Card ────────────────── */}
-      {info ? (
-        <Card className="mb-6">
+      <Card className="mb-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-ink">Regulatory Context</h2>
             <span className="inline-flex items-center gap-1.5 rounded-md bg-[#000042] px-2.5 py-1 text-xs font-medium text-white">
@@ -303,20 +336,7 @@ export default function JurisdictionPage() {
               </ul>
             </div>
           )}
-        </Card>
-      ) : (
-        <Card className="mb-6">
-          <div className="py-4 text-center">
-            <p className="text-sm font-medium text-ink">
-              No regulatory data available for jurisdiction code{' '}
-              <span className="font-mono font-semibold">{code}</span>.
-            </p>
-            <p className="mt-1 text-sm text-ink-secondary">
-              This jurisdiction is not yet covered in the reference database.
-            </p>
-          </div>
-        </Card>
-      )}
+      </Card>
 
       {/* ── Investors Card ─────────────────────────── */}
       {loading ? (
@@ -433,3 +453,4 @@ export default function JurisdictionPage() {
     </div>
   );
 }
+

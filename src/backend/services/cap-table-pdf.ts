@@ -100,6 +100,15 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
   const holders = Number(utilRows[0]?.holders || 0);
   const utilPct = asset.total_units > 0 ? ((allocated / asset.total_units) * 100) : 0;
 
+  // Pre-fetch KYC stats for enhanced sections (must be outside Promise callback)
+  const kycStats = await query<{ status: string; count: string }>(
+    `SELECT COALESCE(i.kyc_status, 'unknown') as status, COUNT(DISTINCT i.id) as count
+     FROM holdings h JOIN investors i ON h.investor_id = i.id
+     WHERE h.asset_id = $1 AND h.units > 0
+     GROUP BY i.kyc_status ORDER BY count DESC`,
+    [assetId]
+  );
+
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     const doc = new PDFDocument({
@@ -303,6 +312,87 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
     doc.text(fmtNum(asset.total_units), cols.units.x, y, { width: cols.units.w - 8, align: 'right' });
     doc.text('100.00%', cols.pct.x, y, { width: cols.pct.w - 8, align: 'right' });
     doc.font('Helvetica');
+
+    // ─── Investor Type Breakdown ──────────────────────────
+    y += 32;
+    if (y > doc.page.height - 200) {
+      addFooter(doc, L, W, now, reportId);
+      doc.addPage();
+      y = 60;
+    }
+
+    const typeMap = new Map<string, { count: number; units: number }>();
+    for (const entry of capTable) {
+      // We don't have investor_type in cap table query, aggregate by jurisdiction instead
+      const key = entry.jurisdiction || 'Unknown';
+      const prev = typeMap.get(key) || { count: 0, units: 0 };
+      typeMap.set(key, { count: prev.count + 1, units: prev.units + entry.units });
+    }
+
+    doc.fontSize(11).fillColor(C.ink)
+      .text('Jurisdiction Exposure', L, y);
+    y += 20;
+
+    // Mini table header
+    doc.save();
+    doc.rect(L, y - 3, W, 16).fill(C.surface);
+    doc.restore();
+
+    doc.fontSize(6.5).fillColor(C.inkTert);
+    doc.text('JURISDICTION', L + 8, y, { characterSpacing: 0.5 });
+    doc.text('INVESTORS', L + W * 0.4, y, { characterSpacing: 0.5 });
+    doc.text('UNITS', L + W * 0.55, y, { width: W * 0.2, align: 'right', characterSpacing: 0.5 });
+    doc.text('SHARE', L + W * 0.75, y, { width: W * 0.15, align: 'right', characterSpacing: 0.5 });
+    y += 18;
+
+    for (const [jurisdiction, data] of typeMap) {
+      if (y > doc.page.height - 100) {
+        addFooter(doc, L, W, now, reportId);
+        doc.addPage();
+        y = 60;
+      }
+      const pct = asset.total_units > 0 ? ((data.units / asset.total_units) * 100).toFixed(1) : '0';
+      doc.fontSize(8).fillColor(C.ink).text(jurisdiction, L + 8, y);
+      doc.fillColor(C.inkSec).text(String(data.count), L + W * 0.4, y);
+      doc.text(fmtNum(data.units), L + W * 0.55, y, { width: W * 0.2, align: 'right' });
+      doc.text(`${pct}%`, L + W * 0.75, y, { width: W * 0.15, align: 'right' });
+      y += 16;
+    }
+
+    // ─── KYC Overview ─────────────────────────────────────
+    y += 16;
+    if (y > doc.page.height - 160) {
+      addFooter(doc, L, W, now, reportId);
+      doc.addPage();
+      y = 60;
+    }
+
+    doc.fontSize(11).fillColor(C.ink)
+      .text('KYC Status Overview', L, y);
+    y += 20;
+
+    const kycTotal = kycStats.reduce((s, r) => s + Number(r.count), 0);
+    for (const row of kycStats) {
+      if (y > doc.page.height - 100) {
+        addFooter(doc, L, W, now, reportId);
+        doc.addPage();
+        y = 60;
+      }
+      const cnt = Number(row.count);
+      const pct = kycTotal > 0 ? ((cnt / kycTotal) * 100).toFixed(1) : '0';
+      const statusColor = row.status === 'verified' ? C.brand600 : row.status === 'expired' ? C.red : C.inkTert;
+
+      doc.save();
+      doc.rect(L, y - 2, W, 18).fill(C.surfMuted);
+      doc.rect(L, y - 2, 3, 18).fill(statusColor);
+      doc.restore();
+
+      doc.fontSize(8.5).fillColor(C.ink)
+        .text(row.status.charAt(0).toUpperCase() + row.status.slice(1), L + 12, y);
+      doc.fillColor(C.inkSec)
+        .text(`${cnt} investor${cnt !== 1 ? 's' : ''} (${pct}%)`, L + W * 0.4, y);
+      y += 22;
+    }
 
     // ─── Disclaimer Box ──────────────────────────────────
     y += 40;
