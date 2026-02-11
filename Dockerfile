@@ -10,6 +10,7 @@ COPY src/backend ./src/backend
 COPY src/rules-engine ./src/rules-engine
 COPY migrations ./migrations
 COPY scripts ./scripts
+COPY openapi.yml ./
 
 EXPOSE 3001
 
