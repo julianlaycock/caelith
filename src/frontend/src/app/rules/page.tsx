@@ -51,6 +51,7 @@ export default function RulesPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [compositeFormError, setCompositeFormError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [qualRequired, setQualRequired] = useState(false);
   const [lockupDays, setLockupDays] = useState('0');

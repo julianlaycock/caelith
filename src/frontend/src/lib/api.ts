@@ -34,6 +34,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 class ApiClient {
   private token: string | null = null;
+  private static readonly DEFAULT_TIMEOUT_MS = 30_000;
 
   setToken(token: string | null): void {
     this.token = token;
@@ -73,28 +74,42 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ApiClient.DEFAULT_TIMEOUT_MS);
+
     const config: RequestInit = {
       ...options,
       headers,
+      signal: options.signal || controller.signal,
     };
 
-    const response = await fetch(url, config);
+    try {
+      const response = await fetch(url, config);
 
-    if (response.status === 401) {
-      this.token = null;
-      window.dispatchEvent(new CustomEvent('auth:expired'));
-      throw { error: 'UNAUTHORIZED', message: 'Session expired' } as ApiError;
+      clearTimeout(timeoutId);
+
+      if (response.status === 401) {
+        this.token = null;
+        window.dispatchEvent(new CustomEvent('auth:expired'));
+        throw { error: 'UNAUTHORIZED', message: 'Session expired' } as ApiError;
+      }
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({
+          error: 'UNKNOWN_ERROR',
+          message: `HTTP ${response.status}: ${response.statusText}`,
+        }));
+        throw errorBody as ApiError;
+      }
+
+      return response.json() as Promise<T>;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        throw { error: 'TIMEOUT', message: 'Request timed out' } as ApiError;
+      }
+      throw err;
     }
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({
-        error: 'UNKNOWN_ERROR',
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw errorBody as ApiError;
-    }
-
-    return response.json() as Promise<T>;
   }
 
   // ── Auth ──────────────────────────────────────────────────

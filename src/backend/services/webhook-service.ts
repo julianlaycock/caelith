@@ -33,6 +33,18 @@ export interface WebhookDelivery {
 }
 
 /**
+ * Validate webhook URL format
+ */
+function isValidWebhookUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Register a new webhook
  */
 export async function createWebhook(
@@ -40,6 +52,9 @@ export async function createWebhook(
   eventTypes: string[],
   userId?: string
 ): Promise<Webhook> {
+  if (!isValidWebhookUrl(url)) {
+    throw new Error('Invalid webhook URL: must be a valid HTTP or HTTPS URL');
+  }
   const id = randomUUID();
   const secret = randomUUID().replace(/-/g, '');
   const now = new Date().toISOString();
@@ -80,6 +95,9 @@ export async function updateWebhook(
   const params: (string | number | boolean | null)[] = [];
 
   if (updates.url !== undefined) {
+    if (!isValidWebhookUrl(updates.url)) {
+      throw new Error('Invalid webhook URL: must be a valid HTTP or HTTPS URL');
+    }
     sets.push('url = ?');
     params.push(updates.url);
   }
@@ -142,8 +160,22 @@ export async function dispatchEvent(
   );
 
   for (const webhook of webhooks) {
-    // Check if webhook subscribes to this event type
-    const types = webhook.event_types;
+    // Check if webhook subscribes to this event type (safely parse)
+    let types: string[];
+    if (typeof webhook.event_types === 'string') {
+      try {
+        types = JSON.parse(webhook.event_types);
+      } catch {
+        console.error('[webhook] Invalid event_types for webhook', webhook.id);
+        continue;
+      }
+    } else {
+      types = webhook.event_types;
+    }
+    if (!Array.isArray(types)) {
+      console.error('[webhook] event_types is not an array for webhook', webhook.id);
+      continue;
+    }
     if (!types.includes('*') && !types.includes(eventType)) {
       continue;
     }
@@ -161,8 +193,8 @@ export async function dispatchEvent(
     );
 
     // Fire-and-forget delivery attempt
-    deliverWebhook(deliveryId, webhook.url, body, signature).catch(() => {
-      // Silently catch — delivery status tracked in DB
+    deliverWebhook(deliveryId, webhook.url, body, signature).catch((err) => {
+      console.error('[webhook] Delivery failed for', deliveryId, ':', err instanceof Error ? err.message : err);
     });
   }
 }

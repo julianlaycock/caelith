@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
 
 const REMEMBER_KEY = 'caelith_remember';
@@ -13,15 +14,15 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   // Restore remembered credentials on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(REMEMBER_KEY);
       if (saved) {
-        const { email: savedEmail, password: savedPassword } = JSON.parse(saved);
+        const { email: savedEmail } = JSON.parse(saved);
         if (savedEmail) setEmail(savedEmail);
-        if (savedPassword) setPassword(savedPassword);
         setRememberMe(true);
       }
     } catch {
@@ -43,13 +44,13 @@ export default function LoginPage() {
       }
       // Save or clear remembered credentials
       if (rememberMe) {
-        localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email, password }));
+        localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email }));
       } else {
         localStorage.removeItem(REMEMBER_KEY);
       }
       localStorage.setItem('caelith_token', result.token);
       localStorage.setItem('caelith_user', JSON.stringify(result.user));
-      window.location.href = '/';
+      router.push('/');
     } catch (err) {
       setError((err as { message?: string }).message || 'Authentication failed');
     } finally {
