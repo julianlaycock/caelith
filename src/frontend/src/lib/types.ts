@@ -371,7 +371,10 @@ export interface DecisionRecord {
   id: string;
   decision_type: string;
   asset_id: string;
+  asset_name?: string;
   subject_id: string | null;
+  input_snapshot?: Record<string, unknown>;
+  rule_version_snapshot?: Record<string, unknown>;
   result: string;
   result_details: {
     checks: { rule: string; passed: boolean; message: string }[];

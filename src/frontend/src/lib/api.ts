@@ -370,6 +370,16 @@ class ApiClient {
 
   // ── Decision Records ───────────────────────────────────
 
+  async getDecisions(params?: { decision_type?: string; result?: string; limit?: number; offset?: number }): Promise<{ decisions: DecisionRecord[]; total: number; limit: number; offset: number }> {
+    const searchParams = new URLSearchParams();
+    if (params?.decision_type) searchParams.set('decision_type', params.decision_type);
+    if (params?.result) searchParams.set('result', params.result);
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.offset) searchParams.set('offset', String(params.offset));
+    const query = searchParams.toString();
+    return this.request<{ decisions: DecisionRecord[]; total: number; limit: number; offset: number }>(`/decisions${query ? `?${query}` : ''}`);
+  }
+
   async getDecisionsByAsset(assetId: string): Promise<DecisionRecord[]> {
     return this.request<DecisionRecord[]>(`/decisions/asset/${assetId}`);
   }

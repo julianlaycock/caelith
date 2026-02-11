@@ -13,7 +13,7 @@ import {
   ConcentrationRiskGrid,
 } from '../components/charts';
 import { formatNumber, formatDateTime, classNames } from '../lib/utils';
-import type { FundStructure, ComplianceReport, CapTableEntry } from '../lib/types';
+import type { FundStructure, ComplianceReport, CapTableEntry, DecisionRecord } from '../lib/types';
 
 interface FundReportPair {
   fund: FundStructure;
@@ -181,6 +181,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedRisk, setSelectedRisk] = useState<RiskFlag | null>(null);
   const [violationAsset, setViolationAsset] = useState<string | null>(null);
+  const [violationDecisions, setViolationDecisions] = useState<DecisionRecord[]>([]);
+  const [violationLoading, setViolationLoading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -229,6 +231,21 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Fetch full decision records when violation modal opens
+  useEffect(() => {
+    if (!violationAsset) {
+      setViolationDecisions([]);
+      return;
+    }
+    const assetId = Object.entries(assetNameMap).find(([, name]) => name === violationAsset)?.[0];
+    if (!assetId) return;
+    setViolationLoading(true);
+    api.getDecisionsByAsset(assetId)
+      .then((decisions) => setViolationDecisions(decisions.filter((d) => d.result_details?.violation_count > 0)))
+      .catch(() => setViolationDecisions([]))
+      .finally(() => setViolationLoading(false));
+  }, [violationAsset]);
 
   // Aggregate metrics
   const totalFunds = fundReports.length;
@@ -349,7 +366,7 @@ export default function DashboardPage() {
           <SectionHeader title="Analytics" description="Portfolio composition and compliance metrics" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <InvestorTypeDonut data={typeData} onTypeClick={(type) => router.push(`/investors?type=${type}`)} />
-            <JurisdictionExposureBar data={jurisdictionData} />
+            <JurisdictionExposureBar data={jurisdictionData} onBarClick={(j) => router.push(`/jurisdiction/${j}`)} />
             <KycExpiryHorizon data={kycData} onStatusClick={(status) => router.push(`/investors?kyc=${status}`)} />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -617,24 +634,83 @@ export default function DashboardPage() {
       {/* Violation Detail Modal */}
       <Modal open={!!violationAsset} onClose={() => setViolationAsset(null)} title={`Violations — ${violationAsset || ''}`}>
         {violationAsset && (() => {
-          const assetId = Object.entries(assetNameMap).find(([, name]) => name === violationAsset)?.[0];
-          const decisions = allDecisions.filter(
-            (d) => d.asset_id === assetId && d.violation_count > 0
-          );
-          return decisions.length > 0 ? (
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-              {decisions.map((d) => (
-                <div key={d.id} className="rounded-lg border border-edge-subtle p-3">
-                  <div className="flex items-center justify-between mb-1">
+          // Get matching eligibility criteria for source references
+          const eligCriteria = reports.flatMap((r) => r.eligibility_criteria);
+
+          if (violationLoading) {
+            return (
+              <div className="flex items-center justify-center py-8">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
+                <span className="ml-2 text-sm text-ink-secondary">Loading decisions…</span>
+              </div>
+            );
+          }
+
+          return violationDecisions.length > 0 ? (
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+              {violationDecisions.map((d) => (
+                <div key={d.id} className="rounded-lg border border-edge-subtle p-4">
+                  <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-ink">{d.decision_type.replace(/_/g, ' ')}</span>
                     <Badge variant={d.result === 'approved' || d.result === 'pass' ? 'green' : d.result === 'rejected' || d.result === 'fail' ? 'red' : 'gray'}>
                       {d.result}
                     </Badge>
                   </div>
-                  <p className="text-xs tabular-nums text-ink-tertiary mb-2">{formatDateTime(d.decided_at)}</p>
-                  <div className="rounded bg-red-50 px-3 py-2">
-                    <p className="text-xs font-medium text-red-700">{d.violation_count} violation{d.violation_count !== 1 ? 's' : ''} detected</p>
-                  </div>
+                  <p className="text-xs tabular-nums text-ink-tertiary mb-3">{formatDateTime(d.decided_at)}</p>
+
+                  {/* Individual checks */}
+                  {d.result_details?.checks && d.result_details.checks.length > 0 && (
+                    <div className="space-y-1.5">
+                      {d.result_details.checks.map((check, ci) => (
+                        <div
+                          key={ci}
+                          className={classNames(
+                            'flex items-start gap-2 rounded-md px-3 py-2 text-xs',
+                            check.passed ? 'bg-brand-50' : 'bg-red-50'
+                          )}
+                        >
+                          <span className="mt-0.5 flex-shrink-0">
+                            {check.passed ? (
+                              <svg className="h-3.5 w-3.5 text-brand-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-3.5 w-3.5 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            )}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className={classNames('font-medium', check.passed ? 'text-brand-800' : 'text-red-800')}>
+                              {check.rule}
+                            </p>
+                            <p className={classNames('mt-0.5', check.passed ? 'text-brand-700' : 'text-red-700')}>
+                              {check.message}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Regulatory citations from eligibility criteria */}
+                  {eligCriteria.length > 0 && (
+                    <div className="mt-3 rounded-md border border-edge-subtle bg-surface-subtle px-3 py-2">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-ink-tertiary mb-1">Regulatory Citations</p>
+                      <div className="space-y-0.5">
+                        {eligCriteria
+                          .filter((c) => c.source_reference)
+                          .slice(0, 5)
+                          .map((c, ci) => (
+                            <p key={ci} className="text-xs text-ink-secondary">
+                              <span className="font-medium text-ink">{c.investor_type.replace(/_/g, ' ')}</span>
+                              {' — '}
+                              <span className="font-mono text-[11px]">{c.source_reference}</span>
+                            </p>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

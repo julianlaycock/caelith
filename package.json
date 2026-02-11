@@ -6,9 +6,11 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:fresh": "npm run clean:frontend && npm run dev",
     "predev:backend": "node scripts/free-port.js 3001",
     "dev:backend": "nodemon --watch src/backend --exec tsx src/backend/server.ts",
     "dev:frontend": "cd src/frontend && npm run dev",
+    "dev:frontend:fresh": "npm run clean:frontend && npm run dev:frontend",
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "tsc --project tsconfig.backend.json",
     "build:frontend": "cd src/frontend && npm run build",
@@ -17,6 +19,7 @@
     "test:ui": "vitest --ui",
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed-data.ts",
+    "clean:frontend": "node scripts/clean-next-cache.js",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "type-check": "tsc --noEmit"
@@ -29,6 +32,9 @@
   ],
   "author": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=20 <21"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
     "bcrypt": "^6.0.0",
