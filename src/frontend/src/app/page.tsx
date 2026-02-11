@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '../lib/api';
@@ -12,7 +12,7 @@ import {
   ViolationAnalysisBar,
   ConcentrationRiskGrid,
 } from '../components/charts';
-import { formatNumber, formatDateTime, classNames } from '../lib/utils';
+import { formatNumber, formatDateTime, classNames, getErrorMessage } from '../lib/utils';
 import type { FundStructure, ComplianceReport, CapTableEntry, DecisionRecord } from '../lib/types';
 
 interface FundReportPair {
@@ -233,8 +233,7 @@ export default function DashboardPage() {
       }
       setCapTables(capTableMap);
     } catch (err: unknown) {
-      const message = (err as { message?: string })?.message || 'Failed to load dashboard data';
-      setError(message);
+      setError(getErrorMessage(err, 'Failed to load dashboard data'));
     } finally {
       setLoading(false);
     }
@@ -243,6 +242,19 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Memoized derived data
+  const reports = useMemo(() => fundReports.map(({ report }) => report), [fundReports]);
+
+  const assetNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const { report } of fundReports) {
+      for (const asset of report.fund.assets) {
+        map[asset.id] = asset.name;
+      }
+    }
+    return map;
+  }, [fundReports]);
 
   // Fetch full decision records when violation modal opens
   useEffect(() => {
@@ -257,36 +269,30 @@ export default function DashboardPage() {
       .then((decisions) => setViolationDecisions(decisions.filter((d) => d.result_details?.violation_count > 0)))
       .catch(() => setViolationDecisions([]))
       .finally(() => setViolationLoading(false));
-  }, [violationAsset]);
+  }, [violationAsset, assetNameMap]);
 
   // Aggregate metrics
   const totalFunds = fundReports.length;
   const totalInvestors = fundReports.reduce((sum, { report }) => sum + report.fund.total_investors, 0);
   const totalAllocated = fundReports.reduce((sum, { report }) => sum + report.fund.total_allocated_units, 0);
-  const allRiskFlags = fundReports.flatMap(({ report }) => report.risk_flags);
+  const allRiskFlags = useMemo(() => fundReports.flatMap(({ report }) => report.risk_flags), [fundReports]);
   const actionRequired = allRiskFlags.filter((f) => f.severity === 'high' || f.severity === 'medium').length;
 
   // Aggregate recent decisions across all funds
-  const allDecisions = fundReports
-    .flatMap(({ report }) => report.recent_decisions)
-    .sort((a, b) => new Date(b.decided_at).getTime() - new Date(a.decided_at).getTime())
-    .slice(0, 10);
+  const allDecisions = useMemo(() =>
+    fundReports
+      .flatMap(({ report }) => report.recent_decisions)
+      .sort((a, b) => new Date(b.decided_at).getTime() - new Date(a.decided_at).getTime())
+      .slice(0, 10),
+    [fundReports]
+  );
 
-  // Build a map of asset ID -> asset name for decision display
-  const assetNameMap: Record<string, string> = {};
-  for (const { report } of fundReports) {
-    for (const asset of report.fund.assets) {
-      assetNameMap[asset.id] = asset.name;
-    }
-  }
-
-  // Aggregate chart data
-  const reports = fundReports.map(({ report }) => report);
-  const typeData = aggregateByType(reports);
-  const jurisdictionData = aggregateByJurisdiction(reports);
-  const kycData = aggregateKycData(reports);
-  const violationData = aggregateViolations(reports, assetNameMap);
-  const concentrationData = computeConcentration(fundReports, capTables);
+  // Memoized chart data aggregations
+  const typeData = useMemo(() => aggregateByType(reports), [reports]);
+  const jurisdictionData = useMemo(() => aggregateByJurisdiction(reports), [reports]);
+  const kycData = useMemo(() => aggregateKycData(reports), [reports]);
+  const violationData = useMemo(() => aggregateViolations(reports, assetNameMap), [reports, assetNameMap]);
+  const concentrationData = useMemo(() => computeConcentration(fundReports, capTables), [fundReports, capTables]);
 
   const today = new Date().toLocaleDateString('en-US', {
     month: 'short',
@@ -548,7 +554,7 @@ export default function DashboardPage() {
         <Card>
           <div className="py-8 text-center">
             <p className="text-sm font-medium text-ink">No fund structures found</p>
-            <p className="mt-1 text-sm text-ink-secondary">Create a fund structure to see compliance data here.</p>
+            <p className="mt-1 text-sm text-ink-secondary">Run <code className="rounded bg-surface-subtle px-1 py-0.5 font-mono text-xs">npm run seed:showcase</code> in the project root, then refresh.</p>
           </div>
         </Card>
       )}

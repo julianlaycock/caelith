@@ -57,7 +57,7 @@ interface TypeAllocationEntry {
   total_units: number;
 }
 
-export function InvestorTypeDonut({ data, onTypeClick }: { data: TypeAllocationEntry[]; onTypeClick?: (rawType: string) => void }) {
+export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({ data, onTypeClick }: { data: TypeAllocationEntry[]; onTypeClick?: (rawType: string) => void }) {
   if (!data || data.length === 0) {
     return <EmptyChart label="No investor type data" />;
   }
@@ -129,7 +129,7 @@ export function InvestorTypeDonut({ data, onTypeClick }: { data: TypeAllocationE
       </div>
     </ChartCard>
   );
-}
+});
 
 // ── 2. Jurisdiction Exposure (Horizontal Bar) ────────────
 
@@ -139,7 +139,7 @@ interface JurisdictionEntry {
   total_units: number;
 }
 
-export function JurisdictionExposureBar({ data, onBarClick }: { data: JurisdictionEntry[]; onBarClick?: (jurisdiction: string) => void }) {
+export const JurisdictionExposureBar = React.memo(function JurisdictionExposureBar({ data, onBarClick }: { data: JurisdictionEntry[]; onBarClick?: (jurisdiction: string) => void }) {
   if (!data || data.length === 0) {
     return <EmptyChart label="No jurisdiction data" />;
   }
@@ -192,7 +192,7 @@ export function JurisdictionExposureBar({ data, onBarClick }: { data: Jurisdicti
       </div>
     </ChartCard>
   );
-}
+});
 
 // ── 3. KYC Expiry Horizon (Segmented Bar) ─────────────────
 
@@ -203,7 +203,7 @@ interface KycSegmentData {
   expiring_soon: number;
 }
 
-export function KycExpiryHorizon({ data, onStatusClick }: { data: KycSegmentData; onStatusClick?: (status: string) => void }) {
+export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({ data, onStatusClick }: { data: KycSegmentData; onStatusClick?: (status: string) => void }) {
   const total = data.verified + data.pending + data.expired + data.expiring_soon;
 
   if (total === 0) {
@@ -262,7 +262,7 @@ export function KycExpiryHorizon({ data, onStatusClick }: { data: KycSegmentData
       </div>
     </ChartCard>
   );
-}
+});
 
 // ── 4. Violation Top 5 (Horizontal Bar) ──────────────────
 
@@ -272,7 +272,7 @@ interface ViolationEntry {
   total_decisions: number;
 }
 
-export function ViolationAnalysisBar({ data, onBarClick }: { data: ViolationEntry[]; onBarClick?: (assetName: string) => void }) {
+export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({ data, onBarClick }: { data: ViolationEntry[]; onBarClick?: (assetName: string) => void }) {
   if (!data || data.length === 0) {
     return (
       <ChartCard title="Rule Violations" subtitle="Top assets by compliance violations">
@@ -345,7 +345,7 @@ export function ViolationAnalysisBar({ data, onBarClick }: { data: ViolationEntr
       </div>
     </ChartCard>
   );
-}
+});
 
 // ── 5. Fund Concentration Risk (Small Multiples) ─────────
 
@@ -356,7 +356,7 @@ interface ConcentrationEntry {
   hhi: number; // Herfindahl-Hirschman Index
 }
 
-export function ConcentrationRiskGrid({ data }: { data: ConcentrationEntry[] }) {
+export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({ data }: { data: ConcentrationEntry[] }) {
   if (!data || data.length === 0) {
     return <EmptyChart label="No concentration data" />;
   }
@@ -415,7 +415,7 @@ export function ConcentrationRiskGrid({ data }: { data: ConcentrationEntry[] }) 
       </div>
     </ChartCard>
   );
-}
+});
 
 function ConcentrationBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (

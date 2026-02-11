@@ -188,6 +188,9 @@ export interface DecisionRecord {
   decided_by: string | null;
   decided_at: string;
   created_at: string;
+  sequence_number?: number;
+  integrity_hash?: string | null;
+  previous_hash?: string | null;
 }
 
 /**

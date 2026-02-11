@@ -7,7 +7,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
-import { query, execute } from '../db.js';
+import { query, execute, DEFAULT_TENANT_ID } from '../db.js';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -22,6 +22,7 @@ export interface User {
   email: string;
   name: string;
   role: 'admin' | 'compliance_officer' | 'viewer';
+  tenant_id: string;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -35,6 +36,7 @@ export interface TokenPayload {
   userId: string;
   email: string;
   role: string;
+  tenantId: string;
 }
 
 export interface AuthResult {
@@ -70,7 +72,16 @@ export async function registerUser(
     [id, email, passwordHash, name, role, true, now, now]
   );
 
-  const user: User = { id, email, name, role, active: true, created_at: now, updated_at: now };
+  const user: User = {
+    id,
+    email,
+    name,
+    role,
+    tenant_id: DEFAULT_TENANT_ID,
+    active: true,
+    created_at: now,
+    updated_at: now,
+  };
   const token = generateToken(user);
 
   return { user, token };
@@ -103,6 +114,7 @@ export async function loginUser(
     email: row.email,
     name: row.name,
     role: row.role,
+    tenant_id: row.tenant_id || DEFAULT_TENANT_ID,
     active: row.active,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -127,6 +139,7 @@ function generateToken(user: User): string {
     userId: user.id,
     email: user.email,
     role: user.role,
+    tenantId: user.tenant_id || DEFAULT_TENANT_ID,
   };
   return jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
 }
@@ -147,6 +160,7 @@ export async function getUserById(id: string): Promise<User | null> {
     email: row.email,
     name: row.name,
     role: row.role,
+    tenant_id: row.tenant_id || DEFAULT_TENANT_ID,
     active: row.active,
     created_at: row.created_at,
     updated_at: row.updated_at,

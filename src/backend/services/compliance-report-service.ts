@@ -14,7 +14,7 @@
 
 import { query } from '../db.js';
 
-// ── Types ───────────────────────────────────────────────────
+// ── Public Types ────────────────────────────────────────────
 
 export interface ComplianceReport {
   generated_at: string;
@@ -95,6 +95,64 @@ interface RiskFlag {
   message: string;
 }
 
+// ── DB Row Types ────────────────────────────────────────────
+
+interface FundRow {
+  id: string;
+  name: string;
+  legal_form: string;
+  domicile: string;
+  status: string;
+  regulatory_framework: string | null;
+}
+
+interface AssetRow {
+  id: string;
+  name: string;
+  asset_type: string;
+  total_units: number;
+  unit_price: string | null;
+  allocated_units: string;
+  holder_count: string;
+}
+
+interface CriteriaRow {
+  investor_type: string;
+  jurisdiction: string;
+  minimum_investment: number;
+  suitability_required: boolean;
+  source_reference: string | null;
+}
+
+interface TypeRow { type: string; count: string; total_units: string }
+interface JurisdictionRow { jurisdiction: string; count: string; total_units: string }
+interface KycStatusRow { status: string; count: string }
+interface KycExpiringRow { investor_id: string; investor_name: string; kyc_expiry: string }
+interface ObStatusRow { status: string; count: string }
+
+interface ObRecentRow {
+  id: string;
+  investor_name: string;
+  asset_name: string;
+  status: string;
+  requested_units: number;
+  applied_at: string;
+}
+
+interface DecisionRow {
+  id: string;
+  decision_type: string;
+  result: string;
+  subject_id: string | null;
+  asset_id: string;
+  decided_at: string;
+  decided_by: string | null;
+  result_details: Record<string, unknown> | string | null;
+}
+
+interface ConcentrationRow { name: string; total_units: string }
+interface CountRow { count: string }
+
 // ── Main Report Generator ───────────────────────────────────
 
 export async function generateComplianceReport(
@@ -102,8 +160,8 @@ export async function generateComplianceReport(
 ): Promise<ComplianceReport> {
   const now = new Date().toISOString();
 
-  // 1. Fund structure
-  const funds = await query<any>(
+  // 1. Fund structure (must resolve first — abort if missing)
+  const funds = await query<FundRow>(
     'SELECT * FROM fund_structures WHERE id = $1',
     [fundStructureId]
   );
@@ -112,21 +170,30 @@ export async function generateComplianceReport(
   }
   const fund = funds[0];
 
-  // 2. Assets in this fund
-  const assets = await query<any>(
-    `SELECT a.*,
-       COALESCE(SUM(h.units), 0) as allocated_units,
-       COUNT(DISTINCT h.investor_id) FILTER (WHERE h.units > 0) as holder_count
-     FROM assets a
-     LEFT JOIN holdings h ON h.asset_id = a.id
-     WHERE a.fund_structure_id = $1
-     GROUP BY a.id
-     ORDER BY a.name`,
-    [fundStructureId]
-  );
+  // 2. Assets + eligibility criteria in parallel (both depend only on fundStructureId)
+  const [assets, criteria] = await Promise.all([
+    query<AssetRow>(
+      `SELECT a.*,
+         COALESCE(SUM(h.units), 0) as allocated_units,
+         COUNT(DISTINCT h.investor_id) FILTER (WHERE h.units > 0) as holder_count
+       FROM assets a
+       LEFT JOIN holdings h ON h.asset_id = a.id
+       WHERE a.fund_structure_id = $1
+       GROUP BY a.id
+       ORDER BY a.name`,
+      [fundStructureId]
+    ),
+    query<CriteriaRow>(
+      `SELECT investor_type, jurisdiction, minimum_investment, suitability_required, source_reference
+       FROM eligibility_criteria
+       WHERE fund_structure_id = $1
+       ORDER BY investor_type, jurisdiction`,
+      [fundStructureId]
+    ),
+  ]);
 
-  const assetIds = assets.map((a: any) => a.id);
-  const assetSummaries: AssetSummary[] = assets.map((a: any) => ({
+  const assetIds = assets.map((a) => a.id);
+  const assetSummaries: AssetSummary[] = assets.map((a) => ({
     id: a.id,
     name: a.name,
     asset_type: a.asset_type,
@@ -139,16 +206,7 @@ export async function generateComplianceReport(
   const totalUnits = assetSummaries.reduce((s, a) => s + a.total_units, 0);
   const totalAllocated = assetSummaries.reduce((s, a) => s + a.allocated_units, 0);
 
-  // 3. Eligibility criteria
-  const criteria = await query<any>(
-    `SELECT investor_type, jurisdiction, minimum_investment, suitability_required, source_reference
-     FROM eligibility_criteria
-     WHERE fund_structure_id = $1
-     ORDER BY investor_type, jurisdiction`,
-    [fundStructureId]
-  );
-
-  const criteriaSummaries: CriteriaSummary[] = criteria.map((c: any) => ({
+  const criteriaSummaries: CriteriaSummary[] = criteria.map((c) => ({
     investor_type: c.investor_type,
     jurisdiction: c.jurisdiction,
     minimum_investment_eur: c.minimum_investment / 100,
@@ -156,130 +214,131 @@ export async function generateComplianceReport(
     source_reference: c.source_reference,
   }));
 
-  // 4. Investor breakdown (only investors with holdings in this fund's assets)
+  // 3. All asset-dependent queries in a single parallel batch
   let investorBreakdown: InvestorBreakdown = {
     by_type: [],
     by_jurisdiction: [],
     by_kyc_status: [],
     kyc_expiring_within_90_days: [],
   };
-
-  if (assetIds.length > 0) {
-    const placeholders = assetIds.map((_: string, i: number) => `$${i + 1}`).join(',');
-
-    const byType = await query<any>(
-      `SELECT COALESCE(i.investor_type, 'unknown') as type, COUNT(DISTINCT i.id) as count, COALESCE(SUM(h.units), 0) as total_units
-       FROM holdings h JOIN investors i ON h.investor_id = i.id
-       WHERE h.asset_id IN (${placeholders}) AND h.units > 0
-       GROUP BY i.investor_type ORDER BY total_units DESC`,
-      assetIds
-    );
-    investorBreakdown.by_type = byType.map((r: any) => ({
-      type: r.type,
-      count: Number(r.count),
-      total_units: Number(r.total_units),
-    }));
-
-    const byJurisdiction = await query<any>(
-      `SELECT i.jurisdiction, COUNT(DISTINCT i.id) as count, COALESCE(SUM(h.units), 0) as total_units
-       FROM holdings h JOIN investors i ON h.investor_id = i.id
-       WHERE h.asset_id IN (${placeholders}) AND h.units > 0
-       GROUP BY i.jurisdiction ORDER BY total_units DESC`,
-      assetIds
-    );
-    investorBreakdown.by_jurisdiction = byJurisdiction.map((r: any) => ({
-      jurisdiction: r.jurisdiction,
-      count: Number(r.count),
-      total_units: Number(r.total_units),
-    }));
-
-    const byKyc = await query<any>(
-      `SELECT COALESCE(i.kyc_status, 'unknown') as status, COUNT(DISTINCT i.id) as count
-       FROM holdings h JOIN investors i ON h.investor_id = i.id
-       WHERE h.asset_id IN (${placeholders}) AND h.units > 0
-       GROUP BY i.kyc_status ORDER BY count DESC`,
-      assetIds
-    );
-    investorBreakdown.by_kyc_status = byKyc.map((r: any) => ({
-      status: r.status,
-      count: Number(r.count),
-    }));
-
-    const kycExpiring = await query<any>(
-      `SELECT DISTINCT i.id as investor_id, i.name as investor_name, i.kyc_expiry
-       FROM holdings h JOIN investors i ON h.investor_id = i.id
-       WHERE h.asset_id IN (${placeholders}) AND h.units > 0
-         AND i.kyc_expiry IS NOT NULL
-         AND i.kyc_expiry <= NOW() + INTERVAL '90 days'
-       ORDER BY i.kyc_expiry`,
-      assetIds
-    );
-    investorBreakdown.kyc_expiring_within_90_days = kycExpiring.map((r: any) => ({
-      investor_id: r.investor_id,
-      investor_name: r.investor_name,
-      kyc_expiry: r.kyc_expiry,
-    }));
-  }
-
-  // 5. Onboarding pipeline
   let onboardingPipeline: OnboardingPipeline = { total: 0, by_status: [], recent: [] };
-
-  if (assetIds.length > 0) {
-    const placeholders = assetIds.map((_: string, i: number) => `$${i + 1}`).join(',');
-
-    const obByStatus = await query<any>(
-      `SELECT status, COUNT(*) as count
-       FROM onboarding_records
-       WHERE asset_id IN (${placeholders})
-       GROUP BY status ORDER BY count DESC`,
-      assetIds
-    );
-    onboardingPipeline.by_status = obByStatus.map((r: any) => ({
-      status: r.status,
-      count: Number(r.count),
-    }));
-    onboardingPipeline.total = onboardingPipeline.by_status.reduce((s, r) => s + r.count, 0);
-
-    const obRecent = await query<any>(
-      `SELECT ob.id, i.name as investor_name, a.name as asset_name,
-              ob.status, ob.requested_units, ob.applied_at
-       FROM onboarding_records ob
-       JOIN investors i ON ob.investor_id = i.id
-       JOIN assets a ON ob.asset_id = a.id
-       WHERE ob.asset_id IN (${placeholders})
-       ORDER BY ob.applied_at DESC LIMIT 10`,
-      assetIds
-    );
-    onboardingPipeline.recent = obRecent.map((r: any) => ({
-      id: r.id,
-      investor_name: r.investor_name,
-      asset_name: r.asset_name,
-      status: r.status,
-      requested_units: r.requested_units,
-      applied_at: r.applied_at,
-    }));
-  }
-
-  // 6. Recent decisions
   let recentDecisions: DecisionSummary[] = [];
+  let totalInvestors = 0;
+  const riskFlags: RiskFlag[] = [];
 
   if (assetIds.length > 0) {
-    const placeholders = assetIds.map((_: string, i: number) => `$${i + 1}`).join(',');
+    const ph = assetIds.map((_, i) => `$${i + 1}`).join(',');
 
-    const decisions = await query<any>(
-      `SELECT id, decision_type, result, subject_id, asset_id, decided_at, decided_by, result_details
-       FROM decision_records
-       WHERE asset_id IN (${placeholders})
-       ORDER BY decided_at DESC LIMIT 20`,
-      assetIds
-    );
-    recentDecisions = decisions.map((d: any) => {
+    const [
+      byType, byJurisdiction, byKyc, kycExpiring,
+      obByStatus, obRecent,
+      decisions, concentration, invCount,
+    ] = await Promise.all([
+      // ── Investor breakdown ──
+      query<TypeRow>(
+        `SELECT COALESCE(i.investor_type, 'unknown') as type, COUNT(DISTINCT i.id) as count, COALESCE(SUM(h.units), 0) as total_units
+         FROM holdings h JOIN investors i ON h.investor_id = i.id
+         WHERE h.asset_id IN (${ph}) AND h.units > 0
+         GROUP BY i.investor_type ORDER BY total_units DESC`,
+        assetIds
+      ),
+      query<JurisdictionRow>(
+        `SELECT i.jurisdiction, COUNT(DISTINCT i.id) as count, COALESCE(SUM(h.units), 0) as total_units
+         FROM holdings h JOIN investors i ON h.investor_id = i.id
+         WHERE h.asset_id IN (${ph}) AND h.units > 0
+         GROUP BY i.jurisdiction ORDER BY total_units DESC`,
+        assetIds
+      ),
+      query<KycStatusRow>(
+        `SELECT COALESCE(i.kyc_status, 'unknown') as status, COUNT(DISTINCT i.id) as count
+         FROM holdings h JOIN investors i ON h.investor_id = i.id
+         WHERE h.asset_id IN (${ph}) AND h.units > 0
+         GROUP BY i.kyc_status ORDER BY count DESC`,
+        assetIds
+      ),
+      query<KycExpiringRow>(
+        `SELECT DISTINCT i.id as investor_id, i.name as investor_name, i.kyc_expiry
+         FROM holdings h JOIN investors i ON h.investor_id = i.id
+         WHERE h.asset_id IN (${ph}) AND h.units > 0
+           AND i.kyc_expiry IS NOT NULL
+           AND i.kyc_expiry <= NOW() + INTERVAL '90 days'
+         ORDER BY i.kyc_expiry`,
+        assetIds
+      ),
+      // ── Onboarding pipeline ──
+      query<ObStatusRow>(
+        `SELECT status, COUNT(*) as count
+         FROM onboarding_records
+         WHERE asset_id IN (${ph})
+         GROUP BY status ORDER BY count DESC`,
+        assetIds
+      ),
+      query<ObRecentRow>(
+        `SELECT ob.id, i.name as investor_name, a.name as asset_name,
+                ob.status, ob.requested_units, ob.applied_at
+         FROM onboarding_records ob
+         JOIN investors i ON ob.investor_id = i.id
+         JOIN assets a ON ob.asset_id = a.id
+         WHERE ob.asset_id IN (${ph})
+         ORDER BY ob.applied_at DESC LIMIT 10`,
+        assetIds
+      ),
+      // ── Recent decisions ──
+      query<DecisionRow>(
+        `SELECT id, decision_type, result, subject_id, asset_id, decided_at, decided_by, result_details
+         FROM decision_records
+         WHERE asset_id IN (${ph})
+         ORDER BY decided_at DESC LIMIT 20`,
+        assetIds
+      ),
+      // ── Concentration risk ──
+      query<ConcentrationRow>(
+        `SELECT i.name, SUM(h.units) as total_units
+         FROM holdings h JOIN investors i ON h.investor_id = i.id
+         WHERE h.asset_id IN (${ph}) AND h.units > 0
+         GROUP BY i.id, i.name
+         HAVING SUM(h.units)::numeric / NULLIF($${assetIds.length + 1}::numeric, 0) > 0.25
+         ORDER BY total_units DESC`,
+        [...assetIds, totalUnits]
+      ),
+      // ── Unique investor count ──
+      query<CountRow>(
+        `SELECT COUNT(DISTINCT investor_id) as count FROM holdings WHERE asset_id IN (${ph}) AND units > 0`,
+        assetIds
+      ),
+    ]);
+
+    // Process investor breakdown
+    investorBreakdown = {
+      by_type: byType.map((r) => ({ type: r.type, count: Number(r.count), total_units: Number(r.total_units) })),
+      by_jurisdiction: byJurisdiction.map((r) => ({ jurisdiction: r.jurisdiction, count: Number(r.count), total_units: Number(r.total_units) })),
+      by_kyc_status: byKyc.map((r) => ({ status: r.status, count: Number(r.count) })),
+      kyc_expiring_within_90_days: kycExpiring.map((r) => ({ investor_id: r.investor_id, investor_name: r.investor_name, kyc_expiry: r.kyc_expiry })),
+    };
+
+    // Process onboarding pipeline
+    const obStatusList = obByStatus.map((r) => ({ status: r.status, count: Number(r.count) }));
+    onboardingPipeline = {
+      total: obStatusList.reduce((s, r) => s + r.count, 0),
+      by_status: obStatusList,
+      recent: obRecent.map((r) => ({
+        id: r.id,
+        investor_name: r.investor_name,
+        asset_name: r.asset_name,
+        status: r.status,
+        requested_units: r.requested_units,
+        applied_at: r.applied_at,
+      })),
+    };
+
+    // Process decisions
+    recentDecisions = decisions.map((d) => {
       let violationCount = 0;
       if (d.result_details) {
         const details = typeof d.result_details === 'string'
-          ? JSON.parse(d.result_details)
+          ? (JSON.parse(d.result_details) as Record<string, unknown>)
           : d.result_details;
-        violationCount = details.violation_count || 0;
+        violationCount = Number(details.violation_count) || 0;
       }
       return {
         id: d.id,
@@ -292,12 +351,21 @@ export async function generateComplianceReport(
         violation_count: violationCount,
       };
     });
+
+    // Process concentration risk flags
+    for (const c of concentration) {
+      const pct = ((Number(c.total_units) / totalUnits) * 100).toFixed(1);
+      riskFlags.push({
+        severity: 'medium',
+        category: 'concentration',
+        message: `${c.name} holds ${pct}% of total fund units (above 25% threshold)`,
+      });
+    }
+
+    totalInvestors = Number(invCount[0]?.count || 0);
   }
 
-  // 7. Risk flags
-  const riskFlags: RiskFlag[] = [];
-
-  // Flag: fund not active
+  // 4. Compute remaining risk flags from query results
   if (fund.status !== 'active') {
     riskFlags.push({
       severity: 'high',
@@ -306,7 +374,6 @@ export async function generateComplianceReport(
     });
   }
 
-  // Flag: KYC expiring soon
   if (investorBreakdown.kyc_expiring_within_90_days.length > 0) {
     riskFlags.push({
       severity: 'medium',
@@ -315,29 +382,6 @@ export async function generateComplianceReport(
     });
   }
 
-  // Flag: high concentration (single investor > 25%)
-  if (assetIds.length > 0) {
-    const placeholders = assetIds.map((_: string, i: number) => `$${i + 1}`).join(',');
-    const concentration = await query<any>(
-      `SELECT i.name, SUM(h.units) as total_units
-       FROM holdings h JOIN investors i ON h.investor_id = i.id
-       WHERE h.asset_id IN (${placeholders}) AND h.units > 0
-       GROUP BY i.id, i.name
-       HAVING SUM(h.units)::numeric / NULLIF($${assetIds.length + 1}::numeric, 0) > 0.25
-       ORDER BY total_units DESC`,
-      [...assetIds, totalUnits]
-    );
-    concentration.forEach((c: any) => {
-      const pct = ((Number(c.total_units) / totalUnits) * 100).toFixed(1);
-      riskFlags.push({
-        severity: 'medium',
-        category: 'concentration',
-        message: `${c.name} holds ${pct}% of total fund units (above 25% threshold)`,
-      });
-    });
-  }
-
-  // Flag: pending onboarding applications
   const pendingCount = onboardingPipeline.by_status
     .filter(s => s.status === 'applied' || s.status === 'eligible')
     .reduce((sum, s) => sum + s.count, 0);
@@ -349,7 +393,6 @@ export async function generateComplianceReport(
     });
   }
 
-  // Flag: rejected decisions in last 30 days
   const recentRejections = recentDecisions.filter(d => d.result === 'rejected');
   if (recentRejections.length > 0) {
     riskFlags.push({
@@ -357,17 +400,6 @@ export async function generateComplianceReport(
       category: 'recent_rejections',
       message: `${recentRejections.length} rejection(s) in recent decisions — review for patterns`,
     });
-  }
-
-  // Unique investors across all assets
-  let totalInvestors = 0;
-  if (assetIds.length > 0) {
-    const placeholders = assetIds.map((_: string, i: number) => `$${i + 1}`).join(',');
-    const invCount = await query<any>(
-      `SELECT COUNT(DISTINCT investor_id) as count FROM holdings WHERE asset_id IN (${placeholders}) AND units > 0`,
-      assetIds
-    );
-    totalInvestors = Number(invCount[0]?.count || 0);
   }
 
   return {

@@ -846,3 +846,169 @@ COMMIT;
 -- UPDATE eligibility_criteria SET source_reference = 'CSSF Circular 15/633, Section 4.2' WHERE fund_structure_id = '00000000-0000-0000-0000-000000000001' AND investor_type = 'semi_professional';
 -- UPDATE eligibility_criteria SET source_reference = 'CSSF Circular 15/633' WHERE fund_structure_id = '00000000-0000-0000-0000-000000000001' AND investor_type = 'professional';
 -- UPDATE eligibility_criteria SET source_reference = 'CSSF Circular 15/633' WHERE fund_structure_id = '00000000-0000-0000-0000-000000000001' AND investor_type = 'institutional';
+
+-- ============================================
+-- 016_tenants.sql
+-- ============================================
+
+-- Migration 016: Multi-tenancy infrastructure
+CREATE TABLE IF NOT EXISTS tenants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(50) NOT NULL UNIQUE,
+    domain VARCHAR(255),
+    settings JSONB NOT NULL DEFAULT '{}',
+    max_funds INTEGER DEFAULT 10,
+    max_investors INTEGER DEFAULT 500,
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'trial', 'closed')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO tenants (id, name, slug, status) VALUES
+    ('00000000-0000-0000-0000-000000000099', 'Caelith Demo', 'demo', 'active')
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE users SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE users ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE users ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_users_tenant ON users(tenant_id);
+
+ALTER TABLE fund_structures ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE fund_structures SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE fund_structures ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE fund_structures ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_fund_structures_tenant ON fund_structures(tenant_id);
+
+ALTER TABLE investors ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE investors SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE investors ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE investors ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_investors_tenant ON investors(tenant_id);
+
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE assets SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE assets ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE assets ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_assets_tenant ON assets(tenant_id);
+
+ALTER TABLE holdings ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE holdings SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE holdings ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE holdings ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_holdings_tenant ON holdings(tenant_id);
+
+ALTER TABLE rules ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE rules SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE rules ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE rules ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_rules_tenant ON rules(tenant_id);
+
+ALTER TABLE transfers ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE transfers SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE transfers ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE transfers ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_transfers_tenant ON transfers(tenant_id);
+
+ALTER TABLE decision_records ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE decision_records SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE decision_records ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE decision_records ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_decision_records_tenant ON decision_records(tenant_id);
+
+ALTER TABLE onboarding_records ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE onboarding_records SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE onboarding_records ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE onboarding_records ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_onboarding_records_tenant ON onboarding_records(tenant_id);
+
+ALTER TABLE events ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE events SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE events ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE events ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_events_tenant ON events(tenant_id);
+
+ALTER TABLE eligibility_criteria ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE eligibility_criteria SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE eligibility_criteria ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE eligibility_criteria ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_eligibility_criteria_tenant ON eligibility_criteria(tenant_id);
+
+ALTER TABLE composite_rules ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE composite_rules SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE composite_rules ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE composite_rules ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_composite_rules_tenant ON composite_rules(tenant_id);
+
+ALTER TABLE regulatory_documents ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+UPDATE regulatory_documents SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+ALTER TABLE regulatory_documents ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE regulatory_documents ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+CREATE INDEX IF NOT EXISTS idx_regulatory_documents_tenant ON regulatory_documents(tenant_id);
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'rule_versions') THEN
+        ALTER TABLE rule_versions ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+        UPDATE rule_versions SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+        ALTER TABLE rule_versions ALTER COLUMN tenant_id SET NOT NULL;
+        ALTER TABLE rule_versions ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+        CREATE INDEX IF NOT EXISTS idx_rule_versions_tenant ON rule_versions(tenant_id);
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'webhooks') THEN
+        ALTER TABLE webhooks ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+        UPDATE webhooks SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+        ALTER TABLE webhooks ALTER COLUMN tenant_id SET NOT NULL;
+        ALTER TABLE webhooks ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+        CREATE INDEX IF NOT EXISTS idx_webhooks_tenant ON webhooks(tenant_id);
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'webhook_deliveries') THEN
+        ALTER TABLE webhook_deliveries ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+        UPDATE webhook_deliveries SET tenant_id = '00000000-0000-0000-0000-000000000099' WHERE tenant_id IS NULL;
+        ALTER TABLE webhook_deliveries ALTER COLUMN tenant_id SET NOT NULL;
+        ALTER TABLE webhook_deliveries ALTER COLUMN tenant_id SET DEFAULT '00000000-0000-0000-0000-000000000099';
+        CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_tenant ON webhook_deliveries(tenant_id);
+    END IF;
+END $$;
+
+-- ============================================
+-- 017_integrity_chain.sql
+-- ============================================
+
+-- Migration 017: Hash chain for decision records
+ALTER TABLE decision_records
+  ADD COLUMN IF NOT EXISTS sequence_number BIGINT GENERATED BY DEFAULT AS IDENTITY;
+
+ALTER TABLE decision_records
+  ADD COLUMN IF NOT EXISTS integrity_hash VARCHAR(64);
+
+ALTER TABLE decision_records
+  ADD COLUMN IF NOT EXISTS previous_hash VARCHAR(64) DEFAULT '0000000000000000000000000000000000000000000000000000000000000000';
+
+WITH ordered AS (
+  SELECT id, ROW_NUMBER() OVER (ORDER BY decided_at ASC, created_at ASC, id ASC) AS rn
+  FROM decision_records
+  WHERE sequence_number IS NULL
+)
+UPDATE decision_records dr
+SET sequence_number = ordered.rn + COALESCE((SELECT MAX(sequence_number) FROM decision_records), 0)
+FROM ordered
+WHERE dr.id = ordered.id;
+
+ALTER TABLE decision_records ALTER COLUMN sequence_number SET NOT NULL;
+ALTER TABLE decision_records ALTER COLUMN previous_hash SET NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_decision_records_sequence
+  ON decision_records(sequence_number);
+
+CREATE INDEX IF NOT EXISTS idx_decision_records_integrity
+  ON decision_records(integrity_hash);
