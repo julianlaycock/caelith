@@ -19,12 +19,45 @@ import {
 import { InvestorTypeDonut, JurisdictionExposureBar, KycExpiryHorizon } from '../../../components/charts';
 import { formatNumber, formatDate, formatDateTime } from '../../../lib/utils';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export default function FundDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const isValidFundId = UUID_RE.test(id);
 
-  const fund = useAsync(() => api.getFundStructure(id), [id]);
-  const report = useAsync(() => api.getComplianceReport(id), [id]);
+  const fund = useAsync(
+    () => (isValidFundId ? api.getFundStructure(id) : Promise.reject(new Error('INVALID_FUND_ID'))),
+    [id, isValidFundId]
+  );
+  const report = useAsync(
+    () => (isValidFundId ? api.getComplianceReport(id) : Promise.resolve(null)),
+    [id, isValidFundId]
+  );
+
+  const fundNotFound =
+    !isValidFundId ||
+    (!!fund.error &&
+      (fund.error.toLowerCase().includes('not found') ||
+        fund.error.includes('INVALID_FUND_ID')));
+
+  if (fundNotFound) {
+    return (
+      <div>
+        <div className="mb-6">
+          <Link href="/funds" className="text-xs font-medium text-brand-600 hover:text-brand-700">&larr; Back to Fund Structures</Link>
+        </div>
+        <Card>
+          <div className="py-8 text-center">
+            <p className="text-sm font-medium text-ink">Fund not found</p>
+            <p className="mt-1 text-sm text-ink-secondary">
+              The fund id <span className="font-mono">{id}</span> does not exist.
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   if (fund.loading || report.loading) {
     return (

@@ -147,6 +147,18 @@ function InvestorsContent() {
         action={<Button onClick={() => setShowForm(true)}>+ Add Investor</Button>}
       />
 
+      {activeFilter && (
+        <button
+          onClick={() => router.push('/')}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-ink-secondary hover:text-ink transition-colors"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+          </svg>
+          Back to Dashboard
+        </button>
+      )}
+
       {successMsg && (
         <div className="mb-4">
           <Alert variant="success">{successMsg}</Alert>

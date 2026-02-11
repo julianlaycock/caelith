@@ -58,21 +58,21 @@ async function seed() {
   // 0. Admin User
   // ====================================================================
   console.log('▸ [Users]');
-  const existingUser = await query('SELECT id FROM users WHERE email = $1', ['admin@caelith.dev']);
+  const existingUser = await query('SELECT id FROM users WHERE email = $1', ['admin@caelith.com']);
   let adminId: string;
   if (existingUser.length > 0) {
     adminId = (existingUser[0] as { id: string }).id;
-    console.log('  → admin@caelith.dev exists');
+    console.log('  → admin@caelith.com exists');
   } else {
     const hash = await bcrypt.hash('admin1234', 10);
     const rows = await query<{ id: string }>(
       `INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
        VALUES (gen_random_uuid(), $1, $2, 'System Admin', 'admin', true, now(), now())
        RETURNING id`,
-      ['admin@caelith.dev', hash]
+      ['admin@caelith.com', hash]
     );
     adminId = rows[0].id;
-    console.log('  ✓ Created admin@caelith.dev (password: admin1234)');
+    console.log('  ✓ Created admin@caelith.com (password: admin1234)');
   }
 
   // ====================================================================
@@ -211,7 +211,6 @@ async function seed() {
   // ====================================================================
   console.log('\n▸ [Investors]');
 
-  const today = new Date();
   const investorDefs = [
     // ── Institutional (4) ──
     { name: 'CalPERS Public Pension Fund',     jur: 'US', type: 'institutional',     kyc: 'verified', expiry: daysFromNow(540), lei: '549300BFHXK1KNC3FW24' },
@@ -548,7 +547,7 @@ async function seed() {
   console.log('║     SIF well-diversified, QIAIF moderate           ║');
   console.log('║                                                    ║');
   console.log('╚══════════════════════════════════════════════════╝');
-  console.log('\nLogin: admin@caelith.dev / admin1234');
+  console.log('\nLogin: admin@caelith.com / admin1234');
   console.log('Open http://localhost:3000 to see the dashboard.');
 }
 

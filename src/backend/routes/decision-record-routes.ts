@@ -8,6 +8,23 @@ import { query } from '../db.js';
 
 const router = Router();
 
+interface DecisionListRow {
+  id: string;
+  decision_type: string;
+  asset_id: string | null;
+  asset_name: string | null;
+  subject_id: string;
+  input_snapshot: unknown;
+  rule_version_snapshot: unknown;
+  result: string;
+  result_details: unknown;
+  decided_by: string | null;
+  decided_by_name: string | null;
+  decided_by_email: string | null;
+  decided_at: string | Date;
+  created_at: string | Date;
+}
+
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { decision_type, result } = req.query;
@@ -35,10 +52,11 @@ router.get('/', async (req: Request, res: Response) => {
     );
     const total = countResult[0]?.count ?? 0;
 
-    const rows = await query(
-      `SELECT dr.*, a.name AS asset_name
+    const rows = await query<DecisionListRow>(
+      `SELECT dr.*, a.name AS asset_name, u.name AS decided_by_name, u.email AS decided_by_email
        FROM decision_records dr
        LEFT JOIN assets a ON a.id = dr.asset_id
+       LEFT JOIN users u ON u.id = dr.decided_by
        ${whereClause}
        ORDER BY dr.decided_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
@@ -46,7 +64,7 @@ router.get('/', async (req: Request, res: Response) => {
     );
 
     const parse = (val: unknown) => typeof val === 'string' ? JSON.parse(val) : val ?? {};
-    const decisions = (rows as any[]).map((row) => ({
+    const decisions = rows.map((row) => ({
       id: row.id,
       decision_type: row.decision_type,
       asset_id: row.asset_id ?? null,
@@ -57,6 +75,8 @@ router.get('/', async (req: Request, res: Response) => {
       result: row.result,
       result_details: parse(row.result_details),
       decided_by: row.decided_by ?? null,
+      decided_by_name: row.decided_by_name ?? null,
+      decided_by_email: row.decided_by_email ?? null,
       decided_at: String(row.decided_at),
       created_at: String(row.created_at),
     }));

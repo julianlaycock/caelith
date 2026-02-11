@@ -69,7 +69,7 @@ export async function createCompositeRule(
 
   await execute(
     `INSERT INTO composite_rules (id, asset_id, name, description, operator, conditions, enabled, created_by, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
     [id, assetId, input.name, input.description, input.operator, JSON.stringify(input.conditions), enabled, userId || null, now, now]
   );
 
@@ -99,7 +99,7 @@ export async function createCompositeRule(
  */
 export async function listCompositeRules(assetId: string): Promise<StoredCompositeRule[]> {
   const rows = await query<CompositeRuleRow>(
-    'SELECT * FROM composite_rules WHERE asset_id = ? ORDER BY created_at ASC',
+    'SELECT * FROM composite_rules WHERE asset_id = $1 ORDER BY created_at ASC',
     [assetId]
   );
   return rows.map(rowToRule);
@@ -110,7 +110,7 @@ export async function listCompositeRules(assetId: string): Promise<StoredComposi
  */
 export async function getActiveCompositeRules(assetId: string): Promise<CompositeRule[]> {
   const rows = await query<CompositeRuleRow>(
-    'SELECT * FROM composite_rules WHERE asset_id = ? AND enabled = ? ORDER BY created_at ASC',
+    'SELECT * FROM composite_rules WHERE asset_id = $1 AND enabled = $2 ORDER BY created_at ASC',
     [assetId, true]
   );
   return rows.map(rowToRule);
@@ -131,40 +131,41 @@ export async function updateCompositeRule(
 ): Promise<void> {
   const sets: string[] = [];
   const params: (string | number | boolean | null)[] = [];
+  let paramIndex = 1;
 
   if (updates.name !== undefined) {
-    sets.push('name = ?');
+    sets.push(`name = $${paramIndex++}`);
     params.push(updates.name);
   }
   if (updates.description !== undefined) {
-    sets.push('description = ?');
+    sets.push(`description = $${paramIndex++}`);
     params.push(updates.description);
   }
   if (updates.operator !== undefined) {
-    sets.push('operator = ?');
+    sets.push(`operator = $${paramIndex++}`);
     params.push(updates.operator);
   }
   if (updates.conditions !== undefined) {
-    sets.push('conditions = ?');
+    sets.push(`conditions = $${paramIndex++}`);
     params.push(JSON.stringify(updates.conditions));
   }
   if (updates.enabled !== undefined) {
-    sets.push('enabled = ?');
+    sets.push(`enabled = $${paramIndex++}`);
     params.push(updates.enabled);
   }
 
   if (sets.length === 0) return;
 
-  sets.push('updated_at = ?');
+  sets.push(`updated_at = $${paramIndex++}`);
   params.push(new Date().toISOString());
   params.push(id);
 
-  await execute(`UPDATE composite_rules SET ${sets.join(', ')} WHERE id = ?`, params);
+  await execute(`UPDATE composite_rules SET ${sets.join(', ')} WHERE id = $${paramIndex}`, params);
 }
 
 /**
  * Delete a composite rule
  */
 export async function deleteCompositeRule(id: string): Promise<void> {
-  await execute('DELETE FROM composite_rules WHERE id = ?', [id]);
+  await execute('DELETE FROM composite_rules WHERE id = $1', [id]);
 }

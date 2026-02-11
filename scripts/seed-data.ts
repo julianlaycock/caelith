@@ -39,7 +39,7 @@ async function seed(): Promise<void> {
   console.log('[Auth] Creating admin user...');
   try {
     const auth = await api<{ token: string }>('/auth/register', {
-      email: 'admin@caelith.dev',
+      email: 'admin@caelith.com',
       password: 'admin1234',
       name: 'System Admin',
       role: 'admin',
@@ -47,12 +47,12 @@ async function seed(): Promise<void> {
     authToken = auth.token;
   } catch {
     const auth = await api<{ token: string }>('/auth/login', {
-      email: 'admin@caelith.dev',
+      email: 'admin@caelith.com',
       password: 'admin1234',
     });
     authToken = auth.token;
   }
-  console.log('  OK - Authenticated as admin@caelith.dev\n');
+  console.log('  OK - Authenticated as admin@caelith.com\n');
 
   // 1. Create assets
   console.log('[Assets] Creating funds...');

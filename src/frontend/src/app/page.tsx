@@ -94,7 +94,19 @@ function aggregateKycData(reports: ComplianceReport[]) {
       else if (entry.status === 'pending') pending += entry.count;
       else if (entry.status === 'expired') expired += entry.count;
     }
-    expiring_soon += r.investor_breakdown.kyc_expiring_within_90_days.length;
+
+    // Split kyc_expiring_within_90_days into already-expired vs expiring-soon
+    const now = new Date();
+    for (const inv of r.investor_breakdown.kyc_expiring_within_90_days) {
+      const expiryDate = new Date(inv.kyc_expiry);
+      if (expiryDate < now) {
+        // Already expired but kyc_status still shows 'verified'
+        expired += 1;
+        verified = Math.max(0, verified - 1);
+      } else {
+        expiring_soon += 1;
+      }
+    }
   }
 
   // Subtract expiring_soon from verified since they're a subset

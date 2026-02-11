@@ -17,8 +17,24 @@ async function computeHash(decision: DecisionRecord): Promise<string> {
     result_details: decision.result_details,
     decided_at: decision.decided_at,
   });
-  const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
-  return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  // Use Web Crypto when available; fall back to deterministic non-cryptographic hash.
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
+    return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  let hash = 2166136261;
+  for (let i = 0; i < payload.length; i++) {
+    hash ^= payload.charCodeAt(i);
+    hash +=
+      (hash << 1) +
+      (hash << 4) +
+      (hash << 7) +
+      (hash << 8) +
+      (hash << 24);
+  }
+  return `fallback-${(hash >>> 0).toString(16).padStart(8, '0')}`;
 }
 
 /* ── Filter options ───────────────────────────────────── */
@@ -37,6 +53,18 @@ const resultOptions = [
   { value: 'rejected', label: 'Rejected' },
   { value: 'simulated', label: 'Simulated' },
 ];
+
+/* ── Regulatory citation map ──────────────────────────── */
+
+const RULE_CITATIONS: Record<string, string> = {
+  investor_type_eligible: 'AIFMD Art. 4(1)(ag) — investor categorisation',
+  minimum_investment: 'AIFMD Art. 43(1) — marketing to retail investors',
+  kyc_valid: 'AMLD5 Art. 13 — customer due diligence',
+  kyc_not_expired: 'AMLD5 Art. 14(5) — ongoing monitoring',
+  fund_status: 'AIFMD Art. 7 — authorisation conditions',
+  suitability_required: 'MiFID II Art. 25(2) — suitability assessment',
+  fund_exists: 'AIFMD Art. 7 — authorisation conditions',
+};
 
 /* ── Badge variant helper ─────────────────────────────── */
 
@@ -143,7 +171,19 @@ export default function DecisionAuditTrailPage() {
   const copyHash = async (id: string) => {
     const hash = hashes[id];
     if (!hash) return;
-    await navigator.clipboard.writeText(hash);
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(hash);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = hash;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -261,6 +301,15 @@ export default function DecisionAuditTrailPage() {
                     )}
                   </button>
                 </div>
+                {/* Previous hash chain reference */}
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="font-mono text-[10px] text-ink-tertiary">prev:</span>
+                  <span className="font-mono text-[10px] text-ink-tertiary">
+                    {index < decisions.length - 1
+                      ? `${(hashes[decisions[index + 1].id] || '').substring(0, 12)}...`
+                      : '000000000000...'}
+                  </span>
+                </div>
 
                 {/* Body */}
                 <div className="mt-3">
@@ -271,28 +320,44 @@ export default function DecisionAuditTrailPage() {
                   {/* Checks list */}
                   {d.result_details?.checks && d.result_details.checks.length > 0 && (
                     <div className="mt-2 space-y-1">
-                      {d.result_details.checks.map((check, i) => (
-                        <div key={i} className="flex items-start gap-1.5 text-sm">
-                          {check.passed ? (
-                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                          ) : (
-                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          )}
-                          <span className="text-ink-secondary">
-                            <span className="font-medium text-ink">{check.rule}</span> — {check.message}
-                          </span>
-                        </div>
-                      ))}
+                      {d.result_details.checks.map((check, i) => {
+                        const citation = RULE_CITATIONS[check.rule];
+                        return (
+                          <div key={i}>
+                            <div className="flex items-start gap-1.5 text-sm">
+                              {check.passed ? (
+                                <svg className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                </svg>
+                              ) : (
+                                <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              )}
+                              <span className="text-ink-secondary">
+                                <span className="font-medium text-ink">{check.rule}</span> — {check.message}
+                              </span>
+                            </div>
+                            {!check.passed && citation && (
+                              <p className="ml-[22px] mt-0.5 text-xs font-mono text-ink-tertiary">
+                                {citation}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
-                  {d.decided_by && (
+                  {(d.decided_by_name || d.decided_by_email || d.decided_by) && (
                     <p className="mt-2 text-xs text-ink-tertiary">
-                      Decided by: <span className="font-medium text-ink-secondary">{d.decided_by}</span>
+                      Decided by:{' '}
+                      <span className="font-medium text-ink-secondary">
+                        {d.decided_by_name || d.decided_by_email || d.decided_by}
+                      </span>
+                      {d.decided_by_name && d.decided_by_email && (
+                        <span className="text-ink-tertiary"> ({d.decided_by_email})</span>
+                      )}
                     </p>
                   )}
                 </div>
