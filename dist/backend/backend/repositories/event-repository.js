@@ -43,8 +43,8 @@ export async function createEvent(input) {
         event_id: id,
         entity_type: input.entity_type,
         entity_id: input.entity_id,
-    }).catch(() => {
-        // Silently catch — webhook failures should never block operations
+    }).catch((err) => {
+        console.error('[webhook] Dispatch failed for event', id, ':', err instanceof Error ? err.message : err);
     });
     return event;
 }

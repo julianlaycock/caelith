@@ -1,12 +1,12 @@
 import { randomUUID } from 'crypto';
-import { query, execute, boolToInt, intToBool } from '../db.js';
+import { query, execute } from '../db.js';
 /** Map a DB row to the domain Investor model */
 function rowToInvestor(row) {
     return {
         id: row.id,
         name: row.name,
         jurisdiction: row.jurisdiction,
-        accredited: intToBool(row.accredited),
+        accredited: Boolean(row.accredited),
         investor_type: row.investor_type,
         kyc_status: row.kyc_status,
         kyc_expiry: row.kyc_expiry,
@@ -31,7 +31,7 @@ export async function createInvestor(input) {
     const lei = input.lei ?? null;
     const email = input.email ?? null;
     await execute(`INSERT INTO investors (id, name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [id, input.name, input.jurisdiction, boolToInt(accredited), investor_type, kyc_status, kyc_expiry, tax_id, lei, email, now, now]);
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [id, input.name, input.jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, now, now]);
     const investor = {
         id,
         name: input.name,
@@ -85,7 +85,7 @@ export async function updateInvestor(id, input) {
     }
     if (input.accredited !== undefined) {
         updates.push('accredited = ?');
-        params.push(boolToInt(input.accredited));
+        params.push(input.accredited);
     }
     if (input.investor_type !== undefined) {
         updates.push('investor_type = ?');

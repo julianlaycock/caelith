@@ -26,7 +26,8 @@ router.get('/', async (req, res) => {
             return;
         }
         // Get all events (with limit)
-        const eventLimit = limit ? Number(limit) : 100;
+        const parsedLimit = limit ? Number(limit) : 100;
+        const eventLimit = Number.isNaN(parsedLimit) || parsedLimit < 1 ? 100 : Math.min(parsedLimit, 1000);
         const events = await findAllEvents(eventLimit);
         res.json(events);
     }

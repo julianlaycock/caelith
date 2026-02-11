@@ -50,7 +50,7 @@ VALUES (
     '00000000-0000-0000-0000-000000000001',
     'Template: Luxembourg SIF',
     'SIF', 'LU', 'AIFMD', 'EUR', 'active'
-);
+) ON CONFLICT (id) DO NOTHING;
 
 -- Luxembourg RAIF
 INSERT INTO fund_structures (id, name, legal_form, domicile, regulatory_framework, currency, status)
@@ -58,7 +58,7 @@ VALUES (
     '00000000-0000-0000-0000-000000000002',
     'Template: Luxembourg RAIF',
     'RAIF', 'LU', 'AIFMD', 'EUR', 'active'
-);
+) ON CONFLICT (id) DO NOTHING;
 
 -- ELTIF 2.0 (EU-wide)
 INSERT INTO fund_structures (id, name, legal_form, domicile, regulatory_framework, currency, status)
@@ -66,7 +66,7 @@ VALUES (
     '00000000-0000-0000-0000-000000000003',
     'Template: ELTIF 2.0',
     'ELTIF', 'LU', 'ELTIF', 'EUR', 'active'
-);
+) ON CONFLICT (id) DO NOTHING;
 
 -- German Spezial-AIF
 INSERT INTO fund_structures (id, name, legal_form, domicile, regulatory_framework, currency, status)
@@ -74,7 +74,7 @@ VALUES (
     '00000000-0000-0000-0000-000000000004',
     'Template: German Spezial-AIF',
     'Spezial_AIF', 'DE', 'AIFMD', 'EUR', 'active'
-);
+) ON CONFLICT (id) DO NOTHING;
 
 -- Irish QIAIF
 INSERT INTO fund_structures (id, name, legal_form, domicile, regulatory_framework, currency, status)
@@ -82,7 +82,7 @@ VALUES (
     '00000000-0000-0000-0000-000000000005',
     'Template: Irish QIAIF',
     'QIAIF', 'IE', 'AIFMD', 'EUR', 'active'
-);
+) ON CONFLICT (id) DO NOTHING;
 
 -- Irish RIAIF
 INSERT INTO fund_structures (id, name, legal_form, domicile, regulatory_framework, currency, status)
@@ -90,7 +90,7 @@ VALUES (
     '00000000-0000-0000-0000-000000000006',
     'Template: Irish RIAIF',
     'RIAIF', 'IE', 'AIFMD', 'EUR', 'active'
-);
+) ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
 -- PRE-POPULATE: Eligibility criteria for 3 jurisdictions
@@ -110,7 +110,8 @@ VALUES
      'CSSF Circular 15/633, Section 4.2 — €125,000 minimum', '2015-08-17'),
     ('00000000-0000-0000-0000-000000000001', '*', 'well_informed', 12500000,
      '["risk_declaration", "professional_certification"]',
-     'CSSF Circular 15/633, Section 4.2', '2015-08-17');
+     'CSSF Circular 15/633, Section 4.2', '2015-08-17')
+ON CONFLICT (fund_structure_id, jurisdiction, investor_type, effective_date) DO NOTHING;
 
 -- ── Luxembourg RAIF ─────────────────────────────────────────────────────────
 INSERT INTO eligibility_criteria
@@ -122,7 +123,8 @@ VALUES
      'Law of 23 July 2016, Art. 2', '2016-07-23'),
     ('00000000-0000-0000-0000-000000000002', '*', 'semi_professional', 12500000,
      '["risk_declaration"]',
-     'Law of 23 July 2016, Art. 2 — €125,000 minimum', '2016-07-23');
+     'Law of 23 July 2016, Art. 2 — €125,000 minimum', '2016-07-23')
+ON CONFLICT (fund_structure_id, jurisdiction, investor_type, effective_date) DO NOTHING;
 
 -- ── ELTIF 2.0 (EU-wide) ────────────────────────────────────────────────────
 INSERT INTO eligibility_criteria
@@ -134,7 +136,8 @@ VALUES
      'Reg 2023/606', '2024-01-10'),
     ('00000000-0000-0000-0000-000000000003', '*', 'retail', 1000000, true,
      '["suitability_assessment"]',
-     'Reg 2023/606, Art. 30(1) — €10,000 minimum, suitability required', '2024-01-10');
+     'Reg 2023/606, Art. 30(1) — €10,000 minimum, suitability required', '2024-01-10')
+ON CONFLICT (fund_structure_id, jurisdiction, investor_type, effective_date) DO NOTHING;
 
 -- ── German Spezial-AIF ──────────────────────────────────────────────────────
 INSERT INTO eligibility_criteria
@@ -154,7 +157,8 @@ VALUES
     ('00000000-0000-0000-0000-000000000004', 'CH', 'institutional', 0, '[]',
      'KAGB §1(6) — Swiss institutional via bilateral agreement', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000004', 'CH', 'professional', 0, '[]',
-     'KAGB §1(6) — Swiss professional via bilateral agreement', '2013-07-22');
+     'KAGB §1(6) — Swiss professional via bilateral agreement', '2013-07-22')
+ON CONFLICT (fund_structure_id, jurisdiction, investor_type, effective_date) DO NOTHING;
 
 -- ── Irish QIAIF ─────────────────────────────────────────────────────────────
 INSERT INTO eligibility_criteria
@@ -164,7 +168,8 @@ VALUES
      'CBI AIF Rulebook, Chapter 2', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000005', '*', 'professional', 10000000,
      '["qualifying_investor_declaration"]',
-     'CBI AIF Rulebook, Chapter 2 — €100,000 minimum qualifying investor', '2013-07-22');
+     'CBI AIF Rulebook, Chapter 2 — €100,000 minimum qualifying investor', '2013-07-22')
+ON CONFLICT (fund_structure_id, jurisdiction, investor_type, effective_date) DO NOTHING;
 
 -- ── Irish RIAIF ─────────────────────────────────────────────────────────────
 INSERT INTO eligibility_criteria
@@ -176,7 +181,8 @@ VALUES
      'CBI AIF Rulebook, Chapter 3', '2013-07-22'),
     ('00000000-0000-0000-0000-000000000006', '*', 'retail', 0, true,
      '["suitability_assessment", "risk_warning_acknowledgment"]',
-     'CBI AIF Rulebook, Chapter 3 — No minimum, suitability required', '2013-07-22');
+     'CBI AIF Rulebook, Chapter 3 — No minimum, suitability required', '2013-07-22')
+ON CONFLICT (fund_structure_id, jurisdiction, investor_type, effective_date) DO NOTHING;
 
 -- ============================================================================
 -- DOWN (rollback)

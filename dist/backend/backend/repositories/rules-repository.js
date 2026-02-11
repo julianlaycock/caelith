@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, boolToInt, intToBool, parseJSON, stringifyJSON } from '../db.js';
+import { query, execute, parseJSON, stringifyJSON } from '../db.js';
 /**
  * Convert database row to RuleSet
  */
@@ -8,7 +8,7 @@ function rowToRuleSet(row) {
         id: row.id,
         asset_id: row.asset_id,
         version: row.version,
-        qualification_required: intToBool(row.qualification_required),
+        qualification_required: Boolean(row.qualification_required),
         lockup_days: row.lockup_days,
         jurisdiction_whitelist: parseJSON(row.jurisdiction_whitelist) || [],
         transfer_whitelist: parseJSON(row.transfer_whitelist),
@@ -16,7 +16,7 @@ function rowToRuleSet(row) {
         minimum_investment: row.minimum_investment ?? null,
         maximum_investors: row.maximum_investors ?? null,
         concentration_limit_pct: row.concentration_limit_pct ?? null,
-        kyc_required: intToBool(row.kyc_required),
+        kyc_required: Boolean(row.kyc_required),
         created_at: row.created_at,
     };
 }
@@ -43,7 +43,7 @@ export async function createRuleSet(input) {
         id,
         input.asset_id,
         version,
-        boolToInt(input.qualification_required),
+        input.qualification_required,
         input.lockup_days,
         stringifyJSON(input.jurisdiction_whitelist),
         input.transfer_whitelist ? stringifyJSON(input.transfer_whitelist) : null,
@@ -51,7 +51,7 @@ export async function createRuleSet(input) {
         minimum_investment,
         maximum_investors,
         concentration_limit_pct,
-        boolToInt(kyc_required),
+        kyc_required,
         now,
     ]);
     const ruleSet = {

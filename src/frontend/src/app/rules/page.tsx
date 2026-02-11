@@ -93,6 +93,7 @@ export default function RulesPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (saving) return;
     setFormError(null);
     const form = new FormData(e.currentTarget);
     const asset_id = form.get('asset_id') as string;
@@ -103,6 +104,7 @@ export default function RulesPage() {
       ? whitelistIds.split(',').map((s) => s.trim()).filter(Boolean)
       : null;
 
+    setSaving(true);
     try {
       await api.createRules({
         asset_id,
@@ -116,6 +118,8 @@ export default function RulesPage() {
       setSelectedAssetId(asset_id);
     } catch (err) {
       setFormError((err as ApiError).message || 'Failed to save rules');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -160,11 +164,13 @@ export default function RulesPage() {
 
   const handleCreateCompositeRule = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (saving) return;
     setCompositeFormError(null);
     if (!selectedAssetId) { setCompositeFormError('Select an asset first.'); return; }
     if (!crName.trim()) { setCompositeFormError('Rule name is required.'); return; }
     if (crConditions.some((c) => !c.value)) { setCompositeFormError('All conditions need a value.'); return; }
 
+    setSaving(true);
     try {
       await api.createCompositeRule({
         asset_id: selectedAssetId,
@@ -183,6 +189,8 @@ export default function RulesPage() {
       setSuccessMsg('Composite rule created.');
     } catch (err) {
       setCompositeFormError((err as ApiError).message || 'Failed to create rule');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -231,7 +239,7 @@ export default function RulesPage() {
                 <button key={code} type="button" onClick={() => toggleJurisdiction(code)}
                   className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
                     selectedJurisdictions.includes(code)
-                      ? 'border-brand-600 bg-brand-50 text-brand-600'
+                      ? 'border-[#000042] bg-navy-50 text-[#000042]'
                       : 'border-edge bg-white text-ink-secondary hover:bg-surface-subtle'
                   }`}>{code}</button>
               ))}
@@ -247,7 +255,7 @@ export default function RulesPage() {
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
-            <Button type="submit">Save Rules</Button>
+            <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Rules'}</Button>
           </div>
         </form>
       </Modal>
@@ -270,19 +278,19 @@ export default function RulesPage() {
               <div key={i} className="mb-2 flex items-end gap-2">
                 <div className="flex-1">
                   <select value={c.field} onChange={(e) => updateCondition(i, 'field', e.target.value)}
-                    className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-[#000042] focus:outline-none focus:ring-1 focus:ring-[#000042]">
                     {CONDITION_FIELDS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
                   </select>
                 </div>
                 <div className="w-36">
                   <select value={c.operator} onChange={(e) => updateCondition(i, 'operator', e.target.value)}
-                    className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-[#000042] focus:outline-none focus:ring-1 focus:ring-[#000042]">
                     {CONDITION_OPERATORS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
                 <div className="flex-1">
                   <input value={c.value} onChange={(e) => updateCondition(i, 'value', e.target.value)}
-                    placeholder="Value" className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                    placeholder="Value" className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-[#000042] focus:outline-none focus:ring-1 focus:ring-[#000042]" />
                 </div>
                 {crConditions.length > 1 && (
                   <button type="button" onClick={() => removeCondition(i)}
@@ -295,12 +303,12 @@ export default function RulesPage() {
               </div>
             ))}
             <button type="button" onClick={addCondition}
-              className="mt-1 text-sm font-medium text-brand-600 hover:text-brand-700">+ Add condition</button>
+              className="mt-1 text-sm font-medium text-[#000042] hover:text-[#000033]">+ Add condition</button>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setShowCompositeForm(false)}>Cancel</Button>
-            <Button type="submit">Create Rule</Button>
+            <Button type="submit" disabled={saving}>{saving ? 'Creating...' : 'Create Rule'}</Button>
           </div>
         </form>
       </Modal>
@@ -421,7 +429,7 @@ export default function RulesPage() {
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => handleToggleCompositeRule(rule)}
-                          className="text-xs font-medium text-brand-600 hover:text-brand-700">
+                          className="text-xs font-medium text-[#000042] hover:text-[#000033]">
                           {rule.enabled ? 'Disable' : 'Enable'}
                         </button>
                         <button onClick={() => handleDeleteCompositeRule(rule.id)}
@@ -434,7 +442,7 @@ export default function RulesPage() {
                         <div key={i} className="flex items-center gap-2 text-xs">
                           <span className="rounded bg-surface-subtle px-2 py-0.5 font-mono text-ink-secondary">{c.field}</span>
                           <span className="text-ink-tertiary">{c.operator}</span>
-                          <span className="rounded bg-brand-50 px-2 py-0.5 font-mono text-brand-600">
+                          <span className="rounded bg-navy-50 px-2 py-0.5 font-mono text-[#000042]">
                             {Array.isArray(c.value) ? (c.value as string[]).join(', ') : String(c.value)}
                           </span>
                         </div>

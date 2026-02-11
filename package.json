@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "predev:backend": "node scripts/free-port.js 3001",
     "dev:backend": "nodemon --watch src/backend --exec tsx src/backend/server.ts",
     "dev:frontend": "cd src/frontend && npm run dev",
     "build": "npm run build:backend && npm run build:frontend",

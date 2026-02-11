@@ -9,12 +9,14 @@ import {
   Card,
   MetricCard,
   Badge,
+  Button,
   RiskFlagCard,
   UtilizationBar,
   SectionHeader,
   LoadingSpinner,
   ErrorMessage,
 } from '../../../components/ui';
+import { InvestorTypeDonut, JurisdictionExposureBar, KycExpiryHorizon } from '../../../components/charts';
 import { formatNumber, formatDate, formatDateTime } from '../../../lib/utils';
 
 export default function FundDetailPage() {
@@ -51,6 +53,14 @@ export default function FundDetailPage() {
   const f = fund.data;
   const r = report.data;
 
+  // Derive KYC segment data from investor breakdown
+  const kycSegments = r ? {
+    verified: r.investor_breakdown.by_kyc_status.find(s => s.status === 'verified')?.count ?? 0,
+    pending: r.investor_breakdown.by_kyc_status.find(s => s.status === 'pending')?.count ?? 0,
+    expired: r.investor_breakdown.by_kyc_status.find(s => s.status === 'expired')?.count ?? 0,
+    expiring_soon: r.investor_breakdown.kyc_expiring_within_90_days.length,
+  } : null;
+
   return (
     <div>
       {/* Back link + Header */}
@@ -67,9 +77,27 @@ export default function FundDetailPage() {
             </div>
           </div>
           {r && (
-            <span className="text-xs text-ink-tertiary">
-              Report generated {formatDateTime(r.generated_at)}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-ink-tertiary">
+                Report generated {formatDateTime(r.generated_at)}
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await api.downloadComplianceReportPdf(id);
+                  } catch {
+                    // PDF download failed silently
+                  }
+                }}
+              >
+                <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Export PDF
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -224,74 +252,16 @@ export default function FundDetailPage() {
             </div>
           )}
 
-          {/* Investor Breakdown */}
+          {/* Investor Breakdown — Charts */}
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {/* By Type */}
-            <div>
-              <SectionHeader title="Investors by Type" />
-              <Card padding={false}>
-                <div className="divide-y divide-edge-subtle">
-                  {r.investor_breakdown.by_type.map((row) => (
-                    <div key={row.type} className="flex items-center justify-between px-6 py-3">
-                      <span className="text-sm text-ink">{row.type}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs tabular-nums text-ink-secondary">{formatNumber(row.total_units)} units</span>
-                        <Badge variant="gray">{row.count}</Badge>
-                      </div>
-                    </div>
-                  ))}
-                  {r.investor_breakdown.by_type.length === 0 && (
-                    <p className="px-6 py-4 text-sm text-ink-tertiary">No investor data available</p>
-                  )}
-                </div>
-              </Card>
-            </div>
-
-            {/* By Jurisdiction */}
-            <div>
-              <SectionHeader title="Investors by Jurisdiction" />
-              <Card padding={false}>
-                <div className="divide-y divide-edge-subtle">
-                  {r.investor_breakdown.by_jurisdiction.map((row) => (
-                    <div key={row.jurisdiction} className="flex items-center justify-between px-6 py-3">
-                      <span className="text-sm text-ink">{row.jurisdiction}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs tabular-nums text-ink-secondary">{formatNumber(row.total_units)} units</span>
-                        <Badge variant="gray">{row.count}</Badge>
-                      </div>
-                    </div>
-                  ))}
-                  {r.investor_breakdown.by_jurisdiction.length === 0 && (
-                    <p className="px-6 py-4 text-sm text-ink-tertiary">No investor data available</p>
-                  )}
-                </div>
-              </Card>
-            </div>
+            <InvestorTypeDonut data={r.investor_breakdown.by_type} />
+            <JurisdictionExposureBar data={r.investor_breakdown.by_jurisdiction} />
           </div>
 
-          {/* KYC Status Breakdown */}
+          {/* KYC Status — Segmented Bar + Expiring Soon */}
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div>
-              <SectionHeader title="KYC Status" />
-              <Card padding={false}>
-                <div className="divide-y divide-edge-subtle">
-                  {r.investor_breakdown.by_kyc_status.map((row) => {
-                    const kycBadge = row.status === 'verified' ? 'green' : row.status === 'pending' ? 'yellow' : 'red';
-                    return (
-                      <div key={row.status} className="flex items-center justify-between px-6 py-3">
-                        <Badge variant={kycBadge}>{row.status}</Badge>
-                        <span className="text-sm tabular-nums text-ink">{row.count}</span>
-                      </div>
-                    );
-                  })}
-                  {r.investor_breakdown.by_kyc_status.length === 0 && (
-                    <p className="px-6 py-4 text-sm text-ink-tertiary">No KYC data available</p>
-                  )}
-                </div>
-              </Card>
-            </div>
+            {kycSegments && <KycExpiryHorizon data={kycSegments} />}
 
-            {/* KYC Expiring Soon */}
             {r.investor_breakdown.kyc_expiring_within_90_days.length > 0 && (
               <div>
                 <SectionHeader title="KYC Expiring Soon" description="Within 90 days" />

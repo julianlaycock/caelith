@@ -149,11 +149,11 @@ export function Button({
   const base =
     'inline-flex items-center justify-center font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
   const variants = {
-    primary: 'bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500 shadow-sm rounded-lg',
+    primary: 'bg-[#000042] text-white hover:bg-[#000033] focus:ring-[#000042] shadow-sm rounded-lg',
     secondary:
-      'bg-white text-ink border border-edge hover:bg-surface-subtle focus:ring-brand-500 rounded-lg',
+      'bg-white text-ink border border-edge hover:bg-surface-subtle focus:ring-[#000042] rounded-lg',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm rounded-lg',
-    ghost: 'text-ink-secondary hover:text-ink hover:bg-surface-subtle focus:ring-brand-500 rounded-lg',
+    ghost: 'text-ink-secondary hover:text-ink hover:bg-surface-subtle focus:ring-[#000042] rounded-lg',
   };
   const sizes = {
     sm: 'px-3 py-1.5 text-xs',
@@ -191,7 +191,7 @@ export function Input({ label, error, id, ...props }: InputProps) {
           'block w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1',
           error
             ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-            : 'border-edge focus:border-brand-500 focus:ring-brand-500 bg-white'
+            : 'border-edge focus:border-[#000042] focus:ring-[#000042] bg-white'
         )}
         {...props}
       />
@@ -221,7 +221,7 @@ export function Select({ label, options, error, id, ...props }: SelectProps) {
           'block w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1',
           error
             ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-            : 'border-edge focus:border-brand-500 focus:ring-brand-500 bg-white'
+            : 'border-edge focus:border-[#000042] focus:ring-[#000042] bg-white'
         )}
         {...props}
       >
@@ -247,7 +247,7 @@ export function Checkbox({ label, id, ...props }: CheckboxProps) {
       <input
         type="checkbox"
         id={checkboxId}
-        className="h-4 w-4 rounded border-edge text-brand-600 focus:ring-brand-500"
+        className="h-4 w-4 rounded border-edge text-[#000042] focus:ring-[#000042]"
         {...props}
       />
       <label htmlFor={checkboxId} className="text-sm text-ink">{label}</label>

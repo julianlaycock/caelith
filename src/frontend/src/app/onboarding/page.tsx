@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import {
   PageHeader,
-  Card,
   Button,
   Select,
   Input,
@@ -15,12 +14,29 @@ import {
   EmptyState,
   Badge,
   Alert,
-  SectionHeader,
 } from '../../components/ui';
-import { formatNumber, formatDate, formatDateTime } from '../../lib/utils';
+import { formatNumber, formatDate, formatDateTime, classNames } from '../../lib/utils';
 import type { ApiError, OnboardingRecord } from '../../lib/types';
 
-const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'red' | 'gray' | 'blue'> = {
+// ── Column definitions ───────────────────────────────────
+
+interface KanbanColumn {
+  key: string;
+  label: string;
+  statuses: string[];
+  color: string;
+  dotColor: string;
+}
+
+const COLUMNS: KanbanColumn[] = [
+  { key: 'applied',   label: 'Applied',    statuses: ['applied'],              color: 'border-t-amber-400',  dotColor: 'bg-amber-400' },
+  { key: 'eligible',  label: 'Eligible',   statuses: ['eligible'],             color: 'border-t-blue-400',   dotColor: 'bg-blue-400' },
+  { key: 'approved',  label: 'Approved',   statuses: ['approved'],             color: 'border-t-brand-500',  dotColor: 'bg-brand-500' },
+  { key: 'allocated', label: 'Allocated',  statuses: ['allocated'],            color: 'border-t-brand-700',  dotColor: 'bg-brand-700' },
+  { key: 'closed',    label: 'Closed',     statuses: ['rejected', 'ineligible', 'withdrawn'], color: 'border-t-red-400', dotColor: 'bg-red-400' },
+];
+
+const STATUS_BADGE: Record<string, 'green' | 'yellow' | 'red' | 'gray' | 'blue'> = {
   applied: 'yellow',
   eligible: 'blue',
   ineligible: 'red',
@@ -36,6 +52,7 @@ export default function OnboardingPage() {
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<OnboardingRecord | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const applyFormRef = useRef<HTMLFormElement>(null);
 
   // All onboarding records aggregated across assets
   const [allRecords, setAllRecords] = useState<OnboardingRecord[]>([]);
@@ -65,7 +82,6 @@ export default function OnboardingPage() {
           }
         }
         if (!cancelled) {
-          // Deduplicate by id and sort by applied_at desc
           const seen = new Set<string>();
           const unique = results.filter(r => {
             if (seen.has(r.id)) return false;
@@ -129,7 +145,9 @@ export default function OnboardingPage() {
 
     try {
       await api.applyToFund({ investor_id, asset_id, requested_units });
+      applyFormRef.current?.reset();
       setShowApplyForm(false);
+      setFormError(null);
       setActionMsg({ type: 'success', text: 'Onboarding application submitted.' });
       refetchRecords();
     } catch (err) {
@@ -169,11 +187,82 @@ export default function OnboardingPage() {
     }
   };
 
-  // Group records by status
-  const pending = allRecords.filter(r => r.status === 'applied');
-  const eligible = allRecords.filter(r => r.status === 'eligible');
-  const approved = allRecords.filter(r => r.status === 'approved');
-  const completed = allRecords.filter(r => ['allocated', 'rejected', 'ineligible', 'withdrawn'].includes(r.status));
+  // ── Drag-and-Drop State & Logic ──────────────────────
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [dragError, setDragError] = useState<string | null>(null);
+
+  // Valid column transitions: source → { targetColumn → action }
+  const VALID_MOVES: Record<string, Record<string, 'check' | 'approve' | 'reject' | 'allocate'>> = {
+    applied:  { eligible: 'check', closed: 'reject' },
+    eligible: { approved: 'approve', closed: 'reject' },
+    approved: { allocated: 'allocate' },
+  };
+
+  const getRecordColumn = (rec: OnboardingRecord): string => {
+    return COLUMNS.find(c => c.statuses.includes(rec.status))?.key || 'applied';
+  };
+
+  const isValidDrop = (recordId: string, targetCol: string): boolean => {
+    const rec = allRecords.find(r => r.id === recordId);
+    if (!rec) return false;
+    const sourceCol = getRecordColumn(rec);
+    if (sourceCol === targetCol) return false;
+    return !!(VALID_MOVES[sourceCol]?.[targetCol]);
+  };
+
+  const handleDragStart = (e: React.DragEvent, recordId: string) => {
+    setDraggedId(recordId);
+    setDragError(null);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', recordId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, colKey: string) => {
+    e.preventDefault();
+    if (draggedId && isValidDrop(draggedId, colKey)) {
+      e.dataTransfer.dropEffect = 'move';
+      setDropTarget(colKey);
+    } else {
+      e.dataTransfer.dropEffect = 'none';
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDropTarget(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDropTarget(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetCol: string) => {
+    e.preventDefault();
+    setDropTarget(null);
+    setDraggedId(null);
+
+    const recordId = e.dataTransfer.getData('text/plain');
+    const rec = allRecords.find(r => r.id === recordId);
+    if (!rec) return;
+
+    const sourceCol = getRecordColumn(rec);
+    const action = VALID_MOVES[sourceCol]?.[targetCol];
+
+    if (!action) {
+      setDragError(`Cannot move from "${sourceCol}" to "${targetCol}".`);
+      setTimeout(() => setDragError(null), 3000);
+      return;
+    }
+
+    await handleAction(action, rec);
+  };
+
+  // Group records into columns
+  const columnRecords: Record<string, OnboardingRecord[]> = {};
+  for (const col of COLUMNS) {
+    columnRecords[col.key] = allRecords.filter(r => col.statuses.includes(r.status));
+  }
 
   const loading = assets.loading || investors.loading || recordsLoading;
 
@@ -193,12 +282,19 @@ export default function OnboardingPage() {
         </div>
       )}
 
+      {dragError && (
+        <div className="mb-4">
+          <Alert variant="error">{dragError}</Alert>
+        </div>
+      )}
+
+      {/* Apply Modal */}
       <Modal
         open={showApplyForm}
-        onClose={() => setShowApplyForm(false)}
+        onClose={() => { setShowApplyForm(false); setFormError(null); }}
         title="Apply to Fund"
       >
-        <form onSubmit={handleApply} className="space-y-4">
+        <form ref={applyFormRef} onSubmit={handleApply} className="space-y-4">
           {formError && <Alert variant="error">{formError}</Alert>}
           <Select label="Investor" name="investor_id" options={investorOptions} required />
           <Select label="Asset" name="asset_id" options={assetOptions} required />
@@ -210,7 +306,7 @@ export default function OnboardingPage() {
         </form>
       </Modal>
 
-      {/* Detail Modal */}
+      {/* Detail / Action Modal */}
       <Modal
         open={!!selectedRecord}
         onClose={() => setSelectedRecord(null)}
@@ -234,7 +330,7 @@ export default function OnboardingPage() {
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">Status</p>
                 <div className="mt-0.5">
-                  <Badge variant={STATUS_COLORS[selectedRecord.status] || 'gray'}>{selectedRecord.status}</Badge>
+                  <Badge variant={STATUS_BADGE[selectedRecord.status] || 'gray'}>{selectedRecord.status}</Badge>
                 </div>
               </div>
               <div>
@@ -309,77 +405,94 @@ export default function OnboardingPage() {
       ) : recordsError ? (
         <ErrorMessage message={recordsError} onRetry={refetchRecords} />
       ) : allRecords.length > 0 ? (
-        <div className="space-y-6">
-          {/* Pipeline Summary */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <Card>
-              <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">Applied</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{pending.length}</p>
-            </Card>
-            <Card>
-              <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">Eligible</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{eligible.length}</p>
-            </Card>
-            <Card>
-              <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">Approved</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-brand-600">{approved.length}</p>
-            </Card>
-            <Card>
-              <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">Completed</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{completed.length}</p>
-            </Card>
+        <>
+          {/* Pipeline Summary Metrics */}
+          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
+            {COLUMNS.map((col) => (
+              <div key={col.key} className={classNames('rounded-xl border border-edge border-t-[3px] bg-white p-4 shadow-sm', col.color)}>
+                <div className="flex items-center gap-2">
+                  <span className={classNames('h-2 w-2 rounded-full', col.dotColor)} />
+                  <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">{col.label}</p>
+                </div>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{columnRecords[col.key].length}</p>
+              </div>
+            ))}
           </div>
 
-          {/* Records Table */}
-          <div>
-            <SectionHeader title="All Applications" description={`${allRecords.length} total`} />
-            <Card padding={false}>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-edge">
-                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Investor</th>
-                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Asset</th>
-                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Units</th>
-                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Status</th>
-                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Applied</th>
-                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-edge-subtle">
-                    {allRecords.map((rec) => (
-                      <tr key={rec.id} className="hover:bg-surface-subtle transition-colors">
-                        <td className="px-6 py-3 text-sm font-medium text-ink">
+          {/* Kanban Board */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+            {COLUMNS.map((col) => (
+              <div
+                key={col.key}
+                className={classNames(
+                  'flex flex-col rounded-lg transition-colors',
+                  dropTarget === col.key && 'ring-2 ring-brand-500 bg-brand-50/30',
+                )}
+                onDragOver={(e) => handleDragOver(e, col.key)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, col.key)}
+              >
+                {/* Column Header */}
+                <div className={classNames('mb-3 flex items-center justify-between rounded-lg border border-edge border-t-[3px] bg-white px-3 py-2', col.color)}>
+                  <div className="flex items-center gap-2">
+                    <span className={classNames('h-2 w-2 rounded-full', col.dotColor)} />
+                    <span className="text-xs font-semibold uppercase tracking-wide text-ink">{col.label}</span>
+                  </div>
+                  <span className="rounded-md bg-surface-subtle px-1.5 py-0.5 text-xs font-medium tabular-nums text-ink-secondary">
+                    {columnRecords[col.key].length}
+                  </span>
+                </div>
+
+                {/* Cards */}
+                <div className="space-y-2 flex-1 min-h-[80px]">
+                  {columnRecords[col.key].length === 0 && (
+                    <div className="rounded-lg border border-dashed border-edge bg-surface-subtle/50 px-3 py-6 text-center">
+                      <p className="text-xs text-ink-tertiary">
+                        {dropTarget === col.key ? 'Drop here' : 'No records'}
+                      </p>
+                    </div>
+                  )}
+                  {columnRecords[col.key].map((rec) => (
+                    <div
+                      key={rec.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, rec.id)}
+                      onDragEnd={handleDragEnd}
+                      onClick={() => setSelectedRecord(rec)}
+                      className={classNames(
+                        'w-full rounded-lg border border-edge bg-white p-3 text-left shadow-sm transition-all hover:shadow-md hover:border-navy-300 cursor-grab active:cursor-grabbing',
+                        draggedId === rec.id && 'opacity-40 scale-95',
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <p className="text-sm font-medium text-ink leading-tight">
                           {investorMap[rec.investor_id] || rec.investor_id.slice(0, 8)}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-ink">
-                          {assetMap[rec.asset_id] || rec.asset_id.slice(0, 8)}
-                        </td>
-                        <td className="px-6 py-3 text-sm tabular-nums text-ink-secondary">
-                          {formatNumber(rec.requested_units)}
-                        </td>
-                        <td className="px-6 py-3">
-                          <Badge variant={STATUS_COLORS[rec.status] || 'gray'}>{rec.status}</Badge>
-                        </td>
-                        <td className="px-6 py-3 text-xs tabular-nums text-ink-secondary">
+                        </p>
+                        <Badge variant={STATUS_BADGE[rec.status] || 'gray'}>{rec.status}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-ink-secondary truncate">
+                        {assetMap[rec.asset_id] || rec.asset_id.slice(0, 8)}
+                      </p>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-xs font-medium tabular-nums text-ink-secondary">
+                          {formatNumber(rec.requested_units)} units
+                        </span>
+                        <span className="text-[10px] tabular-nums text-ink-tertiary">
                           {formatDate(rec.applied_at)}
-                        </td>
-                        <td className="px-6 py-3">
-                          <button
-                            onClick={() => setSelectedRecord(rec)}
-                            className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors"
-                          >
-                            View &rarr;
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </span>
+                      </div>
+                      {rec.rejection_reasons && rec.rejection_reasons.length > 0 && (
+                        <p className="mt-1.5 truncate rounded bg-red-50 px-1.5 py-0.5 text-[10px] text-red-600">
+                          {rec.rejection_reasons[0]}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </Card>
+            ))}
           </div>
-        </div>
+        </>
       ) : (
         <EmptyState
           title="No onboarding applications"

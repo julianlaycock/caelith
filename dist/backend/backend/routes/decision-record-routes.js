@@ -25,7 +25,7 @@ router.get('/:id', async (req, res) => {
     try {
         const record = await findDecisionRecordById(req.params.id);
         if (!record)
-            return res.status(404).json({ error: 'NOT_FOUND' });
+            return res.status(404).json({ error: 'NOT_FOUND', message: `Decision record not found: ${req.params.id}` });
         return res.json(record);
     }
     catch (err) {

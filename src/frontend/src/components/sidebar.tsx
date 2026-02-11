@@ -168,12 +168,12 @@ export function Sidebar() {
       <div className="border-t border-white/10 p-4">
         {user && (
           <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-navy-850 text-xs font-semibold text-navy-200">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#000042] ring-1 ring-white/20 text-xs font-bold text-white">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-white">{user.name}</p>
-              <span className="inline-block rounded bg-navy-850 px-1.5 py-0.5 text-[10px] font-medium text-navy-200">
+              <span className="inline-block rounded bg-[#000042] ring-1 ring-white/20 px-1.5 py-0.5 text-[10px] font-medium text-white">
                 {user.role.replace('_', ' ')}
               </span>
             </div>
@@ -181,7 +181,7 @@ export function Sidebar() {
         )}
         <button
           onClick={logout}
-          className="w-full rounded-lg px-3 py-1.5 text-xs font-medium text-navy-200 transition-colors hover:text-navy-100"
+          className="w-full rounded-lg px-3 py-1.5 text-xs font-medium text-brand-300 transition-colors hover:text-white hover:bg-white/[0.05]"
         >
           Sign Out
         </button>

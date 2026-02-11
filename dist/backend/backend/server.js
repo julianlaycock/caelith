@@ -31,11 +31,32 @@ import onboardingRoutes from './routes/onboarding-routes.js';
 import complianceReportRoutes from './routes/compliance-report-routes.js';
 // Load environment variables
 dotenv.config();
+// Validate required environment variables at startup
+const REQUIRED_ENV_VARS = ['JWT_SECRET', 'DATABASE_URL'];
+for (const envVar of REQUIRED_ENV_VARS) {
+    if (!process.env[envVar]) {
+        console.error(`FATAL: Missing required environment variable: ${envVar}`);
+        process.exit(1);
+    }
+}
 const app = express();
 const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(securityHeaders);
-app.use(cors());
+const ALLOWED_ORIGINS = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+    : ['http://localhost:3000', 'http://localhost:3001'];
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            callback(new Error(`Origin ${origin} not allowed by CORS`));
+        }
+    },
+    credentials: true,
+}));
 app.use(express.json());
 app.use(sanitizeInput);
 // Health check endpoint
@@ -83,7 +104,7 @@ app.use('/api/decisions', authenticate, decisionRecordRoutes);
 app.use('/api/nl-rules', authenticate, authorize('admin', 'compliance_officer'), nlRulesRoutes);
 app.use('/api/reports', authenticate, complianceReportRoutes);
 // Test-only: reset database
-app.post('/api/reset', async (_req, res) => {
+app.post('/api/reset', authenticate, authorize('admin'), async (_req, res) => {
     if (process.env.NODE_ENV === 'production') {
         res.status(403).json({ error: 'FORBIDDEN', message: 'Reset not available in production' });
         return;
@@ -103,7 +124,7 @@ app.post('/api/reset', async (_req, res) => {
         res.json({ status: 'reset' });
     }
     catch (error) {
-        res.status(500).json({ error: 'RESET_FAILED' });
+        res.status(500).json({ error: 'RESET_FAILED', message: 'Database reset failed' });
     }
 });
 // 404 handler
@@ -122,9 +143,9 @@ app.use((err, req, res, _next) => {
     });
 });
 // Graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
     console.log('\nShutting down gracefully...');
-    closeDb();
+    await closeDb();
     process.exit(0);
 });
 // Start server

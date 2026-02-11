@@ -166,6 +166,9 @@ async function seed() {
     { name: 'Marie Laurent',          jur: 'FR', type: 'professional',      kyc: 'verified', expiry: '2027-12-31' },
     { name: 'Klaus Schmidt',          jur: 'DE', type: 'semi_professional', kyc: 'verified', expiry: '2026-05-15' },
     { name: 'Acme Capital Partners',  jur: 'LU', type: 'institutional',    kyc: 'verified', expiry: '2028-06-30' },
+    { name: 'Sophie Dubois',          jur: 'FR', type: 'professional',      kyc: 'verified', expiry: '2027-03-15' },
+    { name: 'Erik Nordström',         jur: 'NO', type: 'semi_professional', kyc: 'verified', expiry: '2026-11-20' },
+    { name: 'Pieter van Dijk',        jur: 'NL', type: 'institutional',    kyc: 'verified', expiry: '2027-06-01' },
   ];
 
   const investorIds: Record<string, string> = {};
@@ -192,6 +195,9 @@ async function seed() {
   const marieId = investorIds['Marie Laurent'];
   const klausId = investorIds['Klaus Schmidt'];
   const acmeId  = investorIds['Acme Capital Partners'];
+  const sophieId = investorIds['Sophie Dubois'];
+  const erikId = investorIds['Erik Nordström'];
+  const pieterId = investorIds['Pieter van Dijk'];
 
   // =========================================================================
   // 6. Holdings
@@ -203,6 +209,9 @@ async function seed() {
     { inv: klausId, invName: 'Klaus Schmidt',          asset: sifClassA,  assetName: 'SIF Class A',  units: 150000 },
     { inv: acmeId,  invName: 'Acme Capital Partners',  asset: sifClassA,  assetName: 'SIF Class A',  units: 400000 },
     { inv: acmeId,  invName: 'Acme Capital Partners',  asset: raifClassA, assetName: 'RAIF Class A', units: 500000 },
+    { inv: sophieId, invName: 'Sophie Dubois',     asset: raifClassA, assetName: 'RAIF Class A', units: 300000 },
+    { inv: erikId,   invName: 'Erik Nordström',    asset: sifClassA,  assetName: 'SIF Class A',  units: 100000 },
+    { inv: pieterId, invName: 'Pieter van Dijk',   asset: raifClassA, assetName: 'RAIF Class A', units: 600000 },
   ];
 
   for (const h of holdings) {
@@ -232,8 +241,8 @@ async function seed() {
   console.log('  6 eligibility criteria');
   console.log('  3 assets (2 SIF classes, 1 RAIF class)');
   console.log('  3 rules (permissive)');
-  console.log('  3 investors (professional, semi_professional, institutional)');
-  console.log('  4 holdings');
+  console.log('  6 investors (professional, semi_professional, institutional)');
+  console.log('  7 holdings');
   console.log('========================================');
   console.log('\nRisk flags for demo:');
   console.log('  - Klaus Schmidt: KYC expires 2026-05-15 (within 90 days)');
