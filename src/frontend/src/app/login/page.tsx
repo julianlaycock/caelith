@@ -123,7 +123,7 @@ export default function LoginPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="block w-full rounded-lg border border-edge px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="block w-full rounded-lg border border-edge px-3 py-2 text-sm focus:border-[#000042] focus:outline-none focus:ring-1 focus:ring-[#000042]"
                   required
                 />
               </div>
@@ -135,7 +135,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-lg border border-edge px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="block w-full rounded-lg border border-edge px-3 py-2 text-sm focus:border-[#000042] focus:outline-none focus:ring-1 focus:ring-[#000042]"
                 required
               />
             </div>
@@ -147,7 +147,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={8}
-                className="block w-full rounded-lg border border-edge px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="block w-full rounded-lg border border-edge px-3 py-2 text-sm focus:border-[#000042] focus:outline-none focus:ring-1 focus:ring-[#000042]"
                 required
               />
             </div>
@@ -159,7 +159,7 @@ export default function LoginPage() {
                   id="remember-me"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-edge text-brand-600 focus:ring-brand-500"
+                  className="h-4 w-4 rounded border-edge text-[#000042] focus:ring-[#000042]"
                 />
                 <label htmlFor="remember-me" className="text-sm text-ink-secondary">
                   Remember me
@@ -170,7 +170,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700 disabled:opacity-50"
+              className="w-full rounded-lg bg-[#000042] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#000033] disabled:opacity-50"
             >
               {loading ? 'Please wait...' : isRegister ? 'Create Account' : 'Sign In'}
             </button>
@@ -180,7 +180,7 @@ export default function LoginPage() {
             {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               onClick={() => { setIsRegister(!isRegister); setError(null); }}
-              className="font-medium text-brand-600 hover:text-brand-700"
+              className="font-medium text-[#000042] hover:text-[#000033]"
             >
               {isRegister ? 'Sign in' : 'Create one'}
             </button>

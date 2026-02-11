@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { createFundStructure, findFundStructureById, findAllFundStructures, updateFundStructure, } from '../repositories/fund-structure-repository.js';
+import { query, execute } from '../db.js';
 const router = Router();
 router.post('/', async (req, res) => {
     try {
@@ -33,7 +34,7 @@ router.get('/:id', async (req, res) => {
     try {
         const fund = await findFundStructureById(req.params.id);
         if (!fund)
-            return res.status(404).json({ error: 'NOT_FOUND' });
+            return res.status(404).json({ error: 'NOT_FOUND', message: `Fund structure not found: ${req.params.id}` });
         return res.json(fund);
     }
     catch (err) {
@@ -45,8 +46,32 @@ router.patch('/:id', async (req, res) => {
     try {
         const fund = await updateFundStructure(req.params.id, req.body);
         if (!fund)
-            return res.status(404).json({ error: 'NOT_FOUND' });
+            return res.status(404).json({ error: 'NOT_FOUND', message: `Fund structure not found: ${req.params.id}` });
         return res.json(fund);
+    }
+    catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        return res.status(500).json({ error: 'INTERNAL_ERROR', message });
+    }
+});
+router.delete('/:id', async (req, res) => {
+    try {
+        // Check for linked assets
+        const assets = await query('SELECT COUNT(*)::int as count FROM assets WHERE fund_structure_id = $1', [req.params.id]);
+        if (assets.length > 0 && assets[0].count > 0) {
+            return res.status(422).json({
+                error: 'DEPENDENCY_ERROR',
+                message: `Cannot delete: this fund structure has ${assets[0].count} linked asset(s). Remove or reassign them first.`,
+            });
+        }
+        // Delete eligibility criteria (configuration, not audit data)
+        await execute('DELETE FROM eligibility_criteria WHERE fund_structure_id = ?', [req.params.id]);
+        // Delete the fund structure
+        const result = await query('DELETE FROM fund_structures WHERE id = $1 RETURNING id', [req.params.id]);
+        if (result.length === 0) {
+            return res.status(404).json({ error: 'NOT_FOUND', message: `Fund structure not found: ${req.params.id}` });
+        }
+        return res.json({ deleted: true, id: result[0].id });
     }
     catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';

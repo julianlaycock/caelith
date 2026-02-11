@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { api } from '../lib/api';
-import { Card, MetricCard, Badge, RiskFlagCard, UtilizationBar, SectionHeader, ErrorMessage } from '../components/ui';
+import { Card, MetricCard, Badge, RiskFlagCard, UtilizationBar, SectionHeader, ErrorMessage, Modal } from '../components/ui';
 import {
   InvestorTypeDonut,
   JurisdictionExposureBar,
@@ -11,7 +12,7 @@ import {
   ViolationAnalysisBar,
   ConcentrationRiskGrid,
 } from '../components/charts';
-import { formatNumber, formatDateTime } from '../lib/utils';
+import { formatNumber, formatDateTime, classNames } from '../lib/utils';
 import type { FundStructure, ComplianceReport, CapTableEntry } from '../lib/types';
 
 interface FundReportPair {
@@ -166,11 +167,20 @@ function computeConcentration(
   });
 }
 
+interface RiskFlag {
+  severity: 'high' | 'medium' | 'low';
+  category: string;
+  message: string;
+}
+
 export default function DashboardPage() {
+  const router = useRouter();
   const [fundReports, setFundReports] = useState<FundReportPair[]>([]);
   const [capTables, setCapTables] = useState<Map<string, CapTableEntry[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRisk, setSelectedRisk] = useState<RiskFlag | null>(null);
+  const [violationAsset, setViolationAsset] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -275,7 +285,7 @@ export default function DashboardPage() {
           <h1 className="text-xl font-semibold tracking-tight text-ink">Command Center</h1>
           <p className="mt-0.5 text-sm text-ink-secondary">Compliance engine overview</p>
         </div>
-        <span className="text-sm text-ink-tertiary">{today}</span>
+        <span className="rounded-lg bg-[#000042] px-3 py-1.5 text-xs font-medium text-white shadow-sm">{today}</span>
       </div>
 
       {/* Metric Cards — compact */}
@@ -338,12 +348,12 @@ export default function DashboardPage() {
         <div className="mb-6">
           <SectionHeader title="Analytics" description="Portfolio composition and compliance metrics" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <InvestorTypeDonut data={typeData} />
+            <InvestorTypeDonut data={typeData} onTypeClick={(type) => router.push(`/investors?type=${type}`)} />
             <JurisdictionExposureBar data={jurisdictionData} />
-            <KycExpiryHorizon data={kycData} />
+            <KycExpiryHorizon data={kycData} onStatusClick={(status) => router.push(`/investors?kyc=${status}`)} />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <ViolationAnalysisBar data={violationData} />
+            <ViolationAnalysisBar data={violationData} onBarClick={(name) => setViolationAsset(name)} />
             <ConcentrationRiskGrid data={concentrationData} />
           </div>
         </div>
@@ -355,7 +365,9 @@ export default function DashboardPage() {
           <SectionHeader title="Risk Flags" description={`${allRiskFlags.length} flag${allRiskFlags.length !== 1 ? 's' : ''} across all funds`} />
           <div className="space-y-2">
             {allRiskFlags.map((flag, i) => (
-              <RiskFlagCard key={i} severity={flag.severity} category={flag.category} message={flag.message} />
+              <div key={i} className="cursor-pointer transition-transform hover:scale-[1.005]" onClick={() => setSelectedRisk(flag)}>
+                <RiskFlagCard severity={flag.severity} category={flag.category} message={flag.message} />
+              </div>
             ))}
           </div>
         </div>
@@ -511,6 +523,126 @@ export default function DashboardPage() {
           </div>
         </Card>
       )}
+
+      {/* Risk Detail Slide-Out Panel */}
+      {selectedRisk && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="fixed inset-0 bg-brand-950/40 backdrop-blur-sm" onClick={() => setSelectedRisk(null)} />
+          <div className="ml-auto relative z-10 w-full max-w-md h-full bg-white shadow-xl border-l border-edge overflow-y-auto">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-edge bg-white px-6 py-4">
+              <h2 className="text-base font-semibold text-ink">Risk Flag Detail</h2>
+              <button
+                onClick={() => setSelectedRisk(null)}
+                className="rounded-lg p-1 text-ink-tertiary hover:bg-surface-subtle hover:text-ink transition-colors"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* Severity */}
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Severity</p>
+                <span className={classNames(
+                  'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold uppercase tracking-wider',
+                  selectedRisk.severity === 'high' && 'bg-red-100 text-red-700',
+                  selectedRisk.severity === 'medium' && 'bg-amber-100 text-amber-700',
+                  selectedRisk.severity === 'low' && 'bg-brand-100 text-brand-700',
+                )}>
+                  {selectedRisk.severity}
+                </span>
+              </div>
+
+              {/* Category */}
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Category</p>
+                <p className="text-sm font-medium text-ink">{selectedRisk.category}</p>
+              </div>
+
+              {/* Description */}
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Description</p>
+                <p className="text-sm text-ink leading-relaxed">{selectedRisk.message}</p>
+              </div>
+
+              {/* Recommended Actions */}
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Recommended Actions</p>
+                <div className={classNames(
+                  'rounded-lg border p-4 space-y-2',
+                  selectedRisk.severity === 'high' ? 'border-red-200 bg-red-50' : selectedRisk.severity === 'medium' ? 'border-amber-200 bg-amber-50' : 'border-brand-200 bg-brand-50',
+                )}>
+                  {selectedRisk.severity === 'high' && (
+                    <>
+                      <p className="text-sm text-red-800 font-medium">Immediate attention required</p>
+                      <ul className="space-y-1 text-sm text-red-700">
+                        <li>&bull; Review and remediate the flagged condition</li>
+                        <li>&bull; Escalate to compliance officer if unresolved</li>
+                        <li>&bull; Document remediation steps taken</li>
+                      </ul>
+                    </>
+                  )}
+                  {selectedRisk.severity === 'medium' && (
+                    <>
+                      <p className="text-sm text-amber-800 font-medium">Review within 7 days</p>
+                      <ul className="space-y-1 text-sm text-amber-700">
+                        <li>&bull; Investigate the flagged condition</li>
+                        <li>&bull; Schedule follow-up action if needed</li>
+                        <li>&bull; Monitor for escalation</li>
+                      </ul>
+                    </>
+                  )}
+                  {selectedRisk.severity === 'low' && (
+                    <>
+                      <p className="text-sm text-brand-800 font-medium">Monitor and review</p>
+                      <ul className="space-y-1 text-sm text-brand-700">
+                        <li>&bull; Note for next periodic review</li>
+                        <li>&bull; No immediate action required</li>
+                      </ul>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Timestamp */}
+              <div className="rounded-lg bg-surface-subtle px-4 py-3">
+                <p className="text-xs text-ink-tertiary">Flagged at: {today}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Violation Detail Modal */}
+      <Modal open={!!violationAsset} onClose={() => setViolationAsset(null)} title={`Violations — ${violationAsset || ''}`}>
+        {violationAsset && (() => {
+          const assetId = Object.entries(assetNameMap).find(([, name]) => name === violationAsset)?.[0];
+          const decisions = allDecisions.filter(
+            (d) => d.asset_id === assetId && d.violation_count > 0
+          );
+          return decisions.length > 0 ? (
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {decisions.map((d) => (
+                <div key={d.id} className="rounded-lg border border-edge-subtle p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-ink">{d.decision_type.replace(/_/g, ' ')}</span>
+                    <Badge variant={d.result === 'approved' || d.result === 'pass' ? 'green' : d.result === 'rejected' || d.result === 'fail' ? 'red' : 'gray'}>
+                      {d.result}
+                    </Badge>
+                  </div>
+                  <p className="text-xs tabular-nums text-ink-tertiary mb-2">{formatDateTime(d.decided_at)}</p>
+                  <div className="rounded bg-red-50 px-3 py-2">
+                    <p className="text-xs font-medium text-red-700">{d.violation_count} violation{d.violation_count !== 1 ? 's' : ''} detected</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-ink-secondary py-4 text-center">No detailed violation records available.</p>
+          );
+        })()}
+      </Modal>
     </div>
   );
 }

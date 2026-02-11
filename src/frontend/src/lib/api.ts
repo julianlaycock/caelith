@@ -381,6 +381,35 @@ class ApiClient {
   async getDecision(id: string): Promise<DecisionRecord> {
     return this.request<DecisionRecord>(`/decisions/${id}`);
   }
+
+  async updateFundStructure(id: string, data: Partial<CreateFundStructureRequest>): Promise<FundStructure> {
+    return this.request<FundStructure>(`/fund-structures/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteFundStructure(id: string): Promise<{ deleted: boolean; id: string }> {
+    return this.request<{ deleted: boolean; id: string }>(`/fund-structures/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async downloadComplianceReportPdf(fundStructureId: string): Promise<void> {
+    const headers: Record<string, string> = {};
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+    const res = await fetch(`${BASE_URL}/reports/compliance/${fundStructureId}/pdf`, { headers });
+    if (!res.ok) throw new Error('PDF download failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `compliance-report-${fundStructureId.substring(0, 8)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 }
 
 export const api = new ApiClient();

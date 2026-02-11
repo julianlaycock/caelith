@@ -6,6 +6,16 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    'bg-navy-875',
+    'text-navy-875',
+    'hover:bg-navy-900',
+    'focus:ring-navy-875',
+    'focus:border-navy-875',
+    'border-navy-875',
+    'ring-navy-875',
+    'bg-navy-50',
+  ],
   theme: {
     extend: {
       colors: {
@@ -34,6 +44,7 @@ const config: Config = {
           600: '#3B4A8A',
           700: '#323D70',
           800: '#2C355E',
+          875: '#000042',
           850: '#253568',
           900: '#1E2540',
           950: '#141929',

@@ -102,11 +102,13 @@ async function runMigrations(): Promise<void> {
         // Run each migration in its own transaction
         await client.query('BEGIN');
 
-        // Strip commented-out rollback section to avoid accidental execution
-        const cleanSql = migration.sql
-          .split('\n')
-          .filter((line) => !line.trimStart().startsWith('--'))
-          .join('\n');
+        // Strip the trailing rollback section (marked by "-- DOWN" or "-- ROLLBACK" header)
+        // Preserves all other comments since they may be inside DO $$ blocks
+        let cleanSql = migration.sql;
+        const rollbackMatch = cleanSql.match(/^--\s*(DOWN|ROLLBACK)\b/im);
+        if (rollbackMatch && rollbackMatch.index !== undefined) {
+          cleanSql = cleanSql.substring(0, rollbackMatch.index).trim();
+        }
 
         await client.query(cleanSql);
 

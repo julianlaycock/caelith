@@ -15,19 +15,31 @@ ALTER TABLE investors ADD COLUMN IF NOT EXISTS lei VARCHAR(20);
 ALTER TABLE investors ADD COLUMN IF NOT EXISTS email VARCHAR(255);
 
 -- ============================================================================
--- CONSTRAINTS
+-- CONSTRAINTS (idempotent — skip if already present)
 -- ============================================================================
-ALTER TABLE investors ADD CONSTRAINT chk_inv_investor_type CHECK (
-    investor_type IN ('institutional', 'professional', 'semi_professional', 'well_informed', 'retail')
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_inv_investor_type') THEN
+    ALTER TABLE investors ADD CONSTRAINT chk_inv_investor_type CHECK (
+      investor_type IN ('institutional', 'professional', 'semi_professional', 'well_informed', 'retail')
+    );
+  END IF;
+END $$;
 
-ALTER TABLE investors ADD CONSTRAINT chk_inv_kyc_status CHECK (
-    kyc_status IN ('pending', 'verified', 'expired', 'rejected')
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_inv_kyc_status') THEN
+    ALTER TABLE investors ADD CONSTRAINT chk_inv_kyc_status CHECK (
+      kyc_status IN ('pending', 'verified', 'expired', 'rejected')
+    );
+  END IF;
+END $$;
 
-ALTER TABLE investors ADD CONSTRAINT chk_inv_lei_length CHECK (
-    lei IS NULL OR length(lei) = 20
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_inv_lei_length') THEN
+    ALTER TABLE investors ADD CONSTRAINT chk_inv_lei_length CHECK (
+      lei IS NULL OR length(lei) = 20
+    );
+  END IF;
+END $$;
 
 -- ============================================================================
 -- INDEXES

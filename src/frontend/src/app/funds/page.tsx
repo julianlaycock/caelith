@@ -18,7 +18,7 @@ import {
   Alert,
 } from '../../components/ui';
 import { formatDate } from '../../lib/utils';
-import type { ApiError } from '../../lib/types';
+import type { ApiError, FundStructure } from '../../lib/types';
 
 const LEGAL_FORMS = [
   { value: '', label: 'Select...' },
@@ -59,6 +59,13 @@ const FRAMEWORKS = [
   { value: 'national', label: 'National' },
 ];
 
+const STATUSES = [
+  { value: 'active', label: 'Active' },
+  { value: 'closing', label: 'Closing' },
+  { value: 'closed', label: 'Closed' },
+  { value: 'liquidating', label: 'Liquidating' },
+];
+
 const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'gray' | 'red'> = {
   active: 'green',
   closing: 'yellow',
@@ -68,15 +75,17 @@ const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'gray' | 'red'> = {
 
 export default function FundsPage() {
   const [showForm, setShowForm] = useState(false);
+  const [editFund, setEditFund] = useState<FundStructure | null>(null);
+  const [deleteFund, setDeleteFund] = useState<FundStructure | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [formSuccess, setFormSuccess] = useState(false);
+  const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const funds = useAsync(() => api.getFundStructures());
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError(null);
-    setFormSuccess(false);
 
     const form = new FormData(e.currentTarget);
     const name = form.get('name') as string;
@@ -98,11 +107,62 @@ export default function FundsPage() {
         regulatory_framework,
         aifm_name: aifm_name || undefined,
       });
-      setFormSuccess(true);
       setShowForm(false);
+      setActionMsg({ type: 'success', text: 'Fund structure created successfully.' });
       funds.refetch();
     } catch (err) {
       setFormError((err as ApiError).message || 'Failed to create fund structure');
+    }
+  };
+
+  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editFund || actionLoading) return;
+    setFormError(null);
+    setActionLoading(true);
+
+    const form = new FormData(e.currentTarget);
+    const data: Record<string, string> = {};
+    const name = form.get('name') as string;
+    const legal_form = form.get('legal_form') as string;
+    const domicile = form.get('domicile') as string;
+    const regulatory_framework = form.get('regulatory_framework') as string;
+    const status = form.get('status') as string;
+    const aifm_name = form.get('aifm_name') as string;
+
+    if (name) data.name = name;
+    if (legal_form) data.legal_form = legal_form;
+    if (domicile) data.domicile = domicile;
+    if (regulatory_framework) data.regulatory_framework = regulatory_framework;
+    if (status) data.status = status;
+    data.aifm_name = aifm_name || '';
+
+    try {
+      await api.updateFundStructure(editFund.id, data);
+      setEditFund(null);
+      setActionMsg({ type: 'success', text: 'Fund structure updated.' });
+      funds.refetch();
+    } catch (err) {
+      setFormError((err as ApiError).message || 'Failed to update fund structure');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteFund || actionLoading) return;
+    setActionLoading(true);
+    setFormError(null);
+
+    try {
+      await api.deleteFundStructure(deleteFund.id);
+      setDeleteFund(null);
+      setActionMsg({ type: 'success', text: 'Fund structure deleted.' });
+      funds.refetch();
+    } catch (err) {
+      setFormError((err as ApiError).message || 'Failed to delete fund structure');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -116,17 +176,14 @@ export default function FundsPage() {
         }
       />
 
-      {formSuccess && (
+      {actionMsg && (
         <div className="mb-4">
-          <Alert variant="success">Fund structure created successfully.</Alert>
+          <Alert variant={actionMsg.type === 'success' ? 'success' : 'error'}>{actionMsg.text}</Alert>
         </div>
       )}
 
-      <Modal
-        open={showForm}
-        onClose={() => setShowForm(false)}
-        title="Create Fund Structure"
-      >
+      {/* Create Modal */}
+      <Modal open={showForm} onClose={() => { setShowForm(false); setFormError(null); }} title="Create Fund Structure">
         <form onSubmit={handleCreate} className="space-y-4">
           {formError && <Alert variant="error">{formError}</Alert>}
           <Input label="Fund Name" name="name" required placeholder="e.g., European Growth Fund I" />
@@ -139,6 +196,43 @@ export default function FundsPage() {
             <Button type="submit">Create</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal open={editFund !== null} onClose={() => { setEditFund(null); setFormError(null); }} title="Edit Fund Structure">
+        {editFund && (
+          <form onSubmit={handleEdit} className="space-y-4">
+            {formError && <Alert variant="error">{formError}</Alert>}
+            <Input label="Fund Name" name="name" defaultValue={editFund.name} required />
+            <Select label="Legal Form" name="legal_form" options={LEGAL_FORMS} defaultValue={editFund.legal_form} required />
+            <Select label="Domicile" name="domicile" options={DOMICILES} defaultValue={editFund.domicile} required />
+            <Select label="Regulatory Framework" name="regulatory_framework" options={FRAMEWORKS} defaultValue={editFund.regulatory_framework} required />
+            <Select label="Status" name="status" options={STATUSES} defaultValue={editFund.status} required />
+            <Input label="AIFM Name" name="aifm_name" defaultValue={editFund.aifm_name || ''} placeholder="Optional" />
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="secondary" type="button" onClick={() => setEditFund(null)}>Cancel</Button>
+              <Button type="submit" disabled={actionLoading}>{actionLoading ? 'Saving...' : 'Save Changes'}</Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={deleteFund !== null} onClose={() => { setDeleteFund(null); setFormError(null); }} title="Delete Fund Structure">
+        {deleteFund && (
+          <div className="space-y-4">
+            {formError && <Alert variant="error">{formError}</Alert>}
+            <p className="text-sm text-ink-secondary">
+              Are you sure you want to delete <span className="font-semibold text-ink">{deleteFund.name}</span>? This action cannot be undone. Linked eligibility criteria will also be removed.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="secondary" onClick={() => setDeleteFund(null)}>Cancel</Button>
+              <Button variant="danger" disabled={actionLoading} onClick={handleDelete}>
+                {actionLoading ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {funds.loading ? (
@@ -160,6 +254,26 @@ export default function FundsPage() {
                     )}
                     <Badge variant={STATUS_COLORS[fund.status] || 'gray'}>{fund.status}</Badge>
                   </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setEditFund(fund)}
+                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-surface-subtle hover:text-ink transition-colors"
+                    title="Edit"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setDeleteFund(fund)}
+                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-red-50 hover:text-red-600 transition-colors"
+                    title="Delete"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                  </button>
                 </div>
               </div>
 

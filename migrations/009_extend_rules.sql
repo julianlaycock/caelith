@@ -13,19 +13,31 @@ ALTER TABLE rules ADD COLUMN IF NOT EXISTS concentration_limit_pct DECIMAL(5,2);
 ALTER TABLE rules ADD COLUMN IF NOT EXISTS kyc_required BOOLEAN NOT NULL DEFAULT false;
 
 -- ============================================================================
--- CONSTRAINTS
+-- CONSTRAINTS (idempotent — skip if already present)
 -- ============================================================================
-ALTER TABLE rules ADD CONSTRAINT chk_rules_min_investment CHECK (
-    minimum_investment IS NULL OR minimum_investment >= 0
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_rules_min_investment') THEN
+    ALTER TABLE rules ADD CONSTRAINT chk_rules_min_investment CHECK (
+      minimum_investment IS NULL OR minimum_investment >= 0
+    );
+  END IF;
+END $$;
 
-ALTER TABLE rules ADD CONSTRAINT chk_rules_max_investors CHECK (
-    maximum_investors IS NULL OR maximum_investors > 0
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_rules_max_investors') THEN
+    ALTER TABLE rules ADD CONSTRAINT chk_rules_max_investors CHECK (
+      maximum_investors IS NULL OR maximum_investors > 0
+    );
+  END IF;
+END $$;
 
-ALTER TABLE rules ADD CONSTRAINT chk_rules_concentration CHECK (
-    concentration_limit_pct IS NULL OR (concentration_limit_pct > 0 AND concentration_limit_pct <= 100)
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_rules_concentration') THEN
+    ALTER TABLE rules ADD CONSTRAINT chk_rules_concentration CHECK (
+      concentration_limit_pct IS NULL OR (concentration_limit_pct > 0 AND concentration_limit_pct <= 100)
+    );
+  END IF;
+END $$;
 
 -- ============================================================================
 -- DOWN (rollback)

@@ -12,7 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { formatCompactNumber, formatInvestorType } from '../lib/utils';
+import { formatCompactNumber, formatInvestorType, classNames } from '../lib/utils';
 
 // ── Color Palette ────────────────────────────────────────
 
@@ -57,13 +57,14 @@ interface TypeAllocationEntry {
   total_units: number;
 }
 
-export function InvestorTypeDonut({ data }: { data: TypeAllocationEntry[] }) {
+export function InvestorTypeDonut({ data, onTypeClick }: { data: TypeAllocationEntry[]; onTypeClick?: (rawType: string) => void }) {
   if (!data || data.length === 0) {
     return <EmptyChart label="No investor type data" />;
   }
 
   const chartData = data.map((d) => ({
     name: formatInvestorType(d.type),
+    rawType: d.type,
     value: d.total_units,
     count: d.count,
   }));
@@ -85,6 +86,8 @@ export function InvestorTypeDonut({ data }: { data: TypeAllocationEntry[] }) {
                 dataKey="value"
                 stroke="#FFFFFF"
                 strokeWidth={2}
+                style={onTypeClick ? { cursor: 'pointer' } : undefined}
+                onClick={onTypeClick ? (_: unknown, index: number) => onTypeClick(chartData[index].rawType) : undefined}
               >
                 {chartData.map((_, i) => (
                   <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -99,7 +102,14 @@ export function InvestorTypeDonut({ data }: { data: TypeAllocationEntry[] }) {
         </div>
         <div className="flex-1 space-y-2">
           {chartData.map((d, i) => (
-            <div key={d.name} className="flex items-center justify-between text-xs">
+            <div
+              key={d.name}
+              className={classNames(
+                'flex items-center justify-between text-xs',
+                onTypeClick && 'cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-surface-subtle transition-colors'
+              )}
+              onClick={onTypeClick ? () => onTypeClick(d.rawType) : undefined}
+            >
               <div className="flex items-center gap-2">
                 <span
                   className="h-2.5 w-2.5 rounded-full"
@@ -134,16 +144,18 @@ export function JurisdictionExposureBar({ data }: { data: JurisdictionEntry[] })
     return <EmptyChart label="No jurisdiction data" />;
   }
 
-  const sorted = [...data].sort((a, b) => b.total_units - a.total_units).slice(0, 8);
+  const sorted = [...data].sort((a, b) => b.total_units - a.total_units).slice(0, 12);
   const chartData = sorted.map((d) => ({
     name: d.jurisdiction,
     units: d.total_units,
     investors: d.count,
   }));
 
+  const chartHeight = Math.max(200, chartData.length * 28);
+
   return (
     <ChartCard title="Jurisdiction Exposure" subtitle="Top jurisdictions by allocated units">
-      <div className="h-[200px]">
+      <div style={{ height: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} layout="vertical" margin={{ left: 4, right: 12, top: 4, bottom: 4 }}>
             <XAxis
@@ -182,7 +194,7 @@ interface KycSegmentData {
   expiring_soon: number;
 }
 
-export function KycExpiryHorizon({ data }: { data: KycSegmentData }) {
+export function KycExpiryHorizon({ data, onStatusClick }: { data: KycSegmentData; onStatusClick?: (status: string) => void }) {
   const total = data.verified + data.pending + data.expired + data.expiring_soon;
 
   if (total === 0) {
@@ -204,12 +216,13 @@ export function KycExpiryHorizon({ data }: { data: KycSegmentData }) {
           {segments.map((seg) => (
             <div
               key={seg.key}
-              className="transition-all"
+              className={classNames('transition-all', onStatusClick && 'cursor-pointer hover:opacity-80')}
               style={{
                 width: `${(seg.value / total) * 100}%`,
                 backgroundColor: seg.color,
                 minWidth: seg.value > 0 ? '4px' : '0px',
               }}
+              onClick={onStatusClick ? () => onStatusClick(seg.key) : undefined}
             />
           ))}
         </div>
@@ -217,7 +230,14 @@ export function KycExpiryHorizon({ data }: { data: KycSegmentData }) {
         {/* Legend */}
         <div className="grid grid-cols-2 gap-2">
           {segments.map((seg) => (
-            <div key={seg.key} className="flex items-center gap-2 text-xs">
+            <div
+              key={seg.key}
+              className={classNames(
+                'flex items-center gap-2 text-xs',
+                onStatusClick && 'cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-surface-subtle transition-colors'
+              )}
+              onClick={onStatusClick ? () => onStatusClick(seg.key) : undefined}
+            >
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: seg.color }} />
               <span className="text-ink-secondary">{seg.label}</span>
               <span className="ml-auto font-mono font-medium text-ink">{seg.value}</span>
@@ -243,7 +263,7 @@ interface ViolationEntry {
   total_decisions: number;
 }
 
-export function ViolationAnalysisBar({ data }: { data: ViolationEntry[] }) {
+export function ViolationAnalysisBar({ data, onBarClick }: { data: ViolationEntry[]; onBarClick?: (assetName: string) => void }) {
   if (!data || data.length === 0) {
     return (
       <ChartCard title="Rule Violations" subtitle="Top assets by compliance violations">
@@ -264,6 +284,7 @@ export function ViolationAnalysisBar({ data }: { data: ViolationEntry[] }) {
   const sorted = [...data].sort((a, b) => b.violation_count - a.violation_count).slice(0, 5);
   const chartData = sorted.map((d) => ({
     name: d.asset_name.length > 18 ? d.asset_name.slice(0, 16) + '…' : d.asset_name,
+    fullName: d.asset_name,
     violations: d.violation_count,
     decisions: d.total_decisions,
   }));
@@ -272,7 +293,16 @@ export function ViolationAnalysisBar({ data }: { data: ViolationEntry[] }) {
     <ChartCard title="Rule Violations" subtitle="Top assets by compliance violations">
       <div className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="vertical" margin={{ left: 4, right: 12, top: 4, bottom: 4 }}>
+          <BarChart
+            data={chartData}
+            layout="vertical"
+            margin={{ left: 4, right: 12, top: 4, bottom: 4 }}
+            onClick={onBarClick ? (state) => {
+              const idx = Number(state?.activeTooltipIndex);
+              if (!isNaN(idx) && chartData[idx]?.fullName) onBarClick(chartData[idx].fullName);
+            } : undefined}
+            style={onBarClick ? { cursor: 'pointer' } : undefined}
+          >
             <XAxis
               type="number"
               tick={{ fontSize: 11, fill: '#7A9488' }}
@@ -295,7 +325,12 @@ export function ViolationAnalysisBar({ data }: { data: ViolationEntry[] }) {
               ]}
               {...tooltipStyle}
             />
-            <Bar dataKey="violations" fill={VIOLATION_COLOR} radius={[0, 4, 4, 0]} barSize={16} />
+            <Bar
+              dataKey="violations"
+              fill={VIOLATION_COLOR}
+              radius={[0, 4, 4, 0]}
+              barSize={16}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>

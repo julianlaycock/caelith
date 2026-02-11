@@ -2,7 +2,7 @@
  * Database Connection - PostgreSQL
  *
  * Drop-in replacement for the SQLite db.ts.
- * Same API surface: query(), execute(), boolToInt(), intToBool(), parseJSON(), stringifyJSON()
+ * Same API surface: query(), execute(), parseJSON(), stringifyJSON()
  * Repositories require zero changes.
  */
 import { Pool, types } from 'pg';
@@ -12,6 +12,12 @@ types.setTypeParser(20, (val) => parseInt(val, 10));
 types.setTypeParser(1700, (val) => parseFloat(val));
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://caelith:caelith@localhost:5432/caelith',
+    max: parseInt(process.env.PG_POOL_MAX || '20', 10),
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+});
+pool.on('error', (err) => {
+    console.error('[db] Unexpected pool error:', err.message);
 });
 /**
  * Convert ? placeholders to $1, $2, etc. (SQLite → PostgreSQL compatibility)
@@ -32,20 +38,6 @@ export async function query(sql, params = []) {
  */
 export async function execute(sql, params = []) {
     await pool.query(convertPlaceholders(sql), params);
-}
-/**
- * Helper: boolean → PostgreSQL compatible value
- * Previously converted to 0/1 for SQLite. Now passes through for PostgreSQL.
- */
-export function boolToInt(value) {
-    return value;
-}
-/**
- * Helper: PostgreSQL value → boolean
- * Handles both number (legacy) and boolean (PostgreSQL native)
- */
-export function intToBool(value) {
-    return Boolean(value);
 }
 /**
  * Helper: Parse JSON from database
@@ -79,22 +71,10 @@ export function getPool() {
  * Close database connection
  */
 let poolEnded = false;
-export function closeDb() {
+export async function closeDb() {
     if (!poolEnded) {
         poolEnded = true;
-        pool.end();
+        await pool.end();
     }
-}
-/**
- * Legacy compatibility - no-ops for PostgreSQL
- */
-export async function getDb() {
-    return pool;
-}
-export function saveDb() {
-    /* no-op: PostgreSQL persists automatically */
-}
-export function setTestDb() {
-    /* no-op: use DATABASE_URL env var for test databases */
 }
 //# sourceMappingURL=db.js.map
