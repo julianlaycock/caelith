@@ -400,3 +400,42 @@ export interface DecisionChainVerificationResult {
   actual_hash?: string;
   message: string;
 }
+
+// ── NL Rule Compiler ────────────────────────────────
+export interface NLRuleResponse {
+  proposed_rule: {
+    name: string;
+    description: string;
+    operator: 'AND' | 'OR' | 'NOT';
+    conditions: RuleCondition[];
+    enabled: boolean;
+  };
+  confidence: number;
+  explanation: string;
+  source_suggestion: string | null;
+  requires_approval: true;
+  validation: {
+    structurally_valid: boolean;
+    errors: string[];
+  };
+}
+
+// ── Copilot ─────────────────────────────────────────
+export interface CopilotCitation {
+  documentTitle: string;
+  articleRef?: string | null;
+  excerpt?: string;
+}
+
+export interface CopilotSuggestedAction {
+  label: string;
+  action: string;
+  payload?: Record<string, unknown>;
+}
+
+export interface CopilotResponse {
+  message: string;
+  intent: string;
+  citations?: CopilotCitation[];
+  suggestedActions?: CopilotSuggestedAction[];
+}

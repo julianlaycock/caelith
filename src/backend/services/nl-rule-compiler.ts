@@ -114,6 +114,31 @@ Respond with ONLY a JSON object (no markdown, no backticks):
   "source_suggestion": "regulatory reference or null"
 }`;
 
+// ── Constants ───────────────────────────────────────────────
+
+const MAX_PROMPT_LENGTH = 500;
+const MAX_RETRIES = 3;
+const API_TIMEOUT_MS = 30_000;
+
+// ── Input Validation ────────────────────────────────────────
+
+function validateInput(description: string): void {
+  if (!description || typeof description !== 'string') {
+    throw new Error('Description must be a non-empty string');
+  }
+  const trimmed = description.trim();
+  if (trimmed.length === 0) {
+    throw new Error('Description must be a non-empty string');
+  }
+  if (trimmed.length > MAX_PROMPT_LENGTH) {
+    throw new Error(`Description exceeds maximum length of ${MAX_PROMPT_LENGTH} characters`);
+  }
+}
+
+function sanitizeInput(input: string): string {
+  return input.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 // ── Claude API Call ─────────────────────────────────────────
 
 async function callClaude(description: string, context?: NLRuleRequest['context']): Promise<string> {
@@ -124,28 +149,57 @@ async function callClaude(description: string, context?: NLRuleRequest['context'
 
   const client = new Anthropic({ apiKey });
 
-  let userMessage = description;
+  let userMessage = sanitizeInput(description);
   if (context) {
-    const parts: string[] = [description];
+    const parts: string[] = [userMessage];
     if (context.fund_legal_form) parts.push(`Fund type: ${context.fund_legal_form}`);
     if (context.fund_domicile) parts.push(`Fund domicile: ${context.fund_domicile}`);
     if (context.fund_name) parts.push(`Fund name: ${context.fund_name}`);
     userMessage = parts.join('\n');
   }
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userMessage }],
-  });
+  let lastError: Error | null = null;
 
-  const textBlock = message.content.find(b => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('No text response from Claude API');
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const message = await Promise.race([
+        client.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1024,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userMessage }],
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('API request timed out')), API_TIMEOUT_MS)
+        ),
+      ]);
+
+      const textBlock = message.content.find(b => b.type === 'text');
+      if (!textBlock || textBlock.type !== 'text') {
+        throw new Error('No text response from Claude API');
+      }
+
+      return textBlock.text;
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err : new Error('Unknown API error');
+
+      // Detect rate limit (429) from Anthropic SDK errors
+      const isRateLimit = lastError.message.includes('429') || lastError.message.toLowerCase().includes('rate limit');
+      const isTimeout = lastError.message.includes('timed out');
+      const isRetryable = isRateLimit || isTimeout || lastError.message.includes('overloaded');
+
+      if (isRetryable && attempt < MAX_RETRIES - 1) {
+        const delayMs = Math.min(8000, 400 * 2 ** attempt) + Math.floor(Math.random() * 200);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        console.warn(`[nl-compiler] Retry ${attempt + 1}/${MAX_RETRIES} after: ${lastError.message}`);
+        continue;
+      }
+
+      break;
+    }
   }
 
-  return textBlock.text;
+  throw lastError || new Error('Claude API request failed');
 }
 
 // ── Deterministic Validator ─────────────────────────────────
@@ -228,6 +282,20 @@ function validateRuleStructure(rule: any): { valid: boolean; errors: string[] } 
 export async function compileNaturalLanguageRule(
   request: NLRuleRequest
 ): Promise<NLRuleResponse> {
+  // Validate input
+  validateInput(request.description);
+
+  // Log attempt
+  await createEvent({
+    event_type: 'nl_compiler.attempt',
+    entity_type: 'asset',
+    entity_id: request.asset_id,
+    payload: {
+      input: request.description,
+      context: request.context,
+    },
+  });
+
   // Call Claude
   const rawResponse = await callClaude(request.description, request.context);
 
