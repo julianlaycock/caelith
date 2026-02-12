@@ -24,25 +24,37 @@ function sanitizeText(input: string): string {
 }
 
 function getProvider(): EmbeddingProvider {
-  const provider = (process.env.EMBEDDING_PROVIDER || 'openai').trim().toLowerCase();
-  if (provider === 'openai' || provider === 'anthropic') {
-    return provider;
+  const explicit = process.env.EMBEDDING_PROVIDER?.trim().toLowerCase();
+  if (explicit === 'openai' || explicit === 'anthropic') {
+    return explicit;
   }
-  throw new Error(`Unsupported EMBEDDING_PROVIDER: ${provider}`);
+  if (!explicit && !process.env.OPENAI_API_KEY && process.env.ANTHROPIC_API_KEY) {
+    return 'anthropic';
+  }
+  if (!explicit || explicit === 'openai') {
+    return 'openai';
+  }
+  throw new Error(`Unsupported EMBEDDING_PROVIDER: ${explicit}`);
 }
 
 function getApiKey(provider: EmbeddingProvider): string {
   if (provider === 'openai') {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error('OPENAI_API_KEY is required when EMBEDDING_PROVIDER=openai');
+      throw new Error(
+        'OPENAI_API_KEY is required when EMBEDDING_PROVIDER=openai. ' +
+        'Set it in .env or use EMBEDDING_PROVIDER=anthropic with ANTHROPIC_API_KEY.'
+      );
     }
     return apiKey;
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    throw new Error('ANTHROPIC_API_KEY is required when EMBEDDING_PROVIDER=anthropic');
+    throw new Error(
+      'ANTHROPIC_API_KEY is required when EMBEDDING_PROVIDER=anthropic. ' +
+      'Set it in .env or use EMBEDDING_PROVIDER=openai with OPENAI_API_KEY.'
+    );
   }
   return apiKey;
 }

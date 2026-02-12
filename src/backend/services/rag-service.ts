@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { DEFAULT_TENANT_ID, query } from '../db.js';
 import { createEmbeddingService, EmbeddingService } from './embedding-service.js';
 import type { RuleCondition } from '../../rules-engine/types.js';
@@ -196,93 +195,20 @@ function getSimilarityThreshold(filters?: QueryFilters): number {
 export class RagService {
   constructor(private readonly embeddingService: EmbeddingService = createEmbeddingService()) {}
 
-  async ingestDocument(pdfBuffer: Buffer, metadata: DocumentMetadata): Promise<IngestResult> {
-    if (!pdfBuffer || pdfBuffer.length === 0) {
-      throw new Error('PDF payload is empty');
+  async ingestDocument(buffer: Buffer, metadata: DocumentMetadata): Promise<IngestResult> {
+    if (!buffer || buffer.length === 0) {
+      throw new Error('Upload payload is empty');
     }
 
-    const uint8 = new Uint8Array(pdfBuffer);
-    const doc = await getDocument({ data: uint8, useSystemFonts: true }).promise;
-    let rawText = '';
-    for (let i = 1; i <= doc.numPages; i++) {
-      const page = await doc.getPage(i);
-      const content = await page.getTextContent();
-      rawText += content.items.map((item: any) => ('str' in item ? item.str : '')).join(' ') + '\n';
-    }
-    const text = normalizeWhitespace(rawText);
-
-    if (!text) {
-      throw new Error('No text content could be extracted from PDF');
+    // Reject raw PDF binaries — use ingestText() with pre-extracted text instead
+    if (buffer[0] === 0x25 && buffer.subarray(0, 5).toString('ascii') === '%PDF-') {
+      throw new Error(
+        'PDF binary ingestion is not supported. Use ingestText() with pre-extracted text, or convert to text first.'
+      );
     }
 
-    const headerChunks = chunkByHeaders(text);
-    const rawChunks = headerChunks.length >= 2 ? headerChunks : chunkByTokenWindow(text);
-
-    const chunks = rawChunks
-      .map((chunk, index) => ({
-        ...chunk,
-        chunkIndex: index,
-        content: chunk.content.slice(0, 10_000),
-      }))
-      .filter(chunk => chunk.content.length > 0);
-
-    if (chunks.length === 0) {
-      throw new Error('Document chunking produced no content');
-    }
-
-    const tenantId = metadata.tenantId || DEFAULT_TENANT_ID;
-    const baseMetadata = metadata.metadata || {};
-    const documentId = randomUUID();
-
-    let firstChunkId = documentId;
-
-    const batchSize = 8;
-    for (let i = 0; i < chunks.length; i += batchSize) {
-      const batch = chunks.slice(i, i + batchSize);
-      const embeddings = await this.embeddingService.embedBatch(batch.map(chunk => chunk.content));
-
-      for (let j = 0; j < batch.length; j++) {
-        const chunk = batch[j];
-        const rawEmbedding = embeddings[j] || [];
-        const normalizedEmbedding = normalizeEmbeddingForStorage(rawEmbedding);
-        const chunkId = randomUUID();
-
-        await query(
-          `INSERT INTO regulatory_documents
-            (id, source_name, document_title, jurisdiction, framework, article_ref,
-             chunk_index, content, metadata, embedding, tenant_id, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::vector, $11, now())`,
-          [
-            chunkId,
-            metadata.documentTitle,
-            metadata.documentTitle,
-            metadata.jurisdiction,
-            metadata.framework,
-            chunk.articleRef,
-            chunk.chunkIndex,
-            chunk.content,
-            JSON.stringify({
-              ...baseMetadata,
-              document_id: documentId,
-            }),
-            toPgVector(normalizedEmbedding),
-            tenantId,
-          ]
-        );
-
-        if (i === 0 && j === 0) {
-          firstChunkId = chunkId;
-        }
-      }
-    }
-
-    const totalTokensEstimated = chunks.reduce((sum, chunk) => sum + estimateTokens(chunk.content), 0);
-
-    return {
-      documentId: firstChunkId,
-      chunksCreated: chunks.length,
-      totalTokensEstimated,
-    };
+    const text = normalizeWhitespace(buffer.toString('utf-8'));
+    return this.ingestText(text, metadata);
   }
 
   async ingestText(text: string, metadata: DocumentMetadata): Promise<IngestResult> {

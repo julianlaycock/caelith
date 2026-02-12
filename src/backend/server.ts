@@ -4,9 +4,11 @@
  * Main API server for Private Asset Registry
  */
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { closeDb, execute as dbExecute, DEFAULT_TENANT_ID, query as dbQuery } from './db.js';
 import swaggerUi from 'swagger-ui-express';
 import { readFileSync } from 'fs';
@@ -37,9 +39,6 @@ import complianceReportRoutes from './routes/compliance-report-routes.js';
 import tenantRoutes from './routes/tenant-routes.js';
 import { createRegulatoryRoutes } from './routes/regulatory-routes.js';
 import { createCopilotRoutes } from './routes/copilot-routes.js';
-
-// Load environment variables
-dotenv.config();
 
 // Validate required environment variables at startup
 const REQUIRED_ENV_VARS = ['JWT_SECRET', 'DATABASE_URL'] as const;

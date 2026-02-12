@@ -67,7 +67,7 @@ const DOCUMENTS: DocumentSpec[] = [
   },
 ];
 
-// Search paths for PDF files
+// Search paths for document files
 const SEARCH_DIRS = [
   '/mnt/project',
   resolve(process.cwd(), 'docs', 'regulations'),
@@ -76,11 +76,25 @@ const SEARCH_DIRS = [
   process.cwd(),
 ];
 
-function findPdf(filename: string): string | null {
+function findDocument(filename: string): string | null {
   for (const dir of SEARCH_DIRS) {
     const fullPath = resolve(dir, filename);
     if (existsSync(fullPath)) {
       return fullPath;
+    }
+  }
+  // Try alternate extension: .pdf <-> .txt
+  const alt = filename.endsWith('.pdf')
+    ? filename.replace(/\.pdf$/, '.txt')
+    : filename.endsWith('.txt')
+      ? filename.replace(/\.txt$/, '.pdf')
+      : null;
+  if (alt) {
+    for (const dir of SEARCH_DIRS) {
+      const fullPath = resolve(dir, alt);
+      if (existsSync(fullPath)) {
+        return fullPath;
+      }
     }
   }
   return null;
@@ -117,8 +131,8 @@ async function main() {
       continue;
     }
 
-    // Find PDF file
-    const pdfPath = findPdf(doc.filename);
+    // Find document file
+    const pdfPath = findDocument(doc.filename);
     if (!pdfPath) {
       console.warn(`${label} WARN: "${doc.filename}" not found in search paths. Skipping.`);
       failed++;
