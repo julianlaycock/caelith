@@ -14,4 +14,4 @@ COPY openapi.yml ./
 
 EXPOSE 3001
 
-CMD ["npx", "tsx", "src/backend/server.ts"]
+CMD ["sh", "-c", "npx tsx scripts/migrate.ts && npx tsx src/backend/server.ts"]
