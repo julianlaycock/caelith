@@ -8,4 +8,12 @@ dist/
 data/
 nul
 
+# Regulatory document working files
 pdfs/
+*.zip
+
+# pdf-parse test fixture workaround
+test/data/
+
+# Temp files
+test-pdf.mjs

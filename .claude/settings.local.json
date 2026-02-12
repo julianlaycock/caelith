@@ -44,7 +44,8 @@
       "Bash($env:DATABASE_URL=\"postgresql://caelith:caelith@localhost:5432/caelith\")",
       "Bash(DATABASE_URL=\"postgresql://caelith:caelith@localhost:5432/caelith\" npx tsx:*)",
       "Bash(EMBEDDING_PROVIDER=anthropic ANTHROPIC_API_KEY=\"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\" DATABASE_URL=\"postgresql://caelith:caelith@localhost:5432/caelith\" npx tsx:*)",
-      "Bash(EMBEDDING_PROVIDER=anthropic ANTHROPIC_API_KEY=\"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\" DATABASE_URL=\"postgresql://caelith:caelith@localhost:5432/caelith\" npx tsx scripts/ingest-regulations.ts)"
+      "Bash(EMBEDDING_PROVIDER=anthropic ANTHROPIC_API_KEY=\"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\" DATABASE_URL=\"postgresql://caelith:caelith@localhost:5432/caelith\" npx tsx scripts/ingest-regulations.ts)",
+      "Bash(docker compose config:*)"
     ]
   }
 }
