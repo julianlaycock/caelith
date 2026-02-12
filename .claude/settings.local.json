@@ -30,7 +30,12 @@
       "Bash(npx jest:*)",
       "Bash(npx vitest run --reporter verbose)",
       "Bash(node -e:*)",
-      "Bash(npx vitest run:*)"
+      "Bash(npx vitest run:*)",
+      "Bash(node --version:*)",
+      "Bash(npm:*)",
+      "Bash(test:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
