@@ -1,16 +1,18 @@
 /**
  * Express Server
- * 
+ *
  * Main API server for Private Asset Registry
  */
 
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { closeDb, execute as dbExecute, DEFAULT_TENANT_ID } from './db.js';
+import { closeDb, execute as dbExecute, DEFAULT_TENANT_ID, query as dbQuery } from './db.js';
 import swaggerUi from 'swagger-ui-express';
 import { readFileSync } from 'fs';
 import { parse } from 'yaml';
+import bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 
 // Import routes
 import assetRoutes from './routes/asset-routes.js';
@@ -46,6 +48,42 @@ for (const envVar of REQUIRED_ENV_VARS) {
   }
 }
 
+/**
+ * Ensure the default admin user exists in the database.
+ * Idempotent — safe to call on every startup.
+ */
+async function ensureAdminUser(): Promise<void> {
+  const ADMIN_EMAIL = 'admin@caelith.com';
+  const ADMIN_PASSWORD = 'admin1234';
+  const ADMIN_NAME = 'Admin';
+
+  try {
+    const existing = await dbQuery<{ id: string }>(
+      'SELECT id FROM users WHERE email = ?',
+      [ADMIN_EMAIL]
+    );
+
+    if (existing.length > 0) {
+      console.log(`✅ Admin user (${ADMIN_EMAIL}) already exists.`);
+      return;
+    }
+
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+
+    await dbExecute(
+      `INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, ADMIN_EMAIL, passwordHash, ADMIN_NAME, 'admin', true, now, now]
+    );
+
+    console.log(`🔑 Admin user created: ${ADMIN_EMAIL}`);
+  } catch (error) {
+    console.error('⚠️  Failed to ensure admin user:', error);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -65,6 +103,7 @@ app.use(cors({
   },
   credentials: true,
 }));
+
 app.use(express.json());
 app.use(sanitizeInput);
 
@@ -135,7 +174,7 @@ app.post('/api/reset', authenticate, authorize('admin'), async (_req, res): Prom
     for (const table of tables) {
       await dbExecute(`DELETE FROM ${table}`).catch(() => {});
     }
-    await dbExecute('DELETE FROM tenants WHERE id <> $1', [DEFAULT_TENANT_ID]).catch(() => {});
+    await dbExecute('DELETE FROM tenants WHERE id <> ?', [DEFAULT_TENANT_ID]).catch(() => {});
     clearRateLimits();
     res.json({ status: 'reset' });
   } catch (error) {
@@ -168,21 +207,32 @@ process.on('SIGINT', async () => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 API: http://localhost:${PORT}/api`);
-  console.log(`💚 Health: http://localhost:${PORT}/health`);
-  console.log(`📖 Docs: http://localhost:${PORT}/api/docs`);
-  console.log('\n📋 Available endpoints:');
-  console.log(`   POST   /api/assets`);
-  console.log(`   GET    /api/assets`);
-  console.log(`   POST   /api/investors`);
-  console.log(`   GET    /api/investors`);
-  console.log(`   POST   /api/holdings`);
-  console.log(`   POST   /api/rules`);
-  console.log(`   POST   /api/transfers`);
-  console.log(`   POST   /api/transfers/simulate`);
-  console.log(`   GET    /api/events`);
+async function startServer() {
+  await ensureAdminUser();
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📊 API: http://localhost:${PORT}/api`);
+    console.log(`💚 Health: http://localhost:${PORT}/health`);
+    console.log(`📖 Docs: http://localhost:${PORT}/api/docs`);
+    console.log('\n📋 Available endpoints:');
+    console.log('  POST /api/assets');
+    console.log('  GET  /api/assets');
+    console.log('  POST /api/investors');
+    console.log('  GET  /api/investors');
+    console.log('  POST /api/holdings');
+    console.log('  POST /api/rules');
+    console.log('  POST /api/transfers');
+    console.log('  POST /api/transfers/simulate');
+    console.log('  GET  /api/events');
+  });
+}
+
+startServer().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
 
+
+export default app;
 export default app;
