@@ -17,7 +17,7 @@ import {
   Alert,
 } from '../../components/ui';
 import { formatDate, formatDateTime } from '../../lib/utils';
-import type { RuleSet, CompositeRule, ApiError, Investor } from '../../lib/types';
+import type { RuleSet, CompositeRule, ApiError, Investor, NLRuleResponse } from '../../lib/types';
 
 const ALL_JURISDICTIONS = [
   'US', 'GB', 'CA', 'DE', 'FR', 'ES', 'IT', 'NL', 'IE', 'LU', 'JP', 'SG', 'HK', 'CH', 'AU', 'KR', 'BR', 'IN',
@@ -65,6 +65,13 @@ export default function RulesPage() {
   const [crConditions, setCrConditions] = useState([
     { field: 'to.jurisdiction', operator: 'eq', value: '' },
   ]);
+
+  // NL Rule Compiler state
+  const [showNlModal, setShowNlModal] = useState(false);
+  const [nlPrompt, setNlPrompt] = useState('');
+  const [nlLoading, setNlLoading] = useState(false);
+  const [nlError, setNlError] = useState<string | null>(null);
+  const [nlResult, setNlResult] = useState<NLRuleResponse | null>(null);
 
   const assets = useAsync(() => api.getAssets());
   const investors = useAsync(() => api.getInvestors());
@@ -215,6 +222,48 @@ export default function RulesPage() {
     }
   };
 
+  const handleNlCompile = async () => {
+    if (!nlPrompt.trim() || !selectedAssetId) return;
+    setNlLoading(true);
+    setNlError(null);
+    setNlResult(null);
+    try {
+      const result = await api.compileNaturalLanguageRule(nlPrompt, selectedAssetId);
+      setNlResult(result);
+    } catch (err) {
+      setNlError((err as ApiError).message || 'Failed to compile rule. Please try again.');
+    } finally {
+      setNlLoading(false);
+    }
+  };
+
+  const handleApplyNlRule = async () => {
+    if (!nlResult || !selectedAssetId) return;
+    setSaving(true);
+    try {
+      await api.createCompositeRule({
+        asset_id: selectedAssetId,
+        name: nlResult.proposed_rule.name,
+        description: nlResult.proposed_rule.description,
+        operator: nlResult.proposed_rule.operator,
+        conditions: nlResult.proposed_rule.conditions.map((c) => ({
+          field: c.field,
+          operator: c.operator as 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'not_in',
+          value: c.value,
+        })),
+        enabled: true,
+      });
+      setShowNlModal(false);
+      setNlPrompt('');
+      setNlResult(null);
+      setSuccessMsg('AI-generated rule applied successfully.');
+    } catch (err) {
+      setNlError((err as ApiError).message || 'Failed to apply rule');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -340,6 +389,79 @@ export default function RulesPage() {
         </form>
       </Modal>
 
+      {/* NL Rule Compiler Modal */}
+      <Modal open={showNlModal} onClose={() => { setShowNlModal(false); setNlResult(null); setNlError(null); }} title="Create Rule from English">
+        <div className="space-y-4">
+          {nlError && <Alert variant="error">{nlError}</Alert>}
+          {!nlResult ? (
+            <>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-tertiary">
+                  Describe your compliance rule
+                </label>
+                <textarea
+                  value={nlPrompt}
+                  onChange={(e) => setNlPrompt(e.target.value)}
+                  placeholder="e.g., Block retail investors from SIF funds"
+                  rows={3}
+                  maxLength={500}
+                  className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-[#000042] focus:outline-none focus:ring-1 focus:ring-[#000042]"
+                />
+                <p className="mt-1 text-xs text-ink-tertiary">{nlPrompt.length}/500 characters</p>
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="secondary" type="button" onClick={() => setShowNlModal(false)}>Cancel</Button>
+                <Button onClick={handleNlCompile} disabled={nlLoading || !nlPrompt.trim()}>
+                  {nlLoading ? 'Generating...' : 'Generate Rule'}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="rounded-lg border border-edge bg-surface-subtle p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-ink">{nlResult.proposed_rule.name}</h4>
+                  <Badge variant={nlResult.confidence >= 0.7 ? 'green' : 'yellow'}>
+                    {Math.round(nlResult.confidence * 100)}% confidence
+                  </Badge>
+                </div>
+                <p className="mb-3 text-sm text-ink-secondary">{nlResult.explanation}</p>
+                {nlResult.source_suggestion && (
+                  <p className="mb-3 text-xs text-ink-tertiary">Source: {nlResult.source_suggestion}</p>
+                )}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium uppercase tracking-wider text-ink-tertiary">
+                    {nlResult.proposed_rule.operator} conditions:
+                  </p>
+                  {nlResult.proposed_rule.conditions.map((c, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs">
+                      <span className="rounded bg-white px-2 py-0.5 font-mono text-ink-secondary">{c.field}</span>
+                      <span className="text-ink-tertiary">{c.operator}</span>
+                      <span className="rounded bg-navy-50 px-2 py-0.5 font-mono text-[#000042]">
+                        {Array.isArray(c.value) ? (c.value as string[]).join(', ') : String(c.value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {!nlResult.validation.structurally_valid && (
+                  <div className="mt-3">
+                    <Alert variant="error">
+                      Validation issues: {nlResult.validation.errors.join('; ')}
+                    </Alert>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="secondary" onClick={() => { setNlResult(null); setNlPrompt(''); }}>Try Again</Button>
+                <Button onClick={handleApplyNlRule} disabled={saving || !nlResult.validation.structurally_valid}>
+                  {saving ? 'Applying...' : 'Apply Rule'}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
       {/* Asset Selector */}
       <Card className="mb-6">
         <div className="max-w-xs">
@@ -441,7 +563,15 @@ export default function RulesPage() {
           <Card>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-ink">Custom Compliance Rules</h3>
-              <Button size="sm" onClick={() => setShowCompositeForm(true)}>+ Add Rule</Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" onClick={() => setShowNlModal(true)}>
+                  <svg className="mr-1.5 h-3.5 w-3.5 inline-block" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                  </svg>
+                  Create from English
+                </Button>
+                <Button size="sm" onClick={() => setShowCompositeForm(true)}>+ Add Rule</Button>
+              </div>
             </div>
 
             {compositeRules.loading ? <LoadingSpinner /> : compositeRules.data && compositeRules.data.length > 0 ? (

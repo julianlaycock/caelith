@@ -29,6 +29,8 @@ import type {
   OnboardingReviewResult,
   DecisionRecord,
   DecisionChainVerificationResult,
+  NLRuleResponse,
+  CopilotResponse,
 } from './types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -427,6 +429,25 @@ class ApiClient {
     a.download = `compliance-report-${fundStructureId.substring(0, 8)}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  // ── NL Rule Compiler ──────────────────────────────────
+  async compileNaturalLanguageRule(prompt: string, assetId: string): Promise<NLRuleResponse> {
+    return this.request<NLRuleResponse>('/nl-rules/from-natural-language', {
+      method: 'POST',
+      body: JSON.stringify({ prompt, asset_id: assetId }),
+    });
+  }
+
+  // ── Copilot ───────────────────────────────────────────
+  async copilotChat(
+    message: string,
+    context?: { currentPage?: string; selectedEntityId?: string; selectedEntityType?: string }
+  ): Promise<CopilotResponse> {
+    return this.request<CopilotResponse>('/copilot/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message, context }),
+    });
   }
 }
 

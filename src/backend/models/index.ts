@@ -276,6 +276,7 @@ export type EventType =
   | 'onboarding.rejected'
   | 'onboarding.allocated'
   | 'onboarding.withdrawn'
+  | 'nl_compiler.attempt'
   | 'copilot.query'
   | 'copilot.rule_proposed';
 
@@ -350,6 +351,7 @@ export interface CreateEventInput {
   entity_type: EntityType;
   entity_id: string;
   payload: Record<string, unknown>;
+  tenant_id?: string;
 }
 
 export interface CreateFundStructureInput {
