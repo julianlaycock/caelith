@@ -13,12 +13,87 @@ interface ChatMessage {
   citations?: CopilotCitation[];
 }
 
-const SUGGESTED_PROMPTS = [
+const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
+  '/': {
+    title: 'Dashboard',
+    prompts: [
+      'Summarize my portfolio compliance status',
+      'What risk flags need immediate attention?',
+      'What are the SIF investor requirements?',
+      'What if minimum investment changed to €200K?',
+    ],
+  },
+  '/funds': {
+    title: 'Funds',
+    prompts: [
+      'What legal forms are available for Luxembourg funds?',
+      'Explain the difference between SIF and RAIF',
+      'What CSSF requirements apply to my fund?',
+      'What are the regulatory reporting deadlines?',
+    ],
+  },
+  '/investors': {
+    title: 'Investors',
+    prompts: [
+      'What are the well-informed investor requirements?',
+      'Explain KYC/AML requirements for fund investors',
+      'What is the €125,000 minimum investment rule?',
+      'Which investor types qualify for SIF funds?',
+    ],
+  },
+  '/transfers': {
+    title: 'Transfers',
+    prompts: [
+      'Why was the last transfer rejected?',
+      'What checks are applied to transfer validation?',
+      'What if minimum investment changed to €200K?',
+      'Explain transfer restriction rules',
+    ],
+  },
+  '/rules': {
+    title: 'Rules',
+    prompts: [
+      'Create a rule to block retail investors',
+      'What eligibility rules should a SIF fund have?',
+      'Draft a rule for €125K minimum investment',
+      'Explain how composite rules work',
+    ],
+  },
+  '/onboarding': {
+    title: 'Onboarding',
+    prompts: [
+      'What documents are needed for investor onboarding?',
+      'Explain the AML due diligence process',
+      'What are the KYC requirements for professional investors?',
+      'How long does CSSF approval typically take?',
+    ],
+  },
+  '/audit': {
+    title: 'Activity',
+    prompts: [
+      'What compliance events happened recently?',
+      'Explain AIFMD audit trail requirements',
+      'What records must be kept for CSSF inspections?',
+      'How long must compliance records be retained?',
+    ],
+  },
+};
+
+const DEFAULT_PROMPTS = [
   'What are the SIF investor requirements?',
   'Why was the last transfer rejected?',
   'Create a rule to block retail investors',
-  'What if minimum investment changed to \u20AC200K?',
+  'What if minimum investment changed to €200K?',
 ];
+
+function getPromptsForPath(pathname: string): string[] {
+  // Exact match first
+  if (PAGE_PROMPTS[pathname]) return PAGE_PROMPTS[pathname].prompts;
+  // Prefix match (e.g., /funds/[id] → /funds)
+  const prefix = '/' + pathname.split('/').filter(Boolean)[0];
+  if (PAGE_PROMPTS[prefix]) return PAGE_PROMPTS[prefix].prompts;
+  return DEFAULT_PROMPTS;
+}
 
 export function CopilotPanel({
   open,
@@ -143,7 +218,7 @@ export function CopilotPanel({
                 Ask questions about regulations, decisions, or draft rules using natural language.
               </p>
               <div className="w-full space-y-2">
-                {SUGGESTED_PROMPTS.map((prompt) => (
+                {getPromptsForPath(pathname).map((prompt) => (
                   <button
                     key={prompt}
                     onClick={() => sendMessage(prompt)}
