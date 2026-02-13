@@ -11,8 +11,12 @@ export const metadata: Metadata = {
     ],
     apple: '/favicon.svg',
   },
+  manifest: '/manifest.json',
   other: {
     'theme-color': '#0A0E1A',
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
   },
   openGraph: {
     title: 'Caelith — Compliance Engine',

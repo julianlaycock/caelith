@@ -1,0 +1,20 @@
+{
+  "name": "Caelith — Compliance Engine",
+  "short_name": "Caelith",
+  "description": "Compliance infrastructure for tokenized alternative investments",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0E1A",
+  "theme_color": "#0A0E1A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "business"],
+  "lang": "en"
+}
