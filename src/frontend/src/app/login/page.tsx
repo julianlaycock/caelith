@@ -71,9 +71,17 @@ export default function LoginPage() {
         {/* Gradient glow */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl" />
 
-        <div className="relative">
-          <div className="mb-2 h-0.5 w-8 bg-accent-400" />
-          <span className="text-base font-bold uppercase tracking-[0.2em] text-ink">
+        <div className="relative flex items-center gap-3">
+          <svg viewBox="0 0 32 32" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(2, 1)">
+              <rect x="7" y="0" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
+              <rect x="0" y="11" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
+              <rect x="7" y="22" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
+              <line x1="14" y1="8" x2="14" y2="11" stroke="#22D3EE" strokeWidth="2"/>
+              <line x1="8" y1="19" x2="8" y2="22" stroke="#22D3EE" strokeWidth="2"/>
+            </g>
+          </svg>
+          <span className="text-base font-bold uppercase tracking-[0.14em] text-ink">
             CAELITH
           </span>
         </div>
@@ -93,9 +101,17 @@ export default function LoginPage() {
       {/* Right Panel — Form */}
       <div className="flex w-full flex-col items-center justify-center bg-bg-primary px-8 lg:w-1/2">
         <div className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden">
-            <div className="mb-1 h-0.5 w-6 bg-accent-400" />
-            <span className="text-base font-bold uppercase tracking-[0.2em] text-ink">
+          <div className="mb-8 lg:hidden flex items-center gap-3">
+            <svg viewBox="0 0 32 32" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(2, 1)">
+                <rect x="7" y="0" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
+                <rect x="0" y="11" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
+                <rect x="7" y="22" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
+                <line x1="14" y1="8" x2="14" y2="11" stroke="#22D3EE" strokeWidth="2"/>
+                <line x1="8" y1="19" x2="8" y2="22" stroke="#22D3EE" strokeWidth="2"/>
+              </g>
+            </svg>
+            <span className="text-base font-bold uppercase tracking-[0.14em] text-ink">
               CAELITH
             </span>
           </div>

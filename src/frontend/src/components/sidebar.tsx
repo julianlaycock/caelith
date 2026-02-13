@@ -166,9 +166,18 @@ export function Sidebar({ onCopilotToggle, mobileOpen, onMobileClose }: { onCopi
     )}>
       {/* Brand */}
       <div className="px-6 pt-6 pb-4 flex items-center justify-between">
-        <div>
-          <div className="mb-1.5 h-0.5 w-6 bg-accent-400" />
-          <span className="text-sm font-bold uppercase tracking-[0.2em] text-ink">
+        <div className="flex items-center gap-3">
+          {/* Hash Chain Logo Mark */}
+          <svg viewBox="0 0 32 32" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+            <g transform="translate(2, 1)">
+              <rect x="7" y="0" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
+              <rect x="0" y="11" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
+              <rect x="7" y="22" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
+              <line x1="14" y1="8" x2="14" y2="11" stroke="#22D3EE" strokeWidth="2"/>
+              <line x1="8" y1="19" x2="8" y2="22" stroke="#22D3EE" strokeWidth="2"/>
+            </g>
+          </svg>
+          <span className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
             CAELITH
           </span>
         </div>
