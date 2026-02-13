@@ -39,7 +39,7 @@
   "author": "",
   "license": "MIT",
   "engines": {
-    "node": ">=20 <21"
+    "node": ">=20"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
