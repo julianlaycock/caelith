@@ -113,7 +113,7 @@ export default function RuleBuilderPage() {
               id="asset-select"
               value={assetId}
               onChange={(e) => setAssetId(e.target.value)}
-              className="block w-full rounded-lg border border-edge px-3 py-2 text-sm bg-bg-secondary focus:outline-none focus:ring-1 focus:ring-accent-400/30"
+              className="block w-full rounded-lg border border-edge px-3 py-2 text-sm bg-bg-primary text-ink focus:outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400 placeholder:text-ink-muted"
             >
               <option value="">Select asset...</option>
               {assetOptions.map((opt) => (
@@ -153,7 +153,7 @@ export default function RuleBuilderPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe what this rule does..."
                   rows={3}
-                  className="block w-full rounded-lg border border-edge px-3 py-2 text-sm bg-bg-secondary focus:outline-none focus:ring-1 focus:ring-accent-400/30 resize-none"
+                  className="block w-full rounded-lg border border-edge px-3 py-2 text-sm bg-bg-primary text-ink border-edge focus:outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400 resize-none placeholder:text-ink-muted"
                 />
               </div>
             </div>

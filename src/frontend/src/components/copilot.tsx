@@ -230,7 +230,7 @@ export function CopilotPanel({
               onKeyDown={handleKeyDown}
               placeholder="Ask a compliance question..."
               rows={1}
-              className="flex-1 resize-none rounded-lg border border-edge px-3 py-2 text-sm focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30"
+              className="flex-1 resize-none rounded-lg border border-edge bg-bg-primary text-ink px-3 py-2 text-sm placeholder:text-ink-muted focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30"
             />
             <button
               type="submit"

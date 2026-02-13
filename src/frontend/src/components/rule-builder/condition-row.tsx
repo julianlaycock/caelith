@@ -111,7 +111,7 @@ export function ConditionRow({ condition, onChange, onDelete }: ConditionRowProp
       <select
         value={condition.field}
         onChange={(e) => handleFieldChange(e.target.value)}
-        className="rounded-lg border border-edge px-2 py-1.5 text-sm bg-bg-secondary focus:outline-none focus:ring-1 focus:ring-accent-400/30 min-w-[170px]"
+        className="rounded-lg border border-edge px-2 py-1.5 text-sm bg-bg-primary text-ink focus:outline-none focus:ring-1 focus:ring-accent-400/30 min-w-[170px]"
       >
         <option value="">Select field...</option>
         {FIELDS.map((f) => (
@@ -123,7 +123,7 @@ export function ConditionRow({ condition, onChange, onDelete }: ConditionRowProp
       <select
         value={condition.operator}
         onChange={(e) => handleOperatorChange(e.target.value)}
-        className="rounded-lg border border-edge px-2 py-1.5 text-sm bg-bg-secondary focus:outline-none focus:ring-1 focus:ring-accent-400/30 min-w-[140px]"
+        className="rounded-lg border border-edge px-2 py-1.5 text-sm bg-bg-primary text-ink focus:outline-none focus:ring-1 focus:ring-accent-400/30 min-w-[140px]"
       >
         {validOperators.map((op) => (
           <option key={op} value={op}>{OPERATOR_LABELS[op] || op}</option>
@@ -135,7 +135,7 @@ export function ConditionRow({ condition, onChange, onDelete }: ConditionRowProp
         <select
           value={String(condition.value)}
           onChange={(e) => onChange({ ...condition, value: e.target.value === 'true' })}
-          className="rounded-lg border border-edge px-2 py-1.5 text-sm bg-bg-secondary focus:outline-none focus:ring-1 focus:ring-accent-400/30 min-w-[90px]"
+          className="rounded-lg border border-edge px-2 py-1.5 text-sm bg-bg-primary text-ink focus:outline-none focus:ring-1 focus:ring-accent-400/30 min-w-[90px]"
         >
           <option value="true">true</option>
           <option value="false">false</option>
@@ -146,7 +146,7 @@ export function ConditionRow({ condition, onChange, onDelete }: ConditionRowProp
           value={typeof condition.value === 'number' ? condition.value : ''}
           onChange={(e) => onChange({ ...condition, value: e.target.value === '' ? 0 : Number(e.target.value) })}
           placeholder="0"
-          className="rounded-lg border border-edge px-2 py-1.5 text-sm bg-bg-secondary focus:outline-none focus:ring-1 focus:ring-accent-400/30 w-32"
+          className="rounded-lg border border-edge px-2 py-1.5 text-sm bg-bg-primary text-ink focus:outline-none focus:ring-1 focus:ring-accent-400/30 w-32"
         />
       ) : isListOperator ? (
         <ListValueInput
@@ -159,7 +159,7 @@ export function ConditionRow({ condition, onChange, onDelete }: ConditionRowProp
           value={typeof condition.value === 'string' ? condition.value : String(condition.value)}
           onChange={(e) => onChange({ ...condition, value: e.target.value })}
           placeholder="Value"
-          className="rounded-lg border border-edge px-2 py-1.5 text-sm bg-bg-secondary focus:outline-none focus:ring-1 focus:ring-accent-400/30 flex-1 min-w-[120px]"
+          className="rounded-lg border border-edge px-2 py-1.5 text-sm bg-bg-primary text-ink focus:outline-none focus:ring-1 focus:ring-accent-400/30 flex-1 min-w-[120px]"
         />
       )}
 

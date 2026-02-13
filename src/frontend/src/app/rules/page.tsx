@@ -230,7 +230,10 @@ export default function RulesPage() {
       const result = await api.compileNaturalLanguageRule(nlPrompt, selectedAssetId);
       setNlResult(result);
     } catch (err) {
-      setNlError((err as ApiError).message || 'Failed to compile rule. Please try again.');
+      const msg = (err as ApiError).message || '';
+      setNlError(msg.includes('x-api-key') || msg.includes('authentication') || msg.includes('401')
+        ? 'AI service is not configured. Please add a valid Anthropic API key to use natural language rules.'
+        : msg || 'Failed to compile rule. Please try again.');
     } finally {
       setNlLoading(false);
     }
@@ -358,19 +361,19 @@ export default function RulesPage() {
               <div key={i} className="mb-2 flex items-end gap-2">
                 <div className="flex-1">
                   <select value={c.field} onChange={(e) => updateCondition(i, 'field', e.target.value)}
-                    className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30">
+                    className="w-full rounded-md border border-edge bg-bg-primary text-ink px-3 py-2 text-sm focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30 placeholder:text-ink-muted">
                     {CONDITION_FIELDS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
                   </select>
                 </div>
                 <div className="w-36">
                   <select value={c.operator} onChange={(e) => updateCondition(i, 'operator', e.target.value)}
-                    className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30">
+                    className="w-full rounded-md border border-edge bg-bg-primary text-ink px-3 py-2 text-sm focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30 placeholder:text-ink-muted">
                     {CONDITION_OPERATORS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
                 <div className="flex-1">
                   <input value={c.value} onChange={(e) => updateCondition(i, 'value', e.target.value)}
-                    placeholder="Value" className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30" />
+                    placeholder="Value" className="w-full rounded-md border border-edge bg-bg-primary text-ink px-3 py-2 text-sm focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30 placeholder:text-ink-muted" />
                 </div>
                 {crConditions.length > 1 && (
                   <button type="button" onClick={() => removeCondition(i)}
@@ -409,7 +412,7 @@ export default function RulesPage() {
                   placeholder="e.g., Block retail investors from SIF funds"
                   rows={3}
                   maxLength={500}
-                  className="w-full rounded-md border border-edge px-3 py-2 text-sm focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30"
+                  className="w-full rounded-md border border-edge bg-bg-primary text-ink px-3 py-2 text-sm focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30 placeholder:text-ink-muted"
                 />
                 <p className="mt-1 text-xs text-ink-tertiary">{nlPrompt.length}/500 characters</p>
               </div>
