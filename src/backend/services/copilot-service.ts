@@ -412,10 +412,15 @@ async function handleExplainDecision(message: string, tenantId: string): Promise
 }
 
 async function handleRegulatoryQa(message: string, tenantId: string): Promise<CopilotResponse> {
-  const results = await ragService.query(message, {
-    tenantId,
-    topK: 5,
-  });
+  let results: RagResult[] = [];
+  try {
+    results = await ragService.query(message, {
+      tenantId,
+      topK: 5,
+    });
+  } catch (err: any) {
+    console.warn('RAG query failed (embedding service may be unavailable):', err.message);
+  }
 
   if (results.length === 0) {
     return {
