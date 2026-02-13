@@ -206,19 +206,19 @@ function InvestorsContent() {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-edge">
               <tr>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Name</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Jurisdiction</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Type</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">KYC</th>
+                <SortableHeader<Investor> label="Name" sortKey="name" sort={sort} onToggle={toggle} />
+                <SortableHeader<Investor> label="Jurisdiction" sortKey="jurisdiction" sort={sort} onToggle={toggle} />
+                <SortableHeader<Investor> label="Type" sortKey="investor_type" sort={sort} onToggle={toggle} />
+                <SortableHeader<Investor> label="KYC" sortKey="kyc_status" sort={sort} onToggle={toggle} />
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">KYC Expiry</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Days Left</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Status</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Created</th>
+                <SortableHeader<Investor> label="Created" sortKey="created_at" sort={sort} onToggle={toggle} />
                 <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-edge-subtle">
-              {filteredInvestors.map((inv) => (
+              {(sortedInvestors ?? filteredInvestors).map((inv) => (
                 <tr key={inv.id} className="transition-colors hover:bg-bg-tertiary">
                   <td className="px-5 py-3 font-medium text-ink">
                     <Link href={`/investors/${inv.id}`} className="text-accent-400 hover:text-accent-300 transition-colors">
