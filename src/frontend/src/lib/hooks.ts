@@ -68,6 +68,8 @@ export function useAsync<T>(
 
     return () => {
       cancelled = true;
+      // Allow re-fetch on next effect run (React Strict Mode double-fires effects)
+      inFlightRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger, ...deps]);
