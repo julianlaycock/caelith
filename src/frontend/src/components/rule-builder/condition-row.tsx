@@ -36,7 +36,7 @@ function ListValueInput({ value, onChange }: { value: string[]; onChange: (items
 
   return (
     <div className="flex-1 min-w-[120px]">
-      <div className="flex flex-wrap items-center gap-1 rounded-lg border border-edge bg-bg-secondary px-2 py-1 focus-within:ring-1 focus-within:ring-[#000042] min-h-[34px]">
+      <div className="flex flex-wrap items-center gap-1 rounded-lg border border-edge bg-bg-secondary px-2 py-1 focus-within:ring-1 focus-within:ring-accent-400/30 min-h-[34px]">
         {value.map((item, i) => (
           <span
             key={`${item}-${i}`}
@@ -167,7 +167,7 @@ export function ConditionRow({ condition, onChange, onDelete }: ConditionRowProp
       <button
         type="button"
         onClick={onDelete}
-        className="rounded-lg p-1.5 text-ink-tertiary hover:text-red-400 hover:bg-red-500/100/100/100/10 transition-colors"
+        className="rounded-lg p-1.5 text-ink-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors"
         title="Remove condition"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

@@ -13,7 +13,7 @@ import {
   Select,
   Checkbox,
   Modal,
-  LoadingSpinner,
+  SkeletonTable,
   ErrorMessage,
   EmptyState,
   Badge,
@@ -152,7 +152,7 @@ function InvestorsContent() {
           <span className="text-xs text-ink-tertiary">Filtered by:</span>
           <span className="inline-flex items-center gap-1.5 rounded-md bg-accent-500/10 px-2.5 py-1 text-xs font-medium text-accent-300 ring-1 ring-accent-500/20">
             {activeFilter}
-            <button onClick={clearFilters} className="ml-0.5 text-brand-500 hover:text-accent-300">
+            <button onClick={clearFilters} className="ml-0.5 text-accent-400 hover:text-accent-300">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -193,7 +193,7 @@ function InvestorsContent() {
       </Modal>
 
       {investors.loading ? (
-        <LoadingSpinner />
+        <SkeletonTable rows={8} />
       ) : investors.error ? (
         <ErrorMessage message={investors.error} onRetry={investors.refetch} />
       ) : filteredInvestors.length > 0 ? (
@@ -233,9 +233,9 @@ function InvestorsContent() {
                       const expiry = daysUntilExpiry(inv.kyc_expiry);
                       if (!expiry) return <span className="text-xs text-ink-tertiary">—</span>;
                       const colors = {
-                        expired: 'text-red-400 bg-red-500/100/10',
-                        critical: 'text-red-400 bg-red-500/100/10',
-                        warning: 'text-amber-400 bg-amber-500/100/10',
+                        expired: 'text-red-400 bg-red-500/10',
+                        critical: 'text-red-400 bg-red-500/10',
+                        warning: 'text-amber-400 bg-amber-500/10',
                         ok: 'text-accent-300 bg-accent-500/10',
                       };
                       return (
@@ -282,7 +282,7 @@ function InvestorsContent() {
 
 export default function InvestorsPage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<SkeletonTable rows={8} />}>
       <InvestorsContent />
     </Suspense>
   );

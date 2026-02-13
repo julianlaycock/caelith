@@ -54,7 +54,7 @@ export function NLIntegration({ assetId, onApply }: NLIntegrationProps) {
           type="button"
           onClick={handleGenerate}
           disabled={loading || !prompt.trim() || !assetId}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-white hover:bg-[#000033] transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-white hover:bg-accent-600 transition-colors disabled:opacity-50"
         >
           {loading ? (
             <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

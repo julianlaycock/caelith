@@ -11,6 +11,7 @@ import {
   Input,
   Select,
   Modal,
+  SkeletonCards,
   LoadingSpinner,
   ErrorMessage,
   EmptyState,
@@ -113,13 +114,13 @@ export default function AssetsPage() {
       )}
 
       {assets.loading ? (
-        <LoadingSpinner />
+        <SkeletonCards count={6} />
       ) : assets.error ? (
         <ErrorMessage message={assets.error} onRetry={assets.refetch} />
       ) : assets.data && assets.data.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {assets.data.map((asset) => (
-            <Card key={asset.id} className="cursor-pointer transition-shadow hover:shadow-md">
+            <Card key={asset.id} className="cursor-pointer transition-colors hover:border-edge">
               <div onClick={() => setSelectedAsset(asset.id)}>
                 <div className="flex items-start justify-between">
                   <h3 className="text-sm font-semibold text-ink">{asset.name}</h3>
@@ -296,7 +297,7 @@ function AssetDetailModal({
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Utilization</p>
               <div className="mb-2 h-1.5 w-full rounded-full bg-bg-tertiary">
                 <div
-                  className="h-1.5 rounded-full bg-accent-500/100"
+                  className="h-1.5 rounded-full bg-accent-500"
                   style={{ width: `${Math.min(utilization.data.utilization_percentage, 100)}%` }}
                 />
               </div>

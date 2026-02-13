@@ -48,7 +48,7 @@ function resultBadgeVariant(result: string): 'green' | 'red' | 'gray' {
 /* ── Border color helper ──────────────────────────────── */
 
 function resultBorderClass(result: string): string {
-  if (result === 'approved') return 'border-l-brand-500';
+  if (result === 'approved') return 'border-l-accent-500';
   if (result === 'rejected') return 'border-l-red-500';
   return 'border-l-edge-strong';
 }
@@ -187,7 +187,7 @@ export default function DecisionAuditTrailPage() {
             'mb-4 rounded-lg border px-4 py-3 text-sm',
             chainStatus.valid
               ? 'border-accent-500/20 bg-accent-500/10 text-accent-200'
-              : 'border-red-500/20 bg-red-500/100/10 text-red-300'
+              : 'border-red-500/20 bg-red-500/10 text-red-300'
           )}
         >
           {chainStatus.valid ? 'Valid:' : 'Invalid:'} {chainStatus.message}
@@ -246,7 +246,7 @@ export default function DecisionAuditTrailPage() {
               <div
                 key={d.id}
                 className={classNames(
-                  'rounded-xl border border-edge bg-bg-secondary p-5 shadow-sm border-l-[3px]',
+                  'rounded-xl border border-edge bg-bg-secondary p-5 border-l-[3px]',
                   resultBorderClass(d.result)
                 )}
               >

@@ -152,7 +152,7 @@ export function Button({
     primary: 'bg-accent-500 text-white hover:bg-accent-400 focus:ring-accent-400/30 rounded-lg',
     secondary:
       'bg-transparent text-ink-secondary border border-edge hover:text-ink hover:border-edge-strong focus:ring-accent-400/30 rounded-lg',
-    danger: 'bg-red-500/100/100/10 text-red-400 hover:bg-red-500/100/100/100/100/20 focus:ring-red-500/30 rounded-lg',
+    danger: 'bg-red-500/10 text-red-400 hover:bg-red-500/20 focus:ring-red-500/30 rounded-lg',
     ghost: 'text-ink-secondary hover:text-ink hover:bg-bg-tertiary focus:ring-accent-400/30 rounded-lg',
   };
   const sizes = {
@@ -266,8 +266,8 @@ export function Badge({
 }) {
   const colors = {
     green: 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20',
-    red: 'bg-red-500/100/100/10 text-red-400 ring-1 ring-red-500/20',
-    yellow: 'bg-amber-500/100/100/10 text-amber-400 ring-1 ring-amber-500/20',
+    red: 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20',
+    yellow: 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20',
     blue: 'bg-cyan-500/10 text-cyan-400 ring-1 ring-cyan-500/20',
     gray: 'bg-bg-secondary/5 text-ink-secondary ring-1 ring-white/10',
   };
@@ -318,8 +318,8 @@ export function RiskFlagCard({
   message: string;
 }) {
   const styles = {
-    high: 'border-l-red-400 bg-red-500/100/100/5',
-    medium: 'border-l-amber-400 bg-amber-500/100/100/5',
+    high: 'border-l-red-400 bg-red-500/5',
+    medium: 'border-l-amber-400 bg-amber-500/5',
     low: 'border-l-emerald-400 bg-emerald-500/5',
   };
   const badgeVariant = {
@@ -471,7 +471,7 @@ export function ErrorMessage({
   onRetry?: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-red-500/20 bg-red-500/100/100/5 p-4 animate-fade-in">
+    <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 animate-fade-in">
       <p className="text-sm text-red-400">{message}</p>
       {onRetry && (
         <button onClick={onRetry} className="mt-2 text-sm font-medium text-red-400 underline hover:text-red-300">
@@ -528,7 +528,7 @@ export function Alert({
 }) {
   const styles = {
     success: 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400',
-    error: 'border-red-500/20 bg-red-500/100/100/5 text-red-400',
+    error: 'border-red-500/20 bg-red-500/5 text-red-400',
     info: 'border-accent-500/20 bg-accent-500/5 text-accent-400',
   };
   return (

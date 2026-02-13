@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
-import { PageHeader, Card, Badge, Button, LoadingSpinner, ErrorMessage, EmptyState } from '../../../components/ui';
+import { PageHeader, Card, Badge, Button, SkeletonTable, ErrorMessage, EmptyState } from '../../../components/ui';
 import { formatDate } from '../../../lib/utils';
 import type { Investor } from '../../../lib/types';
 
@@ -340,7 +340,7 @@ export default function JurisdictionPage() {
 
       {/* ── Investors Card ─────────────────────────── */}
       {loading ? (
-        <LoadingSpinner />
+        <SkeletonTable rows={5} />
       ) : error ? (
         <ErrorMessage
           message={error}

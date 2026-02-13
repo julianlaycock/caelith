@@ -17,20 +17,20 @@ import { formatCompactNumber, formatInvestorType, classNames } from '../lib/util
 // ── Color Palette ────────────────────────────────────────
 
 const CHART_COLORS = [
-  '#16A34A', // brand-600
-  '#22C55E', // brand-500
-  '#4ADE80', // brand-400
-  '#86EFAD', // brand-300
-  '#BBF7D1', // brand-200
-  '#15803D', // brand-700
-  '#166534', // brand-800
+  '#22D3EE', // accent-400
+  '#06B6D4', // accent-500
+  '#67E8F9', // accent-300
+  '#A5F3FC', // accent-200
+  '#0891B2', // accent-600
+  '#0E7490', // accent-700
+  '#155E75', // accent-800
 ];
 
 const KYC_COLORS: Record<string, string> = {
-  verified: '#16A34A',
-  pending: '#D4A017',
-  expired: '#DC2626',
-  expiring_soon: '#EA580C',
+  verified: '#34D399',
+  pending: '#FBBF24',
+  expired: '#F87171',
+  expiring_soon: '#FB923C',
 };
 
 const VIOLATION_COLOR = '#DC2626';
@@ -39,14 +39,14 @@ const VIOLATION_COLOR = '#DC2626';
 
 const tooltipStyle = {
   contentStyle: {
-    background: '#FFFFFF',
-    border: '1px solid #D1DDD7',
+    background: '#111827',
+    border: '1px solid #334155',
     borderRadius: '8px',
     fontSize: '12px',
-    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.07)',
+    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)',
   },
-  itemStyle: { color: '#0F1D18' },
-  labelStyle: { color: '#4B6358', fontWeight: 600 },
+  itemStyle: { color: '#F1F5F9' },
+  labelStyle: { color: '#94A3B8', fontWeight: 600 },
 };
 
 // ── 1. Investor Type Allocation (Donut) ──────────────────
@@ -84,7 +84,7 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({ data, o
                 innerRadius={55}
                 outerRadius={85}
                 dataKey="value"
-                stroke="#FFFFFF"
+                stroke="#0A0E1A"
                 strokeWidth={2}
                 style={onTypeClick ? { cursor: 'pointer' } : undefined}
                 onClick={onTypeClick ? (_: unknown, index: number) => onTypeClick(chartData[index].rawType) : undefined}
@@ -170,7 +170,7 @@ export const JurisdictionExposureBar = React.memo(function JurisdictionExposureB
             <XAxis
               type="number"
               tickFormatter={formatCompactNumber}
-              tick={{ fontSize: 11, fill: '#7A9488' }}
+              tick={{ fontSize: 11, fill: '#64748B' }}
               axisLine={false}
               tickLine={false}
             />
@@ -178,7 +178,7 @@ export const JurisdictionExposureBar = React.memo(function JurisdictionExposureB
               type="category"
               dataKey="name"
               width={36}
-              tick={{ fontSize: 11, fill: '#4B6358' }}
+              tick={{ fontSize: 11, fill: '#94A3B8' }}
               axisLine={false}
               tickLine={false}
             />
@@ -186,7 +186,7 @@ export const JurisdictionExposureBar = React.memo(function JurisdictionExposureB
               formatter={(value) => [formatCompactNumber(Number(value)) + ' units', 'Allocated']}
               {...tooltipStyle}
             />
-            <Bar dataKey="units" fill="#22C55E" radius={[0, 4, 4, 0]} barSize={16} />
+            <Bar dataKey="units" fill="#22D3EE" radius={[0, 4, 4, 0]} barSize={16} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -314,7 +314,7 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({ d
           >
             <XAxis
               type="number"
-              tick={{ fontSize: 11, fill: '#7A9488' }}
+              tick={{ fontSize: 11, fill: '#64748B' }}
               axisLine={false}
               tickLine={false}
               allowDecimals={false}
@@ -323,7 +323,7 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({ d
               type="category"
               dataKey="name"
               width={160}
-              tick={{ fontSize: 10, fill: '#4B6358' }}
+              tick={{ fontSize: 10, fill: '#94A3B8' }}
               axisLine={false}
               tickLine={false}
             />
@@ -380,12 +380,12 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
               ? '#DC2626'
               : riskLevel === 'medium'
               ? '#EA580C'
-              : '#16A34A';
+              : '#34D399';
           const riskBg =
             riskLevel === 'high'
-              ? 'bg-red-500/100/10'
+              ? 'bg-red-500/10'
               : riskLevel === 'medium'
-              ? 'bg-orange-50'
+              ? 'bg-amber-500/10'
               : 'bg-accent-500/10';
 
           return (
@@ -452,7 +452,7 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-edge bg-bg-secondary p-5 shadow-sm">
+    <div className="rounded-xl border border-edge bg-bg-secondary p-5">
       <div className="mb-4">
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
         {subtitle && <p className="mt-0.5 text-xs text-ink-tertiary">{subtitle}</p>}

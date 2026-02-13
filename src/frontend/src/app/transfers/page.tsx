@@ -9,7 +9,7 @@ import {
   Button,
   Input,
   Select,
-  LoadingSpinner,
+  SkeletonTable,
   ErrorMessage,
   EmptyState,
   Alert,
@@ -215,7 +215,7 @@ export default function TransfersPage() {
                 {validationResult && (
                   <div className={classNames(
                     'rounded-lg border p-4',
-                    validationResult.valid ? 'border-accent-500/20 bg-accent-500/10' : 'border-red-500/20 bg-red-500/100/10'
+                    validationResult.valid ? 'border-accent-500/20 bg-accent-500/10' : 'border-red-500/20 bg-red-500/10'
                   )}>
                     <p className={classNames(
                       'mb-1 text-sm font-semibold',
@@ -285,7 +285,7 @@ export default function TransfersPage() {
       {!selectedAssetId ? (
         <EmptyState title="Select an asset" description="Choose an asset above to view its transfer history." />
       ) : history.loading ? (
-        <LoadingSpinner />
+        <SkeletonTable rows={5} />
       ) : history.error ? (
         <ErrorMessage message={history.error} onRetry={history.refetch} />
       ) : history.data && history.data.length > 0 ? (

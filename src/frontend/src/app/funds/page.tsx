@@ -11,7 +11,7 @@ import {
   Input,
   Select,
   Modal,
-  LoadingSpinner,
+  SkeletonCards,
   ErrorMessage,
   EmptyState,
   Badge,
@@ -199,13 +199,13 @@ export default function FundsPage() {
       </Modal>
 
       {funds.loading ? (
-        <LoadingSpinner />
+        <SkeletonCards count={4} />
       ) : funds.error ? (
         <ErrorMessage message={funds.error} onRetry={funds.refetch} />
       ) : funds.data && funds.data.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
           {funds.data.map((fund) => (
-            <Card key={fund.id} className="transition-shadow hover:shadow-md">
+            <Card key={fund.id} className="transition-colors hover:border-edge">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="text-sm font-semibold text-ink">{fund.name}</h3>
@@ -230,7 +230,7 @@ export default function FundsPage() {
                   </button>
                   <button
                     onClick={() => setDeleteFund(fund)}
-                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-red-500/100/100/100/10 hover:text-red-400 transition-colors"
+                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-red-500/10 hover:text-red-400 transition-colors"
                     title="Delete"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

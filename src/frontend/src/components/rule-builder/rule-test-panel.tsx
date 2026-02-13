@@ -122,7 +122,7 @@ export function RuleTestPanel({ operator, conditions }: RuleTestPanelProps) {
                   <span className="text-ink-tertiary ml-1">({r.investor.jurisdiction})</span>
                 </span>
                 {r.blocked ? (
-                  <span className="inline-flex items-center rounded-full bg-red-500/100/10 px-2 py-0.5 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/20">
+                  <span className="inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/20">
                     blocked
                   </span>
                 ) : (

@@ -202,7 +202,7 @@ export function CopilotPanel({
           )}
 
           {error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/100/10 px-3 py-2 text-xs text-red-400">
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
               {error}
               <button
                 onClick={() => {
@@ -235,7 +235,7 @@ export function CopilotPanel({
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-accent-500 text-white transition-colors hover:bg-[#000033] disabled:opacity-40"
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-accent-500 text-white transition-colors hover:bg-accent-600 disabled:opacity-40"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
@@ -252,7 +252,7 @@ export function CopilotToggleButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-accent-500 text-white shadow-lg transition-all hover:bg-[#000033] hover:shadow-xl hover:scale-105"
+      className="fixed bottom-6 right-6 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-accent-500 text-white shadow-lg transition-all hover:bg-accent-600 hover:shadow-xl hover:scale-105"
       title="Open Compliance Copilot"
     >
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

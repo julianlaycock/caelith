@@ -9,7 +9,7 @@ import {
   Select,
   Input,
   Button,
-  LoadingSpinner,
+  SkeletonTable,
   ErrorMessage,
   EmptyState,
   Badge,
@@ -109,7 +109,7 @@ export default function AuditPage() {
 
       {/* Event List */}
       {events.loading ? (
-        <LoadingSpinner />
+        <SkeletonTable rows={8} />
       ) : events.error ? (
         <ErrorMessage message={events.error} onRetry={events.refetch} />
       ) : events.data && events.data.length > 0 ? (

@@ -22,7 +22,7 @@ interface FundReportPair {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-xl border border-edge bg-bg-secondary px-4 py-3 shadow-sm animate-pulse">
+    <div className="rounded-xl border border-edge bg-bg-secondary px-4 py-3 animate-pulse">
       <div className="h-2.5 w-20 rounded bg-bg-tertiary mb-2" />
       <div className="h-5 w-14 rounded bg-bg-tertiary mb-1" />
       <div className="h-2.5 w-28 rounded bg-bg-tertiary" />
@@ -44,7 +44,7 @@ function SkeletonRow() {
 
 function SkeletonChart() {
   return (
-    <div className="rounded-xl border border-edge bg-bg-secondary p-5 shadow-sm animate-pulse">
+    <div className="rounded-xl border border-edge bg-bg-secondary p-5 animate-pulse">
       <div className="h-3.5 w-32 rounded bg-bg-tertiary mb-2" />
       <div className="h-3 w-48 rounded bg-bg-tertiary mb-4" />
       <div className="h-[200px] rounded bg-bg-tertiary" />
@@ -343,7 +343,7 @@ export default function DashboardPage() {
           <h1 className="text-xl font-semibold tracking-tight text-ink">Command Center</h1>
           <p className="mt-0.5 text-sm text-ink-secondary">Compliance engine overview</p>
         </div>
-        <span className="rounded-lg bg-accent-500 px-3 py-1.5 text-xs font-medium text-white shadow-sm">{today}</span>
+        <span className="rounded-lg bg-accent-500 px-3 py-1.5 text-xs font-medium text-white">{today}</span>
       </div>
 
       {/* Metric Cards — compact */}
@@ -435,7 +435,7 @@ export default function DashboardPage() {
         <div className="mb-6">
           <div className="rounded-xl border border-accent-500/20 bg-accent-500/10 p-4">
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-accent-500/100" />
+              <span className="h-2 w-2 rounded-full bg-accent-500" />
               <p className="text-sm font-medium text-accent-200">All Clear</p>
             </div>
             <p className="mt-1 text-sm text-accent-300">No risk flags detected across any fund structures.</p>
@@ -489,7 +489,7 @@ export default function DashboardPage() {
         <div className="mb-6">
           <div className="h-4 w-32 rounded bg-bg-tertiary mb-4 animate-pulse" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-edge bg-bg-secondary p-6 shadow-sm animate-pulse">
+            <div className="rounded-xl border border-edge bg-bg-secondary p-6 animate-pulse">
               <div className="h-4 w-40 rounded bg-bg-tertiary mb-3" />
               <div className="flex gap-2 mb-4">
                 <div className="h-5 w-12 rounded bg-bg-tertiary" />
@@ -498,7 +498,7 @@ export default function DashboardPage() {
               <div className="h-2 w-full rounded bg-bg-tertiary mb-3" />
               <div className="h-3 w-32 rounded bg-bg-tertiary" />
             </div>
-            <div className="rounded-xl border border-edge bg-bg-secondary p-6 shadow-sm animate-pulse">
+            <div className="rounded-xl border border-edge bg-bg-secondary p-6 animate-pulse">
               <div className="h-4 w-40 rounded bg-bg-tertiary mb-3" />
               <div className="flex gap-2 mb-4">
                 <div className="h-5 w-12 rounded bg-bg-tertiary" />
@@ -604,8 +604,8 @@ export default function DashboardPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Severity</p>
                 <span className={classNames(
                   'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold uppercase tracking-wider',
-                  selectedRisk.severity === 'high' && 'bg-red-500/100/15 text-red-400',
-                  selectedRisk.severity === 'medium' && 'bg-amber-500/100/15 text-amber-400',
+                  selectedRisk.severity === 'high' && 'bg-red-500/15 text-red-400',
+                  selectedRisk.severity === 'medium' && 'bg-amber-500/15 text-amber-400',
                   selectedRisk.severity === 'low' && 'bg-accent-500/15 text-accent-300',
                 )}>
                   {selectedRisk.severity}
@@ -629,7 +629,7 @@ export default function DashboardPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Recommended Actions</p>
                 <div className={classNames(
                   'rounded-lg border p-4 space-y-2',
-                  selectedRisk.severity === 'high' ? 'border-red-500/20 bg-red-500/100/10' : selectedRisk.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/100/10' : 'border-accent-500/20 bg-accent-500/10',
+                  selectedRisk.severity === 'high' ? 'border-red-500/20 bg-red-500/10' : selectedRisk.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/10' : 'border-accent-500/20 bg-accent-500/10',
                 )}>
                   {selectedRisk.severity === 'high' && (
                     <>
@@ -643,7 +643,7 @@ export default function DashboardPage() {
                   )}
                   {selectedRisk.severity === 'medium' && (
                     <>
-                      <p className="text-sm text-amber-800 font-medium">Review within 7 days</p>
+                      <p className="text-sm text-amber-300 font-medium">Review within 7 days</p>
                       <ul className="space-y-1 text-sm text-amber-400">
                         <li>&bull; Investigate the flagged condition</li>
                         <li>&bull; Schedule follow-up action if needed</li>
@@ -681,7 +681,7 @@ export default function DashboardPage() {
           if (violationLoading) {
             return (
               <div className="flex items-center justify-center py-8">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent-400 border-t-transparent" />
                 <span className="ml-2 text-sm text-ink-secondary">Loading decisions…</span>
               </div>
             );
@@ -707,7 +707,7 @@ export default function DashboardPage() {
                           key={ci}
                           className={classNames(
                             'flex items-start gap-2 rounded-md px-3 py-2 text-xs',
-                            check.passed ? 'bg-accent-500/10' : 'bg-red-500/100/10'
+                            check.passed ? 'bg-accent-500/10' : 'bg-red-500/10'
                           )}
                         >
                           <span className="mt-0.5 flex-shrink-0">

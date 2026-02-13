@@ -10,7 +10,7 @@ import {
   Input,
   Select,
   Modal,
-  LoadingSpinner,
+  SkeletonTable,
   ErrorMessage,
   EmptyState,
   Alert,
@@ -122,7 +122,7 @@ export default function HoldingsPage() {
             </div>
             <div className="h-1.5 w-full rounded-full bg-bg-tertiary">
               <div
-                className="h-1.5 rounded-full bg-accent-500/100 transition-all"
+                className="h-1.5 rounded-full bg-accent-500 transition-all"
                 style={{ width: `${Math.min(utilization.data.utilization_percentage, 100)}%` }}
               />
             </div>
@@ -134,7 +134,7 @@ export default function HoldingsPage() {
       {!selectedAssetId ? (
         <EmptyState title="Select an asset" description="Choose an asset above to view its cap table." />
       ) : capTable.loading ? (
-        <LoadingSpinner />
+        <SkeletonTable rows={5} />
       ) : capTable.error ? (
         <ErrorMessage message={capTable.error} onRetry={capTable.refetch} />
       ) : capTable.data && capTable.data.length > 0 ? (
@@ -157,7 +157,7 @@ export default function HoldingsPage() {
                   <td className="px-5 py-3">
                     <div className="h-1.5 w-full max-w-[120px] rounded-full bg-bg-tertiary">
                       <div
-                        className="h-1.5 rounded-full bg-accent-500/100"
+                        className="h-1.5 rounded-full bg-accent-500"
                         style={{ width: `${Math.min(entry.percentage, 100)}%` }}
                       />
                     </div>

@@ -31,8 +31,8 @@ interface KanbanColumn {
 const COLUMNS: KanbanColumn[] = [
   { key: 'applied',   label: 'Applied',    statuses: ['applied'],              color: 'border-t-amber-400',  dotColor: 'bg-amber-400' },
   { key: 'eligible',  label: 'Eligible',   statuses: ['eligible'],             color: 'border-t-blue-400',   dotColor: 'bg-blue-400' },
-  { key: 'approved',  label: 'Approved',   statuses: ['approved'],             color: 'border-t-accent-400',  dotColor: 'bg-accent-500/100' },
-  { key: 'allocated', label: 'Allocated',  statuses: ['allocated'],            color: 'border-t-brand-700',  dotColor: 'bg-brand-700' },
+  { key: 'approved',  label: 'Approved',   statuses: ['approved'],             color: 'border-t-accent-400',  dotColor: 'bg-accent-500' },
+  { key: 'allocated', label: 'Allocated',  statuses: ['allocated'],            color: 'border-t-accent-500',  dotColor: 'bg-accent-600' },
   { key: 'closed',    label: 'Closed',     statuses: ['rejected', 'ineligible', 'withdrawn'], color: 'border-t-red-400', dotColor: 'bg-red-400' },
 ];
 
@@ -436,7 +436,7 @@ export default function OnboardingPage() {
             </div>
 
             {selectedRecord.rejection_reasons && selectedRecord.rejection_reasons.length > 0 && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/100/10 p-3">
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-red-400 mb-1">Rejection Reasons</p>
                 <ul className="space-y-0.5">
                   {selectedRecord.rejection_reasons.map((r, i) => (
@@ -597,7 +597,7 @@ export default function OnboardingPage() {
       >
         {eligibilityResult && (
           <div className="space-y-4">
-            <div className="rounded-lg bg-red-500/100/10 border border-red-500/20 px-4 py-3">
+            <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
               <div className="flex items-center gap-2">
                 <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
@@ -611,7 +611,7 @@ export default function OnboardingPage() {
               {eligibilityResult.checks.map((check, i) => (
                 <div key={i} className={classNames(
                   'flex items-start gap-2 rounded-lg px-3 py-2',
-                  check.passed ? 'bg-accent-500/10 border border-accent-500/20' : 'bg-red-500/100/10 border border-red-500/20'
+                  check.passed ? 'bg-accent-500/10 border border-accent-500/20' : 'bg-red-500/10 border border-red-500/20'
                 )}>
                   {check.passed ? (
                     <svg className="h-4 w-4 mt-0.5 text-accent-400 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
@@ -737,7 +737,7 @@ export default function OnboardingPage() {
           {/* Pipeline Summary Metrics */}
           <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
             {COLUMNS.map((col) => (
-              <div key={col.key} className={classNames('rounded-xl border border-edge border-t-[3px] bg-bg-secondary p-4 shadow-sm', col.color)}>
+              <div key={col.key} className={classNames('rounded-xl border border-edge border-t-[3px] bg-bg-secondary p-4', col.color)}>
                 <div className="flex items-center gap-2">
                   <span className={classNames('h-2 w-2 rounded-full', col.dotColor)} />
                   <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">{col.label}</p>
@@ -788,7 +788,7 @@ export default function OnboardingPage() {
                       onDragEnd={dragSupported ? handleDragEnd : undefined}
                       onClick={() => setSelectedRecord(rec)}
                       className={classNames(
-                        'w-full rounded-lg border border-edge bg-bg-secondary p-3 text-left shadow-sm transition-all hover:shadow-md hover:border-accent-500/30 cursor-pointer',
+                        'w-full rounded-lg border border-edge bg-bg-secondary p-3 text-left transition-all hover:border-accent-500/30 cursor-pointer',
                         dragSupported && 'cursor-grab active:cursor-grabbing',
                         draggedId === rec.id && 'opacity-40 scale-95',
                       )}
@@ -811,7 +811,7 @@ export default function OnboardingPage() {
                         </span>
                       </div>
                       {rec.rejection_reasons && rec.rejection_reasons.length > 0 && (
-                        <p className="mt-1.5 truncate rounded bg-red-500/100/10 px-1.5 py-0.5 text-[10px] text-red-400">
+                        <p className="mt-1.5 truncate rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-400">
                           {rec.rejection_reasons[0]}
                         </p>
                       )}

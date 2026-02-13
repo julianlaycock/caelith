@@ -294,7 +294,7 @@ export default function RulesPage() {
                 <button key={code} type="button" onClick={() => toggleJurisdiction(code)}
                   className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
                     selectedJurisdictions.includes(code)
-                      ? 'border-[#000042] bg-navy-50 text-accent-500'
+                      ? 'border-accent-500 bg-accent-500/10 text-accent-400'
                       : 'border-edge bg-bg-secondary text-ink-secondary hover:bg-bg-tertiary'
                   }`}>{code}</button>
               ))}
@@ -374,7 +374,7 @@ export default function RulesPage() {
                 </div>
                 {crConditions.length > 1 && (
                   <button type="button" onClick={() => removeCondition(i)}
-                    className="rounded-md p-2 text-red-500 hover:bg-red-500/100/100/100/10">
+                    className="rounded-md p-2 text-red-500 hover:bg-red-500/10">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -383,7 +383,7 @@ export default function RulesPage() {
               </div>
             ))}
             <button type="button" onClick={addCondition}
-              className="mt-1 text-sm font-medium text-accent-500 hover:text-[#000033]">+ Add condition</button>
+              className="mt-1 text-sm font-medium text-accent-400 hover:text-accent-300">+ Add condition</button>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
@@ -441,7 +441,7 @@ export default function RulesPage() {
                     <div key={i} className="flex items-center gap-2 text-xs">
                       <span className="rounded bg-bg-secondary px-2 py-0.5 font-mono text-ink-secondary">{c.field}</span>
                       <span className="text-ink-tertiary">{c.operator}</span>
-                      <span className="rounded bg-navy-50 px-2 py-0.5 font-mono text-accent-500">
+                      <span className="rounded bg-accent-500/10 px-2 py-0.5 font-mono text-accent-400">
                         {Array.isArray(c.value) ? (c.value as string[]).join(', ') : String(c.value)}
                       </span>
                     </div>
@@ -590,7 +590,7 @@ export default function RulesPage() {
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => handleToggleCompositeRule(rule)}
-                          className="text-xs font-medium text-accent-500 hover:text-[#000033]">
+                          className="text-xs font-medium text-accent-400 hover:text-accent-300">
                           {rule.enabled ? 'Disable' : 'Enable'}
                         </button>
                         <button onClick={() => handleDeleteCompositeRule(rule.id)}
@@ -603,7 +603,7 @@ export default function RulesPage() {
                         <div key={i} className="flex items-center gap-2 text-xs">
                           <span className="rounded bg-bg-tertiary px-2 py-0.5 font-mono text-ink-secondary">{c.field}</span>
                           <span className="text-ink-tertiary">{c.operator}</span>
-                          <span className="rounded bg-navy-50 px-2 py-0.5 font-mono text-accent-500">
+                          <span className="rounded bg-accent-500/10 px-2 py-0.5 font-mono text-accent-400">
                             {Array.isArray(c.value) ? (c.value as string[]).join(', ') : String(c.value)}
                           </span>
                         </div>
