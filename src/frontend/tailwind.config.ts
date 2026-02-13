@@ -77,8 +77,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Geist', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Geist Mono', 'ui-monospace', 'monospace'],
+        sans: ['Space Grotesk', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         'xs':   ['0.75rem',   { lineHeight: '1rem' }],
