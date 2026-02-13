@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import type { CopilotResponse, CopilotCitation, ApiError } from '../lib/types';
 
 interface ChatMessage {
+  id: string;
   role: 'user' | 'assistant';
   content: string;
   intent?: string;
@@ -54,7 +55,7 @@ export function CopilotPanel({
 
     setInput('');
     setError(null);
-    setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: trimmed }]);
     setLoading(true);
 
     try {
@@ -65,6 +66,7 @@ export function CopilotPanel({
       setMessages((prev) => [
         ...prev,
         {
+          id: crypto.randomUUID(),
           role: 'assistant',
           content: response.message,
           intent: response.intent,
@@ -154,8 +156,8 @@ export function CopilotPanel({
             </div>
           )}
 
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
                   msg.role === 'user'

@@ -3,6 +3,7 @@ import { DEFAULT_TENANT_ID, query } from '../db.js';
 import { ragService, RagResult } from './rag-service.js';
 import { compileNaturalLanguageRule } from './nl-rule-compiler.js';
 import type { EntityType } from '../models/index.js';
+import { RateLimitError, ValidationError } from '../errors.js';
 
 const ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
@@ -321,7 +322,7 @@ async function summarizeRagAnswer(question: string, results: RagResult[]): Promi
 }
 
 function parseEuroAmount(message: string): number | null {
-  const match = message.match(/(?:€|eur)?\s*([0-9]{1,3}(?:[\s.,][0-9]{3})+|[0-9]+)(\s*[kKmM])?/i);
+  const match = message.match(/(?:ï¿½|eur)?\s*([0-9]{1,3}(?:[\s.,][0-9]{3})+|[0-9]+)(\s*[kKmM])?/i);
   if (!match) {
     return null;
   }
@@ -354,7 +355,7 @@ async function enforceRateLimit(tenantId: string, userId: string): Promise<void>
   );
 
   if ((rows[0]?.count || 0) >= 20) {
-    throw new Error('RATE_LIMIT_EXCEEDED');
+    throw new RateLimitError('Rate limit exceeded');
   }
 }
 
@@ -547,7 +548,7 @@ async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<
   if (!newMinimum) {
     return {
       intent: 'what_if',
-      message: 'I could not detect the new threshold amount. Try phrasing like: "What if minimum investment changed to €200K?"',
+      message: 'I could not detect the new threshold amount. Try phrasing like: "What if minimum investment changed to ï¿½200K?"',
     };
   }
 
@@ -596,7 +597,7 @@ async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<
   }
 
   const sample = impacted.slice(0, 5)
-    .map(row => `- ${row.name}: €${Number(row.invested_eur).toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
+    .map(row => `- ${row.name}: ï¿½${Number(row.invested_eur).toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
     .join('\n');
 
   const details = sample
@@ -605,7 +606,7 @@ async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<
 
   return {
     intent: 'what_if',
-    message: `If ${fund.name} minimum investment is set to €${newMinimum.toLocaleString()}, ${impacted.length} investors would fail eligibility and approximately ${blockedTransfers} historical transfers would be blocked under the same threshold.${details}`,
+    message: `If ${fund.name} minimum investment is set to ï¿½${newMinimum.toLocaleString()}, ${impacted.length} investors would fail eligibility and approximately ${blockedTransfers} historical transfers would be blocked under the same threshold.${details}`,
     suggestedActions: [
       {
         label: 'Review Eligibility Criteria',
@@ -619,7 +620,7 @@ async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<
 export async function chat(request: CopilotRequest, tenantId: string, userId?: string): Promise<CopilotResponse> {
   const sanitized = sanitizeMessage(request.message || '');
   if (!sanitized) {
-    throw new Error('VALIDATION_ERROR');
+    throw new ValidationError('Invalid request');
   }
 
   const scopedTenantId = tenantId || DEFAULT_TENANT_ID;

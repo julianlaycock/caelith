@@ -9,6 +9,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { randomUUID, randomBytes } from 'crypto';
 import { query, execute, DEFAULT_TENANT_ID } from '../db.js';
+import { ConflictError, UnauthorizedError, RateLimitError } from '../errors.js';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -162,7 +163,7 @@ export async function registerUser(
     [email]
   );
   if (existing.length > 0) {
-    throw new Error('Email already registered');
+    throw new ConflictError('Email already registered');
   }
 
   const id = randomUUID();
@@ -198,7 +199,7 @@ export async function loginUser(
 ): Promise<AuthResult> {
   // Check account lockout
   if (await isAccountLocked(email)) {
-    throw new Error(`Account temporarily locked. Try again in ${LOCKOUT_DURATION_MINUTES} minutes.`);
+    throw new RateLimitError(`Account temporarily locked. Try again in ${LOCKOUT_DURATION_MINUTES} minutes.`);
   }
 
   const rows = await query<UserRow>(
@@ -208,14 +209,14 @@ export async function loginUser(
 
   if (rows.length === 0) {
     await recordLoginAttempt(email, false, ipAddress);
-    throw new Error('Invalid email or password');
+    throw new UnauthorizedError('Invalid email or password');
   }
 
   const row = rows[0];
   const valid = await bcrypt.compare(password, row.password_hash);
   if (!valid) {
     await recordLoginAttempt(email, false, ipAddress);
-    throw new Error('Invalid email or password');
+    throw new UnauthorizedError('Invalid email or password');
   }
 
   await recordLoginAttempt(email, true, ipAddress);

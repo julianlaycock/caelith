@@ -1,10 +1,5 @@
-/**
- * Event Routes
- * 
- * Endpoints for audit trail
- */
-
 import express from 'express';
+import { asyncHandler } from '../middleware/async-handler.js';
 import {
   findAllEvents,
   findEventsByEntity,
@@ -14,42 +9,28 @@ import { EntityType, EventType } from '../models/index.js';
 
 const router = express.Router();
 
-/**
- * GET /events
- * Get audit trail (with optional filters)
- */
-router.get('/', async (req, res): Promise<void> => {
-  try {
-    const { entityType, entityId, eventType, limit } = req.query;
+router.get('/', asyncHandler(async (req, res): Promise<void> => {
+  const { entityType, entityId, eventType, limit } = req.query;
 
-    // Filter by entity
-    if (entityType && entityId) {
-      const events = await findEventsByEntity(
-        entityType as EntityType,
-        entityId as string
-      );
-      res.json(events);
-      return;
-    }
-
-    // Filter by event type
-    if (eventType) {
-      const events = await findEventsByType(eventType as EventType);
-      res.json(events);
-      return;
-    }
-
-    // Get all events (with limit)
-    const parsedLimit = limit ? Number(limit) : 100;
-    const eventLimit = Number.isNaN(parsedLimit) || parsedLimit < 1 ? 100 : Math.min(parsedLimit, 1000);
-    const events = await findAllEvents(eventLimit);
+  if (entityType && entityId) {
+    const events = await findEventsByEntity(
+      entityType as EntityType,
+      entityId as string
+    );
     res.json(events);
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    return;
   }
-});
+
+  if (eventType) {
+    const events = await findEventsByType(eventType as EventType);
+    res.json(events);
+    return;
+  }
+
+  const parsedLimit = limit ? Number(limit) : 100;
+  const eventLimit = Number.isNaN(parsedLimit) || parsedLimit < 1 ? 100 : Math.min(parsedLimit, 1000);
+  const events = await findAllEvents(eventLimit);
+  res.json(events);
+}));
 
 export default router;

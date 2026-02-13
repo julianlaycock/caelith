@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { query, execute, queryWithTenant, executeWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Investor, CreateInvestorInput, UpdateInvestorInput } from '../models/index.js';
 
 /**
@@ -82,7 +82,7 @@ export async function createInvestor(input: CreateInvestorInput): Promise<Invest
  * Find investor by ID
  */
 export async function findInvestorById(id: string): Promise<Investor | null> {
-  const results = await query<InvestorRow>(
+  const results = await queryWithTenant<InvestorRow>(
     'SELECT * FROM investors WHERE id = ?',
     [id]
   );
@@ -175,7 +175,7 @@ export async function updateInvestor(
 
   params.push(id);
 
-  await execute(
+  await executeWithTenant(
     `UPDATE investors SET ${updates.join(', ')} WHERE id = ?`,
     params
   );
@@ -187,7 +187,7 @@ export async function updateInvestor(
  * Check if investor exists
  */
 export async function investorExists(id: string): Promise<boolean> {
-  const results = await query<{ count: number }>(
+  const results = await queryWithTenant<{ count: number }>(
     'SELECT COUNT(*) as count FROM investors WHERE id = ?',
     [id]
   );

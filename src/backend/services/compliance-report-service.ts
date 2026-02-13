@@ -13,6 +13,7 @@
  */
 
 import { query } from '../db.js';
+import { NotFoundError } from '../errors.js';
 
 // ── Public Types ────────────────────────────────────────────
 
@@ -166,7 +167,7 @@ export async function generateComplianceReport(
     [fundStructureId]
   );
   if (funds.length === 0) {
-    throw new Error(`Fund structure not found: ${fundStructureId}`);
+    throw new NotFoundError('Fund structure', fundStructureId);
   }
   const fund = funds[0];
 

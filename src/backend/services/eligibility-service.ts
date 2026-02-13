@@ -1,141 +1,48 @@
 import {
   EligibilityCheckRequest,
   EligibilityCheckResult,
-  DecisionCheck,
-  DecisionResult,
-  InvestorType,
 } from '../models/index.js';
 import { findInvestorById } from '../repositories/investor-repository.js';
-import { findFundStructureById } from '../repositories/fund-structure-repository.js';
-import { findApplicableCriteria } from '../repositories/eligibility-criteria-repository.js';
-import { createDecisionRecord } from '../repositories/decision-record-repository.js';
+import { NotFoundError } from '../errors.js';
+import { runCoreEligibilityChecks } from './eligibility-check-helper.js';
+import { recordDecision } from './decision-record-helper.js';
 
 /**
  * Check whether an investor is eligible to invest in a fund.
  * Writes a decision record for every check (approved or rejected).
  *
- * Checks performed:
- *   1. Investor exists and is active
- *   2. Fund structure exists and is active
- *   3. KYC status is verified (if fund requires it)
- *   4. Investor type is permitted for this fund structure
- *   5. Minimum investment threshold met (if applicable)
- *   6. Suitability assessment completed (if required)
+ * Delegates the core eligibility checks to the shared helper and then
+ * persists a decision record (which is specific to this service entry-point).
  */
 export async function checkEligibility(request: EligibilityCheckRequest): Promise<EligibilityCheckResult> {
-  const checks: DecisionCheck[] = [];
-  let eligible = true;
-
-  // ── Load entities ──────────────────────────────────────────────────────
+  // ── Load & validate investor ───────────────────────────────────────────
   const investor = await findInvestorById(request.investor_id);
   if (!investor) {
-    throw new Error(`Investor not found: ${request.investor_id}`);
+    throw new NotFoundError('Investor', request.investor_id);
   }
 
-  const fundStructure = await findFundStructureById(request.fund_structure_id);
+  // ── Run shared eligibility checks ──────────────────────────────────────
+  const { checks, criteria, fundStructure, eligible } = await runCoreEligibilityChecks({
+    investor: {
+      investor_type: investor.investor_type,
+      jurisdiction: investor.jurisdiction,
+      kyc_status: investor.kyc_status,
+      kyc_expiry: investor.kyc_expiry,
+    },
+    fundStructureId: request.fund_structure_id,
+    investmentAmountCents: request.investment_amount,
+  });
+
   if (!fundStructure) {
-    throw new Error(`Fund structure not found: ${request.fund_structure_id}`);
-  }
-
-  // ── Check 1: Fund is open ─────────────────────────────────────────────
-  if (fundStructure.status === 'active') {
-    checks.push({ rule: 'fund_status', passed: true, message: `Fund is ${fundStructure.status}` });
-  } else {
-    checks.push({ rule: 'fund_status', passed: false, message: `Fund is ${fundStructure.status}, not accepting new investors` });
-    eligible = false;
-  }
-
-  // ── Check 2: KYC status ───────────────────────────────────────────────
-  if (investor.kyc_status === 'verified') {
-    const expiryMsg = investor.kyc_expiry ? `, expires ${investor.kyc_expiry}` : '';
-    checks.push({ rule: 'kyc_valid', passed: true, message: `KYC verified${expiryMsg}` });
-  } else {
-    checks.push({ rule: 'kyc_valid', passed: false, message: `KYC status is '${investor.kyc_status}', must be 'verified'` });
-    eligible = false;
-  }
-
-  // ── Check 3: KYC not expired ──────────────────────────────────────────
-  if (investor.kyc_status === 'verified' && investor.kyc_expiry) {
-    const expiry = new Date(investor.kyc_expiry);
-    const now = new Date();
-    if (expiry > now) {
-      checks.push({ rule: 'kyc_not_expired', passed: true, message: `KYC expires ${investor.kyc_expiry}` });
-    } else {
-      checks.push({ rule: 'kyc_not_expired', passed: false, message: `KYC expired on ${investor.kyc_expiry}` });
-      eligible = false;
-    }
-  }
-
-  // ── Look up eligibility criteria ──────────────────────────────────────
-  const criteria = await findApplicableCriteria(
-    fundStructure.id,
-    investor.jurisdiction,
-    investor.investor_type
-  );
-
-  // ── Check 4: Investor type permitted ──────────────────────────────────
-  if (criteria) {
-    checks.push({
-      rule: 'investor_type_eligible',
-      passed: true,
-      message: `${investor.investor_type} investors are eligible for ${fundStructure.legal_form} (${criteria.source_reference ?? 'no source'})`,
-    });
-  } else {
-    checks.push({
-      rule: 'investor_type_eligible',
-      passed: false,
-      message: `No eligibility criteria found for ${investor.investor_type} investors from ${investor.jurisdiction} in ${fundStructure.legal_form} (${fundStructure.domicile})`,
-    });
-    eligible = false;
-  }
-
-  // ── Check 5: Minimum investment ───────────────────────────────────────
-  if (criteria && criteria.minimum_investment > 0) {
-    const amount = request.investment_amount ?? 0;
-    const minEur = criteria.minimum_investment / 100;
-    const amountEur = amount / 100;
-
-    if (amount >= criteria.minimum_investment) {
-      checks.push({
-        rule: 'minimum_investment',
-        passed: true,
-        message: `Investment €${amountEur.toLocaleString()} meets minimum €${minEur.toLocaleString()} (${criteria.source_reference ?? ''})`,
-      });
-    } else {
-      checks.push({
-        rule: 'minimum_investment',
-        passed: false,
-        message: `Investment €${amountEur.toLocaleString()} is below minimum €${minEur.toLocaleString()} for ${investor.investor_type} investors (${criteria.source_reference ?? ''})`,
-      });
-      eligible = false;
-    }
-  } else if (criteria) {
-    checks.push({
-      rule: 'minimum_investment',
-      passed: true,
-      message: 'No minimum investment required',
-    });
-  }
-
-  // ── Check 6: Suitability assessment ───────────────────────────────────
-  if (criteria?.suitability_required) {
-    // For now, we flag it as a requirement. In a full implementation,
-    // this would check an onboarding record for a completed assessment.
-    checks.push({
-      rule: 'suitability_required',
-      passed: true,
-      message: 'Suitability assessment required — must be completed during onboarding',
-    });
+    throw new NotFoundError('Fund structure', request.fund_structure_id);
   }
 
   // ── Write decision record ─────────────────────────────────────────────
-  const result: DecisionResult = eligible ? 'approved' : 'rejected';
-
-  const decisionRecord = await createDecisionRecord({
-    decision_type: 'eligibility_check',
-    asset_id: undefined,
-    subject_id: investor.id,
-    input_snapshot: {
+  const decisionRecord = await recordDecision({
+    decisionType: 'eligibility_check',
+    assetId: undefined,
+    subjectId: investor.id,
+    inputSnapshot: {
       investor_id: investor.id,
       investor_name: investor.name,
       investor_type: investor.investor_type,
@@ -147,16 +54,11 @@ export async function checkEligibility(request: EligibilityCheckRequest): Promis
       fund_domicile: fundStructure.domicile,
       investment_amount: request.investment_amount ?? null,
     },
-    rule_version_snapshot: {
+    ruleVersionSnapshot: {
       criteria: criteria ?? null,
       fund_status: fundStructure.status,
     },
-    result,
-    result_details: {
-      checks,
-      overall: result,
-      violation_count: checks.filter(c => !c.passed).length,
-    },
+    checks,
   });
 
   return {

@@ -45,15 +45,15 @@ export async function createDecisionRecord(input: CreateDecisionRecordInput): Pr
 
   await sealRecord(id);
   const sealedRows = await query<DecisionRecordRow>(
-    'SELECT * FROM decision_records WHERE id = $1',
-    [id]
+    'SELECT * FROM decision_records WHERE id = $1 AND tenant_id = $2',
+    [id, DEFAULT_TENANT_ID]
   );
 
   return rowToDecisionRecord(sealedRows[0] || result[0]);
 }
 
 export async function findDecisionRecordById(id: string): Promise<DecisionRecord | null> {
-  const result = await query<DecisionRecordRow>('SELECT * FROM decision_records WHERE id = $1', [id]);
+  const result = await query<DecisionRecordRow>('SELECT * FROM decision_records WHERE id = $1 AND tenant_id = $2', [id, DEFAULT_TENANT_ID]);
   return result[0] ? rowToDecisionRecord(result[0]) : null;
 }
 

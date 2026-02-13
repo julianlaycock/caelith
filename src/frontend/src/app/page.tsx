@@ -693,7 +693,7 @@ export default function DashboardPage() {
                 <div key={d.id} className="rounded-lg border border-edge-subtle p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-ink">{d.decision_type.replace(/_/g, ' ')}</span>
-                    <Badge variant={d.result === 'approved' || d.result === 'pass' ? 'green' : d.result === 'rejected' || d.result === 'fail' ? 'red' : 'gray'}>
+                    <Badge variant={d.result === 'approved' ? 'green' : d.result === 'rejected' ? 'red' : 'gray'}>
                       {d.result}
                     </Badge>
                   </div>

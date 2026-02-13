@@ -1,10 +1,6 @@
-/**
- * EU Jurisdiction Rule Templates
- * 
- * Pre-built compliance rule templates for EU regulatory frameworks.
- */
-
 import { Router, Request, Response } from 'express';
+import { asyncHandler } from '../middleware/async-handler.js';
+import { requireFound } from '../middleware/validate.js';
 
 const router = Router();
 
@@ -195,9 +191,6 @@ const TEMPLATES: RuleTemplate[] = [
   },
 ];
 
-/**
- * GET /api/templates — List all templates
- */
 router.get('/', (_req: Request, res: Response): void => {
   const summaries = TEMPLATES.map(t => ({
     id: t.id,
@@ -210,16 +203,10 @@ router.get('/', (_req: Request, res: Response): void => {
   res.json(summaries);
 });
 
-/**
- * GET /api/templates/:id — Get full template
- */
-router.get('/:id', (req: Request, res: Response): void => {
+router.get('/:id', asyncHandler(async (req, res) => {
   const template = TEMPLATES.find(t => t.id === req.params.id);
-  if (!template) {
-    res.status(404).json({ error: 'NOT_FOUND', message: `Template not found: ${req.params.id}` });
-    return;
-  }
+  requireFound(template, 'Template', req.params.id);
   res.json(template);
-});
+}));
 
 export default router;

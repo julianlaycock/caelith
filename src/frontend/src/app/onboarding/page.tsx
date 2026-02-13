@@ -15,7 +15,7 @@ import {
   Badge,
   Alert,
 } from '../../components/ui';
-import { formatNumber, formatDate, formatDateTime, classNames, getErrorMessage } from '../../lib/utils';
+import { formatNumber, formatDate, formatDateTime, classNames, getErrorMessage, toAssetOptions, toInvestorOptions } from '../../lib/utils';
 import type { ApiError, OnboardingRecord } from '../../lib/types';
 
 // ── Column definitions ───────────────────────────────────
@@ -136,15 +136,8 @@ export default function OnboardingPage() {
     }
   }
 
-  const assetOptions = [
-    { value: '', label: 'Select asset...' },
-    ...(assets.data?.map((a) => ({ value: a.id, label: a.name })) ?? []),
-  ];
-
-  const investorOptions = [
-    { value: '', label: 'Select investor...' },
-    ...(investors.data?.map((i) => ({ value: i.id, label: `${i.name} (${i.jurisdiction})` })) ?? []),
-  ];
+  const assetOptions = toAssetOptions(assets.data);
+  const investorOptions = toInvestorOptions(investors.data);
 
   // ── Standard rejection reason categories ──────────────
   const REJECTION_REASONS = [

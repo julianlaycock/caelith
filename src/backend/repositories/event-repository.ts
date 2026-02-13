@@ -77,7 +77,7 @@ export async function createEvent(input: CreateEventInput): Promise<Event> {
  * Find event by ID
  */
 export async function findEventById(id: string): Promise<Event | null> {
-  const results = await query<EventRow>('SELECT * FROM events WHERE id = ?', [id]);
+  const results = await queryWithTenant<EventRow>('SELECT * FROM events WHERE id = ?', [id]);
 
   return results.length > 0 ? rowToEvent(results[0]) : null;
 }

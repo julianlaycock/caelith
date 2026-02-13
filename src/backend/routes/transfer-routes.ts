@@ -1,10 +1,7 @@
-/**
- * Transfer Routes
- * 
- * Endpoints for transfer operations
- */
-
 import express from 'express';
+import { asyncHandler } from '../middleware/async-handler.js';
+import { requireFields } from '../middleware/validate.js';
+import { BusinessLogicError } from '../errors.js';
 import {
   simulateTransfer,
   executeTransfer,
@@ -17,119 +14,54 @@ import {
 
 const router = express.Router();
 
-/**
- * POST /transfers/simulate
- * Simulate a transfer (validate without executing)
- */
-router.post('/simulate', async (req, res): Promise<void> => {
-  try {
-    const { asset_id, from_investor_id, to_investor_id, units, execution_date } = req.body;
+router.post('/simulate', asyncHandler(async (req, res): Promise<void> => {
+  const { asset_id, from_investor_id, to_investor_id, units, execution_date } = req.body;
+  requireFields(req.body, ['asset_id', 'from_investor_id', 'to_investor_id', 'units', 'execution_date']);
 
-    // Validate request body
-    if (!asset_id || !from_investor_id || !to_investor_id || !units || !execution_date) {
-      res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: 'Missing required fields: asset_id, from_investor_id, to_investor_id, units, execution_date',
-      });
-      return;
-    }
+  const result = await simulateTransfer({
+    asset_id,
+    from_investor_id,
+    to_investor_id,
+    units: Number(units),
+    execution_date,
+  });
 
-    const result = await simulateTransfer({
-      asset_id,
-      from_investor_id,
-      to_investor_id,
-      units: Number(units),
-      execution_date,
-    });
+  res.json(result);
+}));
 
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+router.post('/', asyncHandler(async (req, res): Promise<void> => {
+  const { asset_id, from_investor_id, to_investor_id, units, execution_date } = req.body;
+  requireFields(req.body, ['asset_id', 'from_investor_id', 'to_investor_id', 'units', 'execution_date']);
+
+  const result = await executeTransfer({
+    asset_id,
+    from_investor_id,
+    to_investor_id,
+    units: Number(units),
+    execution_date,
+  });
+
+  if (!result.success) {
+    throw new BusinessLogicError(result.error || 'Transfer validation failed');
   }
-});
 
-/**
- * POST /transfers
- * Execute a transfer
- */
-router.post('/', async (req, res): Promise<void> => {
-  try {
-    const { asset_id, from_investor_id, to_investor_id, units, execution_date } = req.body;
+  res.status(201).json(result.transfer);
+}));
 
-    // Validate request body
-    if (!asset_id || !from_investor_id || !to_investor_id || !units || !execution_date) {
-      res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: 'Missing required fields: asset_id, from_investor_id, to_investor_id, units, execution_date',
-      });
-      return;
-    }
-
-    const result = await executeTransfer({
-      asset_id,
-      from_investor_id,
-      to_investor_id,
-      units: Number(units),
-      execution_date,
-    });
-
-    if (!result.success) {
-      res.status(422).json({
-        error: 'TRANSFER_FAILED',
-        message: result.error || 'Transfer validation failed',
-        violations: result.violations,
-      });
-      return;
-    }
-
-    res.status(201).json(result.transfer);
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+router.get('/', asyncHandler(async (req, res): Promise<void> => {
+  const { assetId } = req.query;
+  if (!assetId) {
+    const all = await findAllTransfers();
+    res.json(all);
+    return;
   }
-});
+  const transfers = await findTransfersByAsset(assetId as string);
+  res.json(transfers);
+}));
 
-/**
- * GET /transfers?assetId=X
- * Get transfer history for an asset
- */
-router.get('/', async (req, res): Promise<void> => {
-  try {
-    const { assetId } = req.query;
-    if (!assetId) {
-      const all = await findAllTransfers();
-      res.json(all);
-      return;
-    }
-    const transfers = await findTransfersByAsset(assetId as string);
-    res.json(transfers);
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
-
-/**
- * GET /transfers/history/:assetId
- * Get detailed transfer history with investor names
- */
-router.get('/history/:assetId', async (req, res) => {
-  try {
-    const history = await getTransferHistory(req.params.assetId);
-    res.json(history);
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+router.get('/history/:assetId', asyncHandler(async (req, res) => {
+  const history = await getTransferHistory(req.params.assetId);
+  res.json(history);
+}));
 
 export default router;

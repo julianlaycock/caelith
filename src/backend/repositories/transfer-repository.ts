@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { query, execute, queryWithTenant, executeWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Transfer, CreateTransferInput } from '../models/index.js';
 
 /**
@@ -64,7 +64,7 @@ export async function findTransfersByAsset(
 export async function findTransferById(
   id: string
 ): Promise<Transfer | undefined> {
-  const rows = await query<Transfer>(
+  const rows = await queryWithTenant<Transfer>(
     'SELECT * FROM transfers WHERE id = ?',
     [id]
   );
@@ -91,9 +91,9 @@ export async function getTransferHistory(assetId: string): Promise<
      FROM transfers t
      JOIN investors f ON t.from_investor_id = f.id
      JOIN investors r ON t.to_investor_id = r.id
-     WHERE t.asset_id = ?
+     WHERE t.asset_id = ? AND t.tenant_id = ?
      ORDER BY t.executed_at DESC`,
-    [assetId]
+    [assetId, DEFAULT_TENANT_ID]
   );
 }
 

@@ -1,10 +1,6 @@
-/**
- * Investor Routes
- * 
- * Endpoints for investor management
- */
-
 import express from 'express';
+import { asyncHandler } from '../middleware/async-handler.js';
+import { requireFields, requireFound } from '../middleware/validate.js';
 import {
   createInvestor,
   getInvestor,
@@ -14,110 +10,41 @@ import {
 
 const router = express.Router();
 
-/**
- * POST /investors
- * Create a new investor
- */
-router.post('/', async (req, res): Promise<void> => {
-  try {
-    const { name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email } = req.body;
+router.post('/', asyncHandler(async (req, res): Promise<void> => {
+  const { name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email } = req.body;
+  requireFields(req.body, ['name', 'jurisdiction', 'accredited']);
 
-    // Validate request body
-    if (!name || !jurisdiction || accredited === undefined) {
-      res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: 'Missing required fields: name, jurisdiction, accredited',
-      });
-      return;
-    }
+  const investor = await createInvestor({ name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email });
+  res.status(201).json(investor);
+}));
 
-    const investor = await createInvestor({ name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email });
+router.get('/', asyncHandler(async (_req, res) => {
+  const investors = await getAllInvestors();
+  res.json(investors);
+}));
 
-    res.status(201).json(investor);
-  } catch (error) {
-    res.status(422).json({
-      error: 'BUSINESS_LOGIC_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+router.get('/:id', asyncHandler(async (req, res): Promise<void> => {
+  const investor = await getInvestor(req.params.id);
+  requireFound(investor, 'Investor', req.params.id);
+  res.json(investor);
+}));
 
-/**
- * GET /investors
- * Get all investors
- */
-router.get('/', async (req, res) => {
-  try {
-    const investors = await getAllInvestors();
-    res.json(investors);
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+router.patch('/:id', asyncHandler(async (req, res): Promise<void> => {
+  const { name, jurisdiction, accredited } = req.body;
 
-/**
- * GET /investors/:id
- * Get investor by ID
- */
-router.get('/:id', async (req, res): Promise<void> => {
-  try {
-    const investor = await getInvestor(req.params.id);
+  const updateData: {
+    name?: string;
+    jurisdiction?: string;
+    accredited?: boolean;
+  } = {};
 
-    if (!investor) {
-      res.status(404).json({
-        error: 'NOT_FOUND',
-        message: `Investor not found: ${req.params.id}`,
-      });
-      return;
-    }
+  if (name !== undefined) updateData.name = name;
+  if (jurisdiction !== undefined) updateData.jurisdiction = jurisdiction;
+  if (accredited !== undefined) updateData.accredited = Boolean(accredited);
 
-    res.json(investor);
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
-
-/**
- * PATCH /investors/:id
- * Update investor
- */
-router.patch('/:id', async (req, res): Promise<void> => {
-  try {
-    const { name, jurisdiction, accredited } = req.body;
-
-    const updateData: {
-      name?: string;
-      jurisdiction?: string;
-      accredited?: boolean;
-    } = {};
-
-    if (name !== undefined) updateData.name = name;
-    if (jurisdiction !== undefined) updateData.jurisdiction = jurisdiction;
-    if (accredited !== undefined) updateData.accredited = Boolean(accredited);
-
-    const investor = await updateInvestor(req.params.id, updateData);
-
-    if (!investor) {
-      res.status(404).json({
-        error: 'NOT_FOUND',
-        message: `Investor not found: ${req.params.id}`,
-      });
-      return;
-    }
-
-    res.json(investor);
-  } catch (error) {
-    res.status(422).json({
-      error: 'BUSINESS_LOGIC_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+  const investor = await updateInvestor(req.params.id, updateData);
+  requireFound(investor, 'Investor', req.params.id);
+  res.json(investor);
+}));
 
 export default router;

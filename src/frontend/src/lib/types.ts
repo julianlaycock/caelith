@@ -5,6 +5,8 @@ export interface Asset {
   name: string;
   asset_type: string;
   total_units: number;
+  fund_structure_id: string | null;
+  unit_price: number | null;
   created_at: string;
 }
 
@@ -26,8 +28,69 @@ export interface AssetUtilization {
 // ── AIFMD Types (Vertical B) ────────────────────────────
 
 export type InvestorType = 'institutional' | 'professional' | 'semi_professional' | 'well_informed' | 'retail';
-export type KycStatus = 'pending' | 'verified' | 'expired';
+export type KycStatus = 'pending' | 'verified' | 'expired' | 'rejected';
 export type OnboardingStatus = 'applied' | 'eligible' | 'ineligible' | 'approved' | 'rejected' | 'allocated' | 'withdrawn';
+
+export type LegalForm =
+  | 'SICAV' | 'SIF' | 'RAIF' | 'SCSp' | 'SCA'
+  | 'ELTIF' | 'Spezial_AIF' | 'Publikums_AIF'
+  | 'QIAIF' | 'RIAIF' | 'LP' | 'other';
+
+export type RegulatoryFramework = 'AIFMD' | 'UCITS' | 'ELTIF' | 'national';
+
+export type FundStatus = 'active' | 'closing' | 'closed' | 'liquidating';
+
+export type DecisionType =
+  | 'transfer_validation'
+  | 'eligibility_check'
+  | 'onboarding_approval'
+  | 'scenario_analysis';
+
+export type DecisionResult = 'approved' | 'rejected' | 'simulated';
+
+export type EventType =
+  | 'asset.created'
+  | 'asset.updated'
+  | 'asset.deleted'
+  | 'investor.created'
+  | 'investor.updated'
+  | 'holding.allocated'
+  | 'holding.updated'
+  | 'rules.created'
+  | 'rules.updated'
+  | 'transfer.executed'
+  | 'transfer.rejected'
+  | 'composite_rule.created'
+  | 'composite_rule.updated'
+  | 'composite_rule.deleted'
+  | 'fund_structure.created'
+  | 'fund_structure.updated'
+  | 'eligibility.checked'
+  | 'eligibility_criteria.created'
+  | 'eligibility_criteria.updated'
+  | 'onboarding.applied'
+  | 'onboarding.eligible'
+  | 'onboarding.ineligible'
+  | 'onboarding.approved'
+  | 'onboarding.rejected'
+  | 'onboarding.allocated'
+  | 'onboarding.withdrawn'
+  | 'nl_compiler.attempt'
+  | 'copilot.query'
+  | 'copilot.rule_proposed';
+
+export type EntityType =
+  | 'asset'
+  | 'investor'
+  | 'holding'
+  | 'rules'
+  | 'transfer'
+  | 'composite_rule'
+  | 'fund_structure'
+  | 'eligibility_criteria'
+  | 'decision_record'
+  | 'onboarding_record'
+  | 'regulatory_document';
 
 export interface Investor {
   id: string;
@@ -84,6 +147,8 @@ export interface CreateHoldingRequest {
 export interface CapTableEntry {
   investor_id: string;
   investor_name: string;
+  investor_type: InvestorType;
+  jurisdiction: string;
   units: number;
   percentage: number;
 }
@@ -96,6 +161,11 @@ export interface RuleSet {
   lockup_days: number;
   jurisdiction_whitelist: string[];
   transfer_whitelist: string[] | null;
+  investor_type_whitelist: InvestorType[] | null;
+  minimum_investment: number | null;
+  maximum_investors: number | null;
+  concentration_limit_pct: number | null;
+  kyc_required: boolean;
   created_at: string;
 }
 
@@ -113,6 +183,7 @@ export interface Transfer {
   from_investor_id: string;
   to_investor_id: string;
   units: number;
+  decision_record_id: string | null;
   executed_at: string;
   created_at: string;
 }
@@ -143,8 +214,8 @@ export interface ValidationResult {
 
 export interface Event {
   id: string;
-  event_type: string;
-  entity_type: string;
+  event_type: EventType;
+  entity_type: EntityType;
   entity_id: string;
   payload: Record<string, unknown>;
   timestamp: string;
@@ -227,27 +298,27 @@ export interface RuleVersion {
 export interface FundStructure {
   id: string;
   name: string;
-  legal_form: string;
+  legal_form: LegalForm;
   domicile: string;
-  regulatory_framework: string;
+  regulatory_framework: RegulatoryFramework;
   aifm_name: string | null;
   aifm_lei: string | null;
   inception_date: string | null;
   target_size: number | null;
   currency: string;
-  status: string;
+  status: FundStatus;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateFundStructureRequest {
   name: string;
-  legal_form: string;
+  legal_form: LegalForm;
   domicile: string;
-  regulatory_framework: string;
+  regulatory_framework: RegulatoryFramework;
   aifm_name?: string;
   aifm_lei?: string;
-  status?: string;
+  status?: FundStatus;
 }
 
 // ── Compliance Report ────────────────────────────────
@@ -321,12 +392,12 @@ export interface ComplianceReport {
 
 export interface EligibilityResult {
   eligible: boolean;
-  investor_type: string;
-  fund_legal_form: string;
+  investor_type: InvestorType;
+  fund_legal_form: LegalForm;
   jurisdiction: string;
   checks: { rule: string; passed: boolean; message: string }[];
   criteria_applied: {
-    investor_type: string;
+    investor_type: InvestorType;
     jurisdiction: string;
     minimum_investment: number;
     suitability_required: boolean;
@@ -369,16 +440,16 @@ export interface OnboardingReviewResult {
 
 export interface DecisionRecord {
   id: string;
-  decision_type: string;
-  asset_id: string;
+  decision_type: DecisionType;
+  asset_id: string | null;
   asset_name?: string;
-  subject_id: string | null;
-  input_snapshot?: Record<string, unknown>;
-  rule_version_snapshot?: Record<string, unknown>;
-  result: string;
+  subject_id: string;
+  input_snapshot: Record<string, unknown>;
+  rule_version_snapshot: Record<string, unknown>;
+  result: DecisionResult;
   result_details: {
     checks: { rule: string; passed: boolean; message: string }[];
-    overall: string;
+    overall: DecisionResult;
     violation_count: number;
   };
   decided_by: string | null;

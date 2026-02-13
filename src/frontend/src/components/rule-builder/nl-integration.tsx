@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { RuleCondition } from '../../lib/types';
+import { api } from '../../lib/api';
+import type { RuleCondition, ApiError } from '../../lib/types';
 
 interface NLIntegrationProps {
   assetId: string;
@@ -20,20 +21,7 @@ export function NLIntegration({ assetId, onApply }: NLIntegrationProps) {
     setError(null);
     setConfidence(null);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3001/api/nl-rules/from-natural-language', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ description: prompt, asset_id: assetId }),
-      });
-      if (!res.ok) {
-        const errBody = await res.json();
-        throw new Error(errBody.message || 'Request failed');
-      }
-      const result = await res.json();
+      const result = await api.compileNaturalLanguageRule(prompt, assetId);
       const rule = result.proposed_rule;
       onApply({
         operator: rule.operator as 'AND' | 'OR' | 'NOT',
@@ -42,14 +30,8 @@ export function NLIntegration({ assetId, onApply }: NLIntegrationProps) {
         description: rule.description || '',
       });
       setConfidence(result.confidence);
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : typeof err === 'object' && err !== null && 'message' in err
-            ? String((err as { message: unknown }).message)
-            : 'Failed to generate rule';
-      setError(msg);
+    } catch (err) {
+      setError((err as ApiError)?.message || 'Failed to generate rule');
     } finally {
       setLoading(false);
     }

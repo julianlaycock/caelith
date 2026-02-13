@@ -1,9 +1,3 @@
-/**
- * Asset Service
- * 
- * Business logic for asset management
- */
-
 import {
   createAsset as createAssetRepo,
   deleteAsset as deleteAssetRepo,
@@ -14,24 +8,19 @@ import {
   createEvent,
 } from '../repositories/index.js';
 import { Asset, CreateAssetInput, UpdateAssetInput } from '../models/index.js';
+import { ValidationError, NotFoundError, ConflictError } from '../errors.js';
 
-/**
- * Create a new asset
- */
 export async function createAsset(input: CreateAssetInput): Promise<Asset> {
-  // Validate input
   if (input.total_units <= 0) {
-    throw new Error('Total units must be greater than zero');
+    throw new ValidationError('Total units must be greater than zero');
   }
 
   if (!input.name.trim()) {
-    throw new Error('Asset name cannot be empty');
+    throw new ValidationError('Asset name cannot be empty');
   }
 
-  // Create asset
   const asset = await createAssetRepo(input);
 
-  // Log event
   await createEvent({
     event_type: 'asset.created',
     entity_type: 'asset',
@@ -46,23 +35,14 @@ export async function createAsset(input: CreateAssetInput): Promise<Asset> {
   return asset;
 }
 
-/**
- * Get asset by ID
- */
 export async function getAsset(id: string): Promise<Asset | null> {
   return await findAssetById(id);
 }
 
-/**
- * Get all assets
- */
 export async function getAllAssets(): Promise<Asset[]> {
   return await findAllAssets();
 }
 
-/**
- * Get asset utilization (allocated vs total units)
- */
 export async function getAssetUtilization(assetId: string): Promise<{
   asset: Asset;
   allocated_units: number;
@@ -70,7 +50,7 @@ export async function getAssetUtilization(assetId: string): Promise<{
   utilization_percentage: number;
 } | null> {
   const asset = await findAssetById(assetId);
-  
+
   if (!asset) {
     return null;
   }
@@ -88,18 +68,18 @@ export async function getAssetUtilization(assetId: string): Promise<{
 }
 
 /**
- * Delete an asset by ID
- * Fails if holdings reference the asset
+ * Delete an asset by ID.
+ * Fails if holdings reference the asset.
  */
 export async function deleteAsset(id: string): Promise<void> {
   const asset = await findAssetById(id);
   if (!asset) {
-    throw new Error(`Asset not found: ${id}`);
+    throw new NotFoundError('Asset', id);
   }
 
   const allocatedUnits = await getTotalAllocatedUnits(id);
   if (allocatedUnits > 0) {
-    throw new Error('Cannot delete asset with existing holdings');
+    throw new ConflictError('Cannot delete asset with existing holdings');
   }
 
   await deleteAssetRepo(id);
@@ -115,22 +95,19 @@ export async function deleteAsset(id: string): Promise<void> {
   });
 }
 
-/**
- * Update an asset
- */
 export async function updateAsset(id: string, input: UpdateAssetInput): Promise<Asset> {
   const existing = await findAssetById(id);
   if (!existing) {
-    throw new Error(`Asset not found: ${id}`);
+    throw new NotFoundError('Asset', id);
   }
 
   if (input.total_units !== undefined && input.total_units <= 0) {
-    throw new Error('Total units must be greater than zero');
+    throw new ValidationError('Total units must be greater than zero');
   }
 
   const updated = await updateAssetRepo(id, input);
   if (!updated) {
-    throw new Error(`Asset not found: ${id}`);
+    throw new NotFoundError('Asset', id);
   }
 
   await createEvent({

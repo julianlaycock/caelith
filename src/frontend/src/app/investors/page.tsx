@@ -4,6 +4,7 @@ import React, { useState, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
+import { useFormAction } from '../../lib/use-form-action';
 import {
   PageHeader,
   Card,
@@ -19,7 +20,8 @@ import {
   Alert,
 } from '../../components/ui';
 import { formatDate, classNames } from '../../lib/utils';
-import type { Investor, ApiError } from '../../lib/types';
+import { JURISDICTIONS } from '../../lib/constants';
+import type { Investor } from '../../lib/types';
 
 function daysUntilExpiry(expiryDate: string | null | undefined) {
   if (!expiryDate) return null;
@@ -30,26 +32,6 @@ function daysUntilExpiry(expiryDate: string | null | undefined) {
   return { days, label: `${days}d`, urgency: 'ok' as const };
 }
 
-const JURISDICTIONS = [
-  { value: '', label: 'Select jurisdiction...' },
-  { value: 'US', label: 'United States (US)' },
-  { value: 'GB', label: 'United Kingdom (GB)' },
-  { value: 'CA', label: 'Canada (CA)' },
-  { value: 'DE', label: 'Germany (DE)' },
-  { value: 'FR', label: 'France (FR)' },
-  { value: 'ES', label: 'Spain (ES)' },
-  { value: 'IT', label: 'Italy (IT)' },
-  { value: 'NL', label: 'Netherlands (NL)' },
-  { value: 'IE', label: 'Ireland (IE)' },
-  { value: 'LU', label: 'Luxembourg (LU)' },
-  { value: 'JP', label: 'Japan (JP)' },
-  { value: 'SG', label: 'Singapore (SG)' },
-  { value: 'HK', label: 'Hong Kong (HK)' },
-  { value: 'CH', label: 'Switzerland (CH)' },
-  { value: 'AU', label: 'Australia (AU)' },
-  { value: 'NO', label: 'Norway (NO)' },
-];
-
 function InvestorsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -58,7 +40,7 @@ function InvestorsContent() {
 
   const [showForm, setShowForm] = useState(false);
   const [editInvestor, setEditInvestor] = useState<Investor | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
+  const formAction = useFormAction();
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const investors = useAsync(() => api.getInvestors());
@@ -105,37 +87,37 @@ function InvestorsContent() {
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setFormError(null);
     const form = new FormData(e.currentTarget);
     const name = form.get('name') as string;
     const jurisdiction = form.get('jurisdiction') as string;
     const accredited = form.get('accredited') === 'on';
-    if (!name || !jurisdiction) { setFormError('Name and jurisdiction are required.'); return; }
-    try {
-      await api.createInvestor({ name, jurisdiction, accredited });
+    if (!name || !jurisdiction) { formAction.setError('Name and jurisdiction are required.'); return; }
+    const ok = await formAction.execute(
+      () => api.createInvestor({ name, jurisdiction, accredited }),
+      'Failed to create investor',
+    );
+    if (ok) {
       setShowForm(false);
       setSuccessMsg('Investor created successfully.');
       investors.refetch();
-    } catch (err) {
-      setFormError((err as ApiError).message || 'Failed to create investor');
     }
   };
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editInvestor) return;
-    setFormError(null);
     const form = new FormData(e.currentTarget);
     const name = form.get('name') as string;
     const jurisdiction = form.get('jurisdiction') as string;
     const accredited = form.get('accredited') === 'on';
-    try {
-      await api.updateInvestor(editInvestor.id, { name, jurisdiction, accredited });
+    const ok = await formAction.execute(
+      () => api.updateInvestor(editInvestor.id, { name, jurisdiction, accredited }),
+      'Failed to update investor',
+    );
+    if (ok) {
       setEditInvestor(null);
       setSuccessMsg('Investor updated successfully.');
       investors.refetch();
-    } catch (err) {
-      setFormError((err as ApiError).message || 'Failed to update investor');
     }
   };
 
@@ -182,9 +164,9 @@ function InvestorsContent() {
         </div>
       )}
 
-      <Modal open={showForm} onClose={() => { setShowForm(false); setFormError(null); }} title="Add Investor">
+      <Modal open={showForm} onClose={() => { setShowForm(false); formAction.setError(null); }} title="Add Investor">
         <form onSubmit={handleCreate} className="space-y-4">
-          {formError && <Alert variant="error">{formError}</Alert>}
+          {formAction.error && <Alert variant="error">{formAction.error}</Alert>}
           <Input label="Name" name="name" required placeholder="e.g., Jane Smith" />
           <Select label="Jurisdiction" name="jurisdiction" options={JURISDICTIONS} required />
           <Checkbox label="Accredited Investor" name="accredited" />
@@ -195,10 +177,10 @@ function InvestorsContent() {
         </form>
       </Modal>
 
-      <Modal open={editInvestor !== null} onClose={() => { setEditInvestor(null); setFormError(null); }} title="Edit Investor">
+      <Modal open={editInvestor !== null} onClose={() => { setEditInvestor(null); formAction.setError(null); }} title="Edit Investor">
         {editInvestor && (
           <form onSubmit={handleUpdate} className="space-y-4">
-            {formError && <Alert variant="error">{formError}</Alert>}
+            {formAction.error && <Alert variant="error">{formAction.error}</Alert>}
             <Input label="Name" name="name" required defaultValue={editInvestor.name} />
             <Select label="Jurisdiction" name="jurisdiction" options={JURISDICTIONS} defaultValue={editInvestor.jurisdiction} required />
             <Checkbox label="Accredited Investor" name="accredited" defaultChecked={editInvestor.accredited} />

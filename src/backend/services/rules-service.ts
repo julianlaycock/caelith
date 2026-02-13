@@ -13,6 +13,7 @@ import {
 } from '../repositories/index.js';
 import { execute, query } from '../db.js';
 import { RuleSet, CreateRuleSetInput } from '../models/index.js';
+import { NotFoundError, ValidationError } from '../errors.js';
 import { randomUUID } from 'crypto';
 
 /**
@@ -24,11 +25,11 @@ export async function createOrUpdateRuleSet(
 ): Promise<RuleSet> {
   const assetFound = await assetExists(input.asset_id);
   if (!assetFound) {
-    throw new Error(`Asset not found: ${input.asset_id}`);
+    throw new NotFoundError('Asset', input.asset_id);
   }
 
   if (input.lockup_days < 0) {
-    throw new Error('Lockup days cannot be negative');
+    throw new ValidationError('Lockup days cannot be negative');
   }
 
   if (input.jurisdiction_whitelist.length > 0) {
@@ -36,7 +37,7 @@ export async function createOrUpdateRuleSet(
       (j) => j.trim().length > 0
     );
     if (!validJurisdictions) {
-      throw new Error('Jurisdiction codes cannot be empty');
+      throw new ValidationError('Jurisdiction codes cannot be empty');
     }
   }
 

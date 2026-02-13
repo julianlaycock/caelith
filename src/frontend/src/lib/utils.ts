@@ -1,3 +1,5 @@
+import type { Asset, Investor } from './types';
+
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -44,6 +46,25 @@ export function getErrorMessage(err: unknown, fallback = 'An error occurred'): s
   }
   if (typeof err === 'string') return err;
   return fallback;
+}
+
+/** Build Select options from an asset list, with a placeholder first entry. */
+export function toAssetOptions(assets: Asset[] | null | undefined) {
+  return [
+    { value: '', label: 'Select an asset...' },
+    ...(assets?.map((a) => ({ value: a.id, label: a.name })) ?? []),
+  ];
+}
+
+/** Build Select options from an investor list, with a placeholder first entry. */
+export function toInvestorOptions(investors: Investor[] | null | undefined) {
+  return [
+    { value: '', label: 'Select an investor...' },
+    ...(investors?.map((i) => ({
+      value: i.id,
+      label: `${i.name} (${i.jurisdiction})`,
+    })) ?? []),
+  ];
 }
 
 const INVESTOR_TYPE_LABELS: Record<string, string> = {

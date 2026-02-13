@@ -18,11 +18,8 @@ import {
   Alert,
 } from '../../components/ui';
 import { formatDate, formatDateTime } from '../../lib/utils';
+import { ALL_JURISDICTIONS } from '../../lib/constants';
 import type { RuleSet, CompositeRule, ApiError, Investor, NLRuleResponse } from '../../lib/types';
-
-const ALL_JURISDICTIONS = [
-  'US', 'GB', 'CA', 'DE', 'FR', 'ES', 'IT', 'NL', 'IE', 'LU', 'JP', 'SG', 'HK', 'CH', 'AU', 'KR', 'BR', 'IN',
-];
 
 const CONDITION_FIELDS = [
   { value: 'to.jurisdiction', label: 'Recipient jurisdiction' },

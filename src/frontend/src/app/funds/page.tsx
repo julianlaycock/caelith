@@ -18,53 +18,8 @@ import {
   Alert,
 } from '../../components/ui';
 import { formatDate } from '../../lib/utils';
-import type { ApiError, FundStructure } from '../../lib/types';
-
-const LEGAL_FORMS = [
-  { value: '', label: 'Select...' },
-  { value: 'SICAV', label: 'SICAV' },
-  { value: 'SIF', label: 'SIF' },
-  { value: 'RAIF', label: 'RAIF' },
-  { value: 'SCSp', label: 'SCSp' },
-  { value: 'SCA', label: 'SCA' },
-  { value: 'ELTIF', label: 'ELTIF' },
-  { value: 'Spezial_AIF', label: 'Spezial-AIF' },
-  { value: 'Publikums_AIF', label: 'Publikums-AIF' },
-  { value: 'QIAIF', label: 'QIAIF' },
-  { value: 'RIAIF', label: 'RIAIF' },
-  { value: 'LP', label: 'LP' },
-  { value: 'other', label: 'Other' },
-];
-
-const DOMICILES = [
-  { value: '', label: 'Select...' },
-  { value: 'LU', label: 'Luxembourg' },
-  { value: 'IE', label: 'Ireland' },
-  { value: 'DE', label: 'Germany' },
-  { value: 'FR', label: 'France' },
-  { value: 'GB', label: 'United Kingdom' },
-  { value: 'US', label: 'United States' },
-  { value: 'SG', label: 'Singapore' },
-  { value: 'HK', label: 'Hong Kong' },
-  { value: 'CH', label: 'Switzerland' },
-  { value: 'AT', label: 'Austria' },
-  { value: 'NL', label: 'Netherlands' },
-];
-
-const FRAMEWORKS = [
-  { value: '', label: 'Select...' },
-  { value: 'AIFMD', label: 'AIFMD' },
-  { value: 'UCITS', label: 'UCITS' },
-  { value: 'ELTIF', label: 'ELTIF' },
-  { value: 'national', label: 'National' },
-];
-
-const STATUSES = [
-  { value: 'active', label: 'Active' },
-  { value: 'closing', label: 'Closing' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'liquidating', label: 'Liquidating' },
-];
+import { LEGAL_FORMS, DOMICILES, FRAMEWORKS, STATUSES } from '../../lib/constants';
+import type { ApiError, FundStructure, CreateFundStructureRequest, LegalForm, RegulatoryFramework, FundStatus } from '../../lib/types';
 
 const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'gray' | 'red'> = {
   active: 'green',
@@ -91,9 +46,9 @@ export default function FundsPage() {
 
     const form = new FormData(e.currentTarget);
     const name = form.get('name') as string;
-    const legal_form = form.get('legal_form') as string;
+    const legal_form = form.get('legal_form') as LegalForm;
     const domicile = form.get('domicile') as string;
-    const regulatory_framework = form.get('regulatory_framework') as string;
+    const regulatory_framework = form.get('regulatory_framework') as RegulatoryFramework;
     const aifm_name = form.get('aifm_name') as string;
 
     const errors: Record<string, string> = {};
@@ -130,12 +85,12 @@ export default function FundsPage() {
     setActionLoading(true);
 
     const form = new FormData(e.currentTarget);
-    const data: Record<string, string> = {};
+    const data: Partial<CreateFundStructureRequest> & { aifm_name?: string } = {};
     const name = form.get('name') as string;
-    const legal_form = form.get('legal_form') as string;
+    const legal_form = form.get('legal_form') as LegalForm;
     const domicile = form.get('domicile') as string;
-    const regulatory_framework = form.get('regulatory_framework') as string;
-    const status = form.get('status') as string;
+    const regulatory_framework = form.get('regulatory_framework') as RegulatoryFramework;
+    const status = form.get('status') as FundStatus;
     const aifm_name = form.get('aifm_name') as string;
 
     if (name) data.name = name;

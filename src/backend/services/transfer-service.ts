@@ -18,15 +18,15 @@ import {
   createEvent,
 } from '../repositories/index.js';
 import { findAssetById } from '../repositories/asset-repository.js';
-import { getPool } from '../db.js';
 import { randomUUID } from 'crypto';
-import { findFundStructureById } from '../repositories/fund-structure-repository.js';
-import { findApplicableCriteria } from '../repositories/eligibility-criteria-repository.js';
-import { createDecisionRecord } from '../repositories/decision-record-repository.js';
+import { runCoreEligibilityChecks } from './eligibility-check-helper.js';
 import { validateTransfer } from '../../rules-engine/validator.js';
 import { ValidationContext, TransferRequest } from '../../rules-engine/types.js';
-import { Transfer, Asset, FundStructure, EligibilityCriteria, InvestorType } from '../models/index.js';
+import { Transfer, Asset, EligibilityCriteria, RuleSet } from '../models/index.js';
+import { NotFoundError } from '../errors.js';
 import { getActiveCompositeRules } from './composite-rules-service.js';
+import { withTransaction } from './transaction-helper.js';
+import { recordDecisionWithResult } from './decision-record-helper.js';
 
 /**
  * Single check result (shared shape with rules engine)
@@ -72,161 +72,31 @@ async function runEligibilityChecks(
   toInvestor: { id: string; investor_type?: string; jurisdiction: string; kyc_status?: string; kyc_expiry?: string | null },
   investmentAmount: number
 ): Promise<{ checks: Check[]; criteria: EligibilityCriteria | null }> {
-  const checks: Check[] = [];
-  let criteria: EligibilityCriteria | null = null;
-
   // Skip if asset has no fund structure
   if (!asset.fund_structure_id) {
-    return { checks, criteria };
+    return { checks: [], criteria: null };
   }
 
-  // Fetch fund structure
-  const fund = await findFundStructureById(asset.fund_structure_id);
-  if (!fund) {
-    return { checks, criteria };
-  }
-
-  // Check fund status
-  checks.push({
-    rule: 'fund_status',
-    passed: fund.status === 'active',
-    message: fund.status === 'active'
-      ? 'Fund is active'
-      : `Fund status is '${fund.status}', transfers not permitted`,
+  // Delegate to the shared eligibility check helper
+  const result = await runCoreEligibilityChecks({
+    investor: {
+      investor_type: toInvestor.investor_type || 'retail',
+      jurisdiction: toInvestor.jurisdiction,
+      kyc_status: toInvestor.kyc_status || 'pending',
+      kyc_expiry: toInvestor.kyc_expiry ?? null,
+    },
+    fundStructureId: asset.fund_structure_id,
+    investmentAmountCents: Math.round(investmentAmount * 100),
   });
 
-  if (fund.status !== 'active') {
-    return { checks, criteria };
-  }
+  // Map helper checks back to the local Check interface (compatible shape)
+  const checks: Check[] = result.checks.map(c => ({
+    rule: c.rule,
+    passed: c.passed,
+    message: c.message,
+  }));
 
-  // Determine receiver's investor type
-  const investorType = (toInvestor.investor_type || 'retail') as InvestorType;
-
-  // Look up applicable eligibility criteria
-  criteria = await findApplicableCriteria(
-    asset.fund_structure_id,
-    toInvestor.jurisdiction,
-    investorType
-  );
-
-  if (!criteria) {
-    checks.push({
-      rule: 'investor_type_eligible',
-      passed: false,
-      message: `No eligibility criteria found for ${investorType} investors from ${toInvestor.jurisdiction} in ${fund.legal_form} (${fund.domicile})`,
-    });
-    return { checks, criteria };
-  }
-
-  // Investor type eligible — criteria exists
-  checks.push({
-    rule: 'investor_type_eligible',
-    passed: true,
-    message: `${investorType} investors are eligible for ${fund.legal_form} (${criteria.source_reference || 'fund rules'})`,
-  });
-
-  // Minimum investment check
-  if (criteria.minimum_investment > 0) {
-    // Convert investment amount to cents for comparison
-    const investmentCents = Math.round(investmentAmount * 100);
-    const passed = investmentCents >= criteria.minimum_investment;
-    const minEuros = criteria.minimum_investment / 100;
-    checks.push({
-      rule: 'minimum_investment',
-      passed,
-      message: passed
-        ? `Investment €${investmentAmount.toLocaleString()} meets minimum €${minEuros.toLocaleString()} (${criteria.source_reference || 'fund rules'})`
-        : `Investment €${investmentAmount.toLocaleString()} is below minimum €${minEuros.toLocaleString()} for ${investorType} investors (${criteria.source_reference || 'fund rules'})`,
-    });
-  } else {
-    checks.push({
-      rule: 'minimum_investment',
-      passed: true,
-      message: 'No minimum investment required',
-    });
-  }
-
-  // KYC check (if receiver has KYC fields)
-  if (toInvestor.kyc_status !== undefined) {
-    const kycValid = toInvestor.kyc_status === 'verified';
-    checks.push({
-      rule: 'kyc_valid',
-      passed: kycValid,
-      message: kycValid
-        ? `KYC verified`
-        : `KYC status is '${toInvestor.kyc_status}', must be 'verified'`,
-    });
-
-    // KYC expiry check
-    if (kycValid && toInvestor.kyc_expiry) {
-      const expiryDate = new Date(toInvestor.kyc_expiry);
-      const now = new Date();
-      const notExpired = expiryDate > now;
-      checks.push({
-        rule: 'kyc_not_expired',
-        passed: notExpired,
-        message: notExpired
-          ? `KYC expires ${expiryDate.toISOString().split('T')[0]}`
-          : `KYC expired on ${expiryDate.toISOString().split('T')[0]}`,
-      });
-    }
-  }
-
-  // Suitability required flag
-  if (criteria.suitability_required) {
-    checks.push({
-      rule: 'suitability_required',
-      passed: true, // Informational — doesn't block, but flags for compliance
-      message: `Suitability assessment required for ${investorType} investors in ${fund.legal_form}`,
-    });
-  }
-
-  return { checks, criteria };
-}
-
-// ── Decision Record Writing ─────────────────────────────────
-
-/**
- * Write a decision provenance record capturing the full validation state.
- */
-async function writeDecisionRecord(params: {
-  decisionType: 'transfer_validation';
-  assetId: string;
-  subjectId: string;
-  request: TransferRequest;
-  rulesEngineResult: { valid: boolean; checks: Check[]; violations: string[] };
-  eligibilityChecks: Check[];
-  criteria: EligibilityCriteria | null;
-  rules: any;
-  result: 'approved' | 'rejected' | 'simulated';
-}): Promise<string> {
-  const allChecks = [...params.rulesEngineResult.checks, ...params.eligibilityChecks];
-  const allViolations = [
-    ...params.rulesEngineResult.violations,
-    ...params.eligibilityChecks.filter(c => !c.passed).map(c => c.message),
-  ];
-
-  const record = await createDecisionRecord({
-    decision_type: params.decisionType,
-    asset_id: params.assetId,
-    subject_id: params.subjectId,
-    input_snapshot: {
-      transfer_request: params.request,
-    },
-    rule_version_snapshot: {
-      rules_engine: params.rules,
-      eligibility_criteria: params.criteria,
-    },
-    result: params.result,
-    result_details: {
-      overall: params.result,
-      checks: allChecks,
-      violation_count: allViolations.length,
-    },
-    decided_by: undefined,
-  });
-
-  return record.id;
+  return { checks, criteria: result.criteria };
 }
 
 // ── Public API ──────────────────────────────────────────────
@@ -263,15 +133,18 @@ export async function simulateTransfer(
     const valid = allViolations.length === 0;
 
     // Write decision record
-    const decisionRecordId = await writeDecisionRecord({
+    const decisionRecord = await recordDecisionWithResult({
       decisionType: 'transfer_validation',
       assetId: request.asset_id,
       subjectId: request.to_investor_id,
-      request,
-      rulesEngineResult: rulesResult,
-      eligibilityChecks,
-      criteria,
-      rules: context.rules,
+      inputSnapshot: {
+        transfer_request: request,
+      },
+      ruleVersionSnapshot: {
+        rules_engine: context.rules,
+        eligibility_criteria: criteria,
+      },
+      checks: allChecks,
       result: 'simulated',
     });
 
@@ -285,7 +158,7 @@ export async function simulateTransfer(
       summary: valid
         ? `Transfer approved (simulated). ${passedChecks}/${totalChecks} checks passed.`
         : `Transfer rejected (simulated). ${allViolations.length} violation(s). ${passedChecks}/${totalChecks} checks passed.`,
-      decision_record_id: decisionRecordId,
+      decision_record_id: decisionRecord.id,
       eligibility_criteria_applied: criteria,
     };
   } catch (error) {
@@ -329,17 +202,22 @@ export async function executeTransfer(
     const valid = allViolations.length === 0;
 
     // Write decision record
-    const decisionRecordId = await writeDecisionRecord({
+    const allChecks = [...rulesResult.checks, ...eligibilityChecks];
+    const decisionRecord = await recordDecisionWithResult({
       decisionType: 'transfer_validation',
       assetId: request.asset_id,
       subjectId: request.to_investor_id,
-      request,
-      rulesEngineResult: rulesResult,
-      eligibilityChecks,
-      criteria,
-      rules: context.rules,
+      inputSnapshot: {
+        transfer_request: request,
+      },
+      ruleVersionSnapshot: {
+        rules_engine: context.rules,
+        eligibility_criteria: criteria,
+      },
+      checks: allChecks,
       result: valid ? 'approved' : 'rejected',
     });
+    const decisionRecordId = decisionRecord.id;
 
     if (!valid) {
       // Log rejection event
@@ -365,13 +243,7 @@ export async function executeTransfer(
     }
 
     // Execute the transfer atomically within a database transaction
-    const pool = getPool();
-    const client = await pool.connect();
-    let transfer: Transfer;
-
-    try {
-      await client.query('BEGIN');
-
+    const transfer = await withTransaction<Transfer | null>(async (client) => {
       // Lock sender's holding row to prevent concurrent modifications
       const lockResult = await client.query(
         `SELECT units FROM holdings WHERE investor_id = $1 AND asset_id = $2 FOR UPDATE`,
@@ -379,12 +251,7 @@ export async function executeTransfer(
       );
 
       if (lockResult.rows.length === 0 || lockResult.rows[0].units < request.units) {
-        await client.query('ROLLBACK');
-        return {
-          success: false,
-          error: 'Insufficient units (concurrent modification detected)',
-          decision_record_id: decisionRecordId,
-        };
+        return null; // signal insufficient units — transaction will be committed (no-op)
       }
 
       const currentUnits = lockResult.rows[0].units;
@@ -425,10 +292,8 @@ export async function executeTransfer(
         [transferId, request.asset_id, request.from_investor_id, request.to_investor_id, request.units, request.execution_date, decisionRecordId, transferNow]
       );
 
-      await client.query('COMMIT');
-
       // Build transfer object from what we just inserted
-      transfer = {
+      return {
         id: transferId,
         asset_id: request.asset_id,
         from_investor_id: request.from_investor_id,
@@ -438,12 +303,14 @@ export async function executeTransfer(
         decision_record_id: decisionRecordId,
         created_at: transferNow,
       } as Transfer;
+    });
 
-    } catch (txError) {
-      await client.query('ROLLBACK').catch(() => {});
-      throw txError;
-    } finally {
-      client.release();
+    if (!transfer) {
+      return {
+        success: false,
+        error: 'Insufficient units (concurrent modification detected)',
+        decision_record_id: decisionRecordId,
+      };
     }
 
     // Log execution event (outside transaction — non-critical)
@@ -495,15 +362,15 @@ async function buildValidationContext(
 
   // Validate data exists
   if (!fromInvestor) {
-    throw new Error(`Sender investor not found: ${request.from_investor_id}`);
+    throw new NotFoundError('Investor', request.from_investor_id);
   }
 
   if (!toInvestor) {
-    throw new Error(`Recipient investor not found: ${request.to_investor_id}`);
+    throw new NotFoundError('Investor', request.to_investor_id);
   }
 
   if (!rules) {
-    throw new Error(`No rules found for asset: ${request.asset_id}`);
+    throw new NotFoundError('Rules', request.asset_id);
   }
 
   return {

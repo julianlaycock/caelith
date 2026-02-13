@@ -15,7 +15,7 @@ import {
   EmptyState,
   Alert,
 } from '../../components/ui';
-import { formatNumber, formatPercentage } from '../../lib/utils';
+import { formatNumber, formatPercentage, toAssetOptions, toInvestorOptions } from '../../lib/utils';
 import type { ApiError } from '../../lib/types';
 
 export default function HoldingsPage() {
@@ -35,18 +35,8 @@ export default function HoldingsPage() {
     [selectedAssetId]
   );
 
-  const assetOptions = [
-    { value: '', label: 'Select an asset...' },
-    ...(assets.data?.map((a) => ({ value: a.id, label: a.name })) ?? []),
-  ];
-
-  const investorOptions = [
-    { value: '', label: 'Select an investor...' },
-    ...(investors.data?.map((i) => ({
-      value: i.id,
-      label: `${i.name} (${i.jurisdiction})`,
-    })) ?? []),
-  ];
+  const assetOptions = toAssetOptions(assets.data);
+  const investorOptions = toInvestorOptions(investors.data);
 
   const handleAllocate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

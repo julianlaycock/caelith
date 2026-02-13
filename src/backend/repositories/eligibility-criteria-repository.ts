@@ -10,7 +10,7 @@ export async function createEligibilityCriteria(input: CreateEligibilityCriteria
   const id = randomUUID();
   const now = new Date().toISOString();
 
-  const result = await query(
+  const result = await query<EligibilityCriteriaRow>(
     `INSERT INTO eligibility_criteria
        (id, tenant_id, fund_structure_id, jurisdiction, investor_type, minimum_investment,
         maximum_allocation_pct, documentation_required, suitability_required,
@@ -45,7 +45,7 @@ export async function findApplicableCriteria(
   investorJurisdiction: string,
   investorType: InvestorType
 ): Promise<EligibilityCriteria | null> {
-  const result = await queryWithTenant(
+  const result = await queryWithTenant<EligibilityCriteriaRow>(
     `SELECT * FROM eligibility_criteria
      WHERE fund_structure_id = ?
        AND investor_type = ?
@@ -66,7 +66,7 @@ export async function findApplicableCriteria(
  * Find all active criteria for a fund structure (for display / template export)
  */
 export async function findCriteriaByFundStructure(fundStructureId: string): Promise<EligibilityCriteria[]> {
-  const result = await queryWithTenant(
+  const result = await queryWithTenant<EligibilityCriteriaRow>(
     `SELECT * FROM eligibility_criteria
      WHERE fund_structure_id = ?
        AND superseded_at IS NULL
@@ -82,17 +82,32 @@ export async function findCriteriaByFundStructure(fundStructureId: string): Prom
  */
 export async function supersedeCriteria(id: string): Promise<void> {
   await query(
-    `UPDATE eligibility_criteria SET superseded_at = CURRENT_DATE WHERE id = $1`,
-    [id]
+    `UPDATE eligibility_criteria SET superseded_at = CURRENT_DATE WHERE id = $1 AND tenant_id = $2`,
+    [id, DEFAULT_TENANT_ID]
   );
 }
 
-function rowToEligibilityCriteria(row: any): EligibilityCriteria {
+interface EligibilityCriteriaRow {
+  id: string;
+  fund_structure_id: string;
+  jurisdiction: string;
+  investor_type: string;
+  minimum_investment: number | string;
+  maximum_allocation_pct: number | string | null;
+  documentation_required: string | string[];
+  suitability_required: boolean | number;
+  source_reference: string | null;
+  effective_date: string | Date;
+  superseded_at: string | Date | null;
+  created_at: string | Date;
+}
+
+function rowToEligibilityCriteria(row: EligibilityCriteriaRow): EligibilityCriteria {
   return {
     id: row.id,
     fund_structure_id: row.fund_structure_id,
     jurisdiction: row.jurisdiction,
-    investor_type: row.investor_type,
+    investor_type: row.investor_type as InvestorType,
     minimum_investment: Number(row.minimum_investment),
     maximum_allocation_pct: row.maximum_allocation_pct ? Number(row.maximum_allocation_pct) : null,
     documentation_required: typeof row.documentation_required === 'string'

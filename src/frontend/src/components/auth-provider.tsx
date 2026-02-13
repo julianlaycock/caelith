@@ -8,9 +8,10 @@ import type { User } from '../lib/types';
 interface AuthContextType {
   user: User | null;
   logout: () => void;
+  setUser: (user: User) => void;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, logout: () => {} });
+const AuthContext = createContext<AuthContextType>({ user: null, logout: () => {}, setUser: () => {} });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -19,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Restore token on mount
+    // Restore token on mount and on pathname change (in case of fresh login)
     const token = localStorage.getItem('caelith_token');
     const stored = localStorage.getItem('caelith_user');
     if (token && stored) {
@@ -42,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('auth:expired', handler);
     return () => window.removeEventListener('auth:expired', handler);
-  }, [router]);
+  }, [router, pathname]);
 
   // Bug 1 fix: redirect in useEffect instead of during render
   useEffect(() => {
@@ -69,13 +70,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, logout }}>
+    <AuthContext.Provider value={{ user, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 // Bug 2 fix: useAuth consumes Context instead of reading localStorage
-export function useAuth(): { user: User | null; logout: () => void } {
+export function useAuth(): { user: User | null; logout: () => void; setUser: (user: User) => void } {
   return useContext(AuthContext);
 }

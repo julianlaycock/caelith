@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, parseJSON, stringifyJSON, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { query, execute, parseJSON, stringifyJSON, queryWithTenant, executeWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { RuleSet, CreateRuleSetInput, InvestorType } from '../models/index.js';
 
 /**
@@ -56,7 +56,7 @@ export async function createRuleSet(input: CreateRuleSetInput): Promise<RuleSet>
 
   // Delete old rules if they exist (we maintain only latest version)
   if (existing) {
-    await execute('DELETE FROM rules WHERE asset_id = ?', [input.asset_id]);
+    await executeWithTenant('DELETE FROM rules WHERE asset_id = ?', [input.asset_id]);
   }
 
   const investor_type_whitelist = input.investor_type_whitelist ?? null;
@@ -109,7 +109,7 @@ export async function createRuleSet(input: CreateRuleSetInput): Promise<RuleSet>
  * Find rule set by ID
  */
 export async function findRuleSetById(id: string): Promise<RuleSet | null> {
-  const results = await query<RuleSetRow>('SELECT * FROM rules WHERE id = ?', [id]);
+  const results = await queryWithTenant<RuleSetRow>('SELECT * FROM rules WHERE id = ?', [id]);
 
   return results.length > 0 ? rowToRuleSet(results[0]) : null;
 }
@@ -142,5 +142,5 @@ export async function ruleSetExists(assetId: string): Promise<boolean> {
  * Delete rule set for an asset
  */
 export async function deleteRuleSet(assetId: string): Promise<void> {
-  await execute('DELETE FROM rules WHERE asset_id = ?', [assetId]);
+  await executeWithTenant('DELETE FROM rules WHERE asset_id = ?', [assetId]);
 }

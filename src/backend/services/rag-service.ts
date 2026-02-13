@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { DEFAULT_TENANT_ID, query } from '../db.js';
 import { createEmbeddingService, EmbeddingService } from './embedding-service.js';
 import type { RuleCondition } from '../../rules-engine/types.js';
+import { NotFoundError } from '../errors.js';
 
 const ARTICLE_PATTERNS = [/Art(?:icle)?\s*\d+[A-Za-z0-9.\-]*/i, /Section\s*\d+[A-Za-z0-9.\-]*/i, /Chapter\s*\d+[A-Za-z0-9.\-]*/i];
 const DEFAULT_TOP_K = 5;
@@ -326,7 +327,7 @@ export class RagService {
 
     const fund = funds[0];
     if (!fund) {
-      throw new Error(`Fund structure not found: ${fundStructureId}`);
+      throw new NotFoundError('Fund structure', fundStructureId);
     }
 
     const ragResults = await this.query(

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { query, execute, queryWithTenant, executeWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Asset, CreateAssetInput, UpdateAssetInput } from '../models/index.js';
 
 /**
@@ -39,7 +39,7 @@ export async function createAsset(input: CreateAssetInput): Promise<Asset> {
  * Find asset by ID
  */
 export async function findAssetById(id: string): Promise<Asset | null> {
-  const results = await query<Asset>(
+  const results = await queryWithTenant<Asset>(
     'SELECT * FROM assets WHERE id = ?',
     [id]
   );
@@ -58,7 +58,7 @@ export async function findAllAssets(): Promise<Asset[]> {
  * Check if asset exists
  */
 export async function assetExists(id: string): Promise<boolean> {
-  const results = await query<{ count: number }>(
+  const results = await queryWithTenant<{ count: number }>(
     'SELECT COUNT(*) as count FROM assets WHERE id = ?',
     [id]
   );
@@ -70,7 +70,7 @@ export async function assetExists(id: string): Promise<boolean> {
  * Get total allocated units for an asset
  */
 export async function getTotalAllocatedUnits(assetId: string): Promise<number> {
-  const results = await query<{ total: number | null }>(
+  const results = await queryWithTenant<{ total: number | null }>(
     'SELECT SUM(units) as total FROM holdings WHERE asset_id = ?',
     [assetId]
   );
@@ -84,7 +84,7 @@ export async function getTotalAllocatedUnits(assetId: string): Promise<number> {
  * Delete an asset by ID
  */
 export async function deleteAsset(id: string): Promise<void> {
-  await execute('DELETE FROM assets WHERE id = ?', [id]);
+  await executeWithTenant('DELETE FROM assets WHERE id = ?', [id]);
 }
 
 /**
@@ -104,7 +104,7 @@ export async function updateAsset(id: string, input: UpdateAssetInput): Promise<
 
   params.push(id);
 
-  await execute(
+  await executeWithTenant(
     `UPDATE assets SET ${sets.join(', ')} WHERE id = ?`,
     params
   );

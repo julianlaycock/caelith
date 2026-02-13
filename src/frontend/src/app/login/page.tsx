@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
+import { useAuth } from '../../components/auth-provider';
 
 const REMEMBER_KEY = 'caelith_remember';
 
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { setUser } = useAuth();
 
   // Restore remembered credentials on mount
   useEffect(() => {
@@ -50,6 +52,7 @@ export default function LoginPage() {
       }
       localStorage.setItem('caelith_token', result.token);
       localStorage.setItem('caelith_user', JSON.stringify(result.user));
+      setUser(result.user); // Update AuthProvider state immediately
       router.push('/');
     } catch (err) {
       setError((err as { message?: string }).message || 'Authentication failed');

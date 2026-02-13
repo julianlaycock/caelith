@@ -204,7 +204,23 @@ async function callClaude(description: string, context?: NLRuleRequest['context'
 
 // ── Deterministic Validator ─────────────────────────────────
 
-function validateRuleStructure(rule: any): { valid: boolean; errors: string[] } {
+interface ParsedLLMCondition {
+  field: string;
+  operator: string;
+  value: unknown;
+}
+
+interface ParsedLLMRule {
+  name?: string;
+  description?: string;
+  operator?: string;
+  conditions?: ParsedLLMCondition[];
+  confidence?: number;
+  explanation?: string;
+  source_suggestion?: string | null;
+}
+
+function validateRuleStructure(rule: ParsedLLMRule): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   // Check required fields
@@ -214,7 +230,7 @@ function validateRuleStructure(rule: any): { valid: boolean; errors: string[] } 
   if (!rule.description || typeof rule.description !== 'string') {
     errors.push('Missing or invalid "description" (must be string)');
   }
-  if (!VALID_COMPOSITE_OPERATORS.includes(rule.operator)) {
+  if (!rule.operator || !(VALID_COMPOSITE_OPERATORS as readonly string[]).includes(rule.operator)) {
     errors.push(`Invalid operator "${rule.operator}" (must be AND, OR, NOT)`);
   }
   if (!Array.isArray(rule.conditions) || rule.conditions.length === 0) {
@@ -228,40 +244,40 @@ function validateRuleStructure(rule: any): { valid: boolean; errors: string[] } 
 
   // Validate each condition
   if (Array.isArray(rule.conditions)) {
-    rule.conditions.forEach((c: any, i: number) => {
-      if (!VALID_FIELDS.includes(c.field)) {
+    rule.conditions.forEach((c: ParsedLLMCondition, i: number) => {
+      if (!(VALID_FIELDS as readonly string[]).includes(c.field)) {
         errors.push(`Condition ${i}: unknown field "${c.field}". Valid: ${VALID_FIELDS.join(', ')}`);
       }
-      if (!VALID_OPERATORS.includes(c.operator)) {
+      if (!(VALID_OPERATORS as readonly string[]).includes(c.operator)) {
         errors.push(`Condition ${i}: unknown operator "${c.operator}". Valid: ${VALID_OPERATORS.join(', ')}`);
       }
       if (c.value === undefined || c.value === null) {
         errors.push(`Condition ${i}: missing "value"`);
       }
       // Type-check value against operator
-      if (['in', 'not_in'].includes(c.operator) && !Array.isArray(c.value)) {
+      if ((c.operator === 'in' || c.operator === 'not_in') && !Array.isArray(c.value)) {
         errors.push(`Condition ${i}: "in"/"not_in" operator requires array value`);
       }
-      if (['gt', 'gte', 'lt', 'lte'].includes(c.operator) && typeof c.value !== 'number') {
+      if (['gt', 'gte', 'lt', 'lte'].includes(c.operator as string) && typeof c.value !== 'number') {
         errors.push(`Condition ${i}: numeric operator requires number value`);
       }
       // Validate investor_type values
-      if (c.field?.endsWith('.investor_type') && c.operator === 'eq' && !VALID_INVESTOR_TYPES.includes(c.value)) {
+      if (c.field?.endsWith('.investor_type') && c.operator === 'eq' && !VALID_INVESTOR_TYPES.includes(c.value as string)) {
         errors.push(`Condition ${i}: invalid investor_type "${c.value}". Valid: ${VALID_INVESTOR_TYPES.join(', ')}`);
       }
-      if (c.field?.endsWith('.investor_type') && ['in', 'not_in'].includes(c.operator) && Array.isArray(c.value)) {
-        c.value.forEach((v: any) => {
-          if (!VALID_INVESTOR_TYPES.includes(v)) {
+      if (c.field?.endsWith('.investor_type') && (c.operator === 'in' || c.operator === 'not_in') && Array.isArray(c.value)) {
+        (c.value as unknown[]).forEach((v: unknown) => {
+          if (!VALID_INVESTOR_TYPES.includes(v as string)) {
             errors.push(`Condition ${i}: invalid investor_type "${v}" in array`);
           }
         });
       }
       // Validate kyc_status values
-      if (c.field?.endsWith('.kyc_status') && c.operator === 'eq' && !VALID_KYC_STATUSES.includes(c.value)) {
+      if (c.field?.endsWith('.kyc_status') && c.operator === 'eq' && !VALID_KYC_STATUSES.includes(c.value as string)) {
         errors.push(`Condition ${i}: invalid kyc_status "${c.value}". Valid: ${VALID_KYC_STATUSES.join(', ')}`);
       }
       // Validate legal_form values
-      if (c.field === 'fund.legal_form' && c.operator === 'eq' && !VALID_LEGAL_FORMS.includes(c.value)) {
+      if (c.field === 'fund.legal_form' && c.operator === 'eq' && !VALID_LEGAL_FORMS.includes(c.value as string)) {
         errors.push(`Condition ${i}: invalid legal_form "${c.value}". Valid: ${VALID_LEGAL_FORMS.join(', ')}`);
       }
     });
@@ -300,7 +316,7 @@ export async function compileNaturalLanguageRule(
   const rawResponse = await callClaude(request.description, request.context);
 
   // Parse JSON (strip any accidental markdown fencing)
-  let parsed: any;
+  let parsed: ParsedLLMRule;
   try {
     const cleaned = rawResponse.replace(/```json\n?|```\n?/g, '').trim();
     parsed = JSON.parse(cleaned);
@@ -330,8 +346,8 @@ export async function compileNaturalLanguageRule(
     proposed_rule: {
       name: parsed.name || 'Unnamed rule',
       description: parsed.description || request.description,
-      operator: parsed.operator || 'AND',
-      conditions: parsed.conditions || [],
+      operator: (parsed.operator || 'AND') as CompositeRule['operator'],
+      conditions: (parsed.conditions || []) as RuleCondition[],
       enabled: true,
     },
     confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5,

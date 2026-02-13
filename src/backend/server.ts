@@ -70,12 +70,13 @@ if (!process.env.ANTHROPIC_API_KEY) {
  */
 async function ensureAdminUser(): Promise<void> {
   const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@caelith.com';
-  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
   const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin';
 
   if (!process.env.ADMIN_PASSWORD && process.env.NODE_ENV === 'production') {
-    console.warn('WARNING: Using default admin password in production — set ADMIN_PASSWORD env var');
+    console.error('FATAL: ADMIN_PASSWORD must be set in production. Refusing to start with default credentials.');
+    process.exit(1);
   }
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234'; // dev-only fallback
 
   try {
     const existing = await dbQuery<{ id: string }>(
@@ -172,6 +173,9 @@ app.get('/api', (req, res) => {
   });
 });
 
+// Apply general API rate limit (200 req / 15 min per IP)
+app.use('/api', apiRateLimit);
+
 // Register API routes
 // Public routes (no auth required)
 app.use('/api/auth', authRateLimit, authRoutes);
@@ -236,21 +240,17 @@ app.use((req, res) => {
   });
 });
 
-// Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(500).json({
-    error: 'INTERNAL_SERVER_ERROR',
-    message: err.message,
-  });
-});
+import { errorHandler } from './middleware/error-handler.js';
+app.use(errorHandler);
 
 // Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('\nShutting down gracefully...');
+async function gracefulShutdown(signal: string) {
+  console.log(`\n${signal} received — shutting down gracefully...`);
   await closeDb();
   process.exit(0);
-});
+}
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 // Start server
 async function startServer() {

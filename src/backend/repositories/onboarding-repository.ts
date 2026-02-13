@@ -11,6 +11,7 @@ import {
   OnboardingRecord,
   CreateOnboardingRecordInput,
   UpdateOnboardingInput,
+  OnboardingStatus,
 } from '../models/index.js';
 
 /**
@@ -52,9 +53,9 @@ export async function createOnboardingRecord(
 export async function findOnboardingById(
   id: string
 ): Promise<OnboardingRecord | null> {
-  const results = await query<any>(
-    'SELECT * FROM onboarding_records WHERE id = $1',
-    [id]
+  const results = await query<OnboardingRow>(
+    'SELECT * FROM onboarding_records WHERE id = $1 AND tenant_id = $2',
+    [id, DEFAULT_TENANT_ID]
   );
   if (results.length === 0) return null;
   return rowToOnboardingRecord(results[0]);
@@ -66,7 +67,7 @@ export async function findOnboardingById(
 export async function findOnboardingByAsset(
   assetId: string
 ): Promise<OnboardingRecord[]> {
-  const results = await queryWithTenant<any>(
+  const results = await queryWithTenant<OnboardingRow>(
     'SELECT * FROM onboarding_records WHERE asset_id = ? ORDER BY applied_at DESC',
     [assetId]
   );
@@ -79,7 +80,7 @@ export async function findOnboardingByAsset(
 export async function findOnboardingByInvestor(
   investorId: string
 ): Promise<OnboardingRecord[]> {
-  const results = await queryWithTenant<any>(
+  const results = await queryWithTenant<OnboardingRow>(
     'SELECT * FROM onboarding_records WHERE investor_id = ? ORDER BY applied_at DESC',
     [investorId]
   );
@@ -96,7 +97,7 @@ export async function updateOnboardingRecord(
   const now = new Date().toISOString();
 
   const setClauses: string[] = ['status = $2', 'updated_at = $3'];
-  const params: any[] = [id, updates.status, now];
+  const params: (string | number | boolean | null)[] = [id, updates.status, now];
   let paramIdx = 4;
 
   if (updates.reviewed_by !== undefined) {
@@ -126,23 +127,37 @@ export async function updateOnboardingRecord(
     paramIdx++;
   }
 
+  params.push(DEFAULT_TENANT_ID);
   await execute(
-    `UPDATE onboarding_records SET ${setClauses.join(', ')} WHERE id = $1`,
+    `UPDATE onboarding_records SET ${setClauses.join(', ')} WHERE id = $1 AND tenant_id = $${paramIdx}`,
     params
   );
 
   return findOnboardingById(id);
 }
 
-/**
- * Map DB row → OnboardingRecord
- */
-function rowToOnboardingRecord(row: any): OnboardingRecord {
+interface OnboardingRow {
+  id: string;
+  investor_id: string;
+  asset_id: string;
+  status: string;
+  requested_units: number;
+  eligibility_decision_id: string | null;
+  approval_decision_id: string | null;
+  reviewed_by: string | null;
+  rejection_reasons: string | string[] | null;
+  applied_at: string;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function rowToOnboardingRecord(row: OnboardingRow): OnboardingRecord {
   return {
     id: row.id,
     investor_id: row.investor_id,
     asset_id: row.asset_id,
-    status: row.status,
+    status: row.status as OnboardingStatus,
     requested_units: row.requested_units,
     eligibility_decision_id: row.eligibility_decision_id ?? null,
     approval_decision_id: row.approval_decision_id ?? null,

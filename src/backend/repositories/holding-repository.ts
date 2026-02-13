@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { query, execute, executeWithTenant, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Holding, CreateHoldingInput, UpdateHoldingInput } from '../models/index.js';
 
 /**
@@ -36,7 +36,7 @@ export async function createHolding(input: CreateHoldingInput): Promise<Holding>
  * Find holding by ID
  */
 export async function findHoldingById(id: string): Promise<Holding | null> {
-  const results = await query<Holding>(
+  const results = await queryWithTenant<Holding>(
     'SELECT * FROM holdings WHERE id = ?',
     [id]
   );
@@ -51,7 +51,7 @@ export async function findHoldingByInvestorAndAsset(
   investorId: string,
   assetId: string
 ): Promise<Holding | null> {
-  const results = await query<Holding>(
+  const results = await queryWithTenant<Holding>(
     'SELECT * FROM holdings WHERE investor_id = ? AND asset_id = ?',
     [investorId, assetId]
   );
@@ -97,7 +97,7 @@ export async function updateHolding(
 
   const now = new Date().toISOString();
 
-  await execute(
+  await executeWithTenant(
     'UPDATE holdings SET units = ?, updated_at = ? WHERE id = ?',
     [input.units, now, id]
   );
@@ -120,7 +120,7 @@ export async function updateHoldingByInvestorAndAsset(
 
   const now = new Date().toISOString();
 
-  await execute(
+  await executeWithTenant(
     'UPDATE holdings SET units = ?, updated_at = ? WHERE investor_id = ? AND asset_id = ?',
     [units, now, investorId, assetId]
   );
@@ -153,9 +153,9 @@ export async function getCapTable(
     FROM holdings h
     JOIN investors i ON h.investor_id = i.id
     JOIN assets a ON h.asset_id = a.id
-    WHERE h.asset_id = ? AND h.units > 0
+    WHERE h.asset_id = ? AND h.units > 0 AND h.tenant_id = ?
     ORDER BY h.units DESC`,
-    [assetId]
+    [assetId, DEFAULT_TENANT_ID]
   );
 
   return results.map((row) => ({

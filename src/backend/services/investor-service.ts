@@ -1,9 +1,3 @@
-/**
- * Investor Service
- * 
- * Business logic for investor management
- */
-
 import {
   createInvestor as createInvestorRepo,
   findInvestorById,
@@ -12,24 +6,19 @@ import {
   createEvent,
 } from '../repositories/index.js';
 import { Investor, CreateInvestorInput, UpdateInvestorInput } from '../models/index.js';
+import { ValidationError } from '../errors.js';
 
-/**
- * Create a new investor
- */
 export async function createInvestor(input: CreateInvestorInput): Promise<Investor> {
-  // Validate input
   if (!input.name.trim()) {
-    throw new Error('Investor name cannot be empty');
+    throw new ValidationError('Investor name cannot be empty');
   }
 
   if (!input.jurisdiction.trim()) {
-    throw new Error('Jurisdiction cannot be empty');
+    throw new ValidationError('Jurisdiction cannot be empty');
   }
 
-  // Create investor
   const investor = await createInvestorRepo(input);
 
-  // Log event
   await createEvent({
     event_type: 'investor.created',
     entity_type: 'investor',
@@ -44,23 +33,14 @@ export async function createInvestor(input: CreateInvestorInput): Promise<Invest
   return investor;
 }
 
-/**
- * Get investor by ID
- */
 export async function getInvestor(id: string): Promise<Investor | null> {
   return await findInvestorById(id);
 }
 
-/**
- * Get all investors
- */
 export async function getAllInvestors(): Promise<Investor[]> {
   return await findAllInvestors();
 }
 
-/**
- * Update investor
- */
 export async function updateInvestor(
   id: string,
   input: UpdateInvestorInput
@@ -71,7 +51,6 @@ export async function updateInvestor(
     return null;
   }
 
-  // Log event
   await createEvent({
     event_type: 'investor.updated',
     entity_type: 'investor',

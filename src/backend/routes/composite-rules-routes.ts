@@ -1,10 +1,7 @@
-/**
- * Composite Rules Routes
- *
- * CRUD for custom composite rules per asset
- */
-
 import express from 'express';
+import { asyncHandler } from '../middleware/async-handler.js';
+import { requireFields } from '../middleware/validate.js';
+import { ValidationError } from '../errors.js';
 import {
   createCompositeRule,
   listCompositeRules,
@@ -14,110 +11,51 @@ import {
 
 const router = express.Router();
 
-/**
- * POST /composite-rules
- */
-router.post('/', async (req, res): Promise<void> => {
-  try {
-    const { asset_id, name, description, operator, conditions, enabled } = req.body;
+router.post('/', asyncHandler(async (req, res) => {
+  requireFields(req.body, ['asset_id', 'name', 'operator', 'conditions']);
+  const { asset_id, name, description, operator, conditions, enabled } = req.body;
 
-    if (!asset_id || !name || !operator || !conditions) {
-      res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: 'Missing required fields: asset_id, name, operator, conditions',
-      });
-      return;
-    }
-
-    if (!['AND', 'OR', 'NOT'].includes(operator)) {
-      res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: 'Operator must be AND, OR, or NOT',
-      });
-      return;
-    }
-
-    if (!Array.isArray(conditions) || conditions.length === 0) {
-      res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: 'Conditions must be a non-empty array',
-      });
-      return;
-    }
-
-    const rule = await createCompositeRule(
-      asset_id,
-      { name, description: description || '', operator, conditions, enabled },
-      req.user?.userId
-    );
-    res.status(201).json(rule);
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+  if (!['AND', 'OR', 'NOT'].includes(operator)) {
+    throw new ValidationError('Operator must be AND, OR, or NOT');
   }
-});
 
-/**
- * GET /composite-rules?assetId=X
- */
-router.get('/', async (req, res): Promise<void> => {
-  try {
-    const { assetId } = req.query;
-    if (!assetId) {
-      res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: 'Required query parameter: assetId',
-      });
-      return;
-    }
-
-    const rules = await listCompositeRules(assetId as string);
-    res.json(rules);
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+  if (!Array.isArray(conditions) || conditions.length === 0) {
+    throw new ValidationError('Conditions must be a non-empty array');
   }
-});
 
-/**
- * PATCH /composite-rules/:id
- */
-router.patch('/:id', async (req, res): Promise<void> => {
-  try {
-    const { name, description, operator, conditions, enabled } = req.body;
-    await updateCompositeRule(req.params.id, {
-      name,
-      description,
-      operator,
-      conditions,
-      enabled,
-    });
-    res.json({ status: 'updated' });
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+  const rule = await createCompositeRule(
+    asset_id,
+    { name, description: description || '', operator, conditions, enabled },
+    req.user?.userId
+  );
+  res.status(201).json(rule);
+}));
 
-/**
- * DELETE /composite-rules/:id
- */
-router.delete('/:id', async (req, res): Promise<void> => {
-  try {
-    await deleteCompositeRule(req.params.id);
-    res.json({ status: 'deleted' });
-  } catch (error) {
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+router.get('/', asyncHandler(async (req, res) => {
+  const { assetId } = req.query;
+  if (!assetId) {
+    throw new ValidationError('Required query parameter: assetId');
   }
-});
+
+  const rules = await listCompositeRules(assetId as string);
+  res.json(rules);
+}));
+
+router.patch('/:id', asyncHandler(async (req, res) => {
+  const { name, description, operator, conditions, enabled } = req.body;
+  await updateCompositeRule(req.params.id, {
+    name,
+    description,
+    operator,
+    conditions,
+    enabled,
+  });
+  res.json({ status: 'updated' });
+}));
+
+router.delete('/:id', asyncHandler(async (req, res) => {
+  await deleteCompositeRule(req.params.id);
+  res.json({ status: 'deleted' });
+}));
 
 export default router;

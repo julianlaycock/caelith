@@ -8,6 +8,7 @@
 
 import { createHash } from 'crypto';
 import { query, execute } from '../db.js';
+import { NotFoundError } from '../errors.js';
 
 const GENESIS_HASH =
   '0000000000000000000000000000000000000000000000000000000000000000';
@@ -63,7 +64,7 @@ export async function sealRecord(recordId: string): Promise<string> {
   );
 
   if (rows.length === 0) {
-    throw new Error(`Decision record not found: ${recordId}`);
+    throw new NotFoundError('Decision record', recordId);
   }
 
   const record = rows[0];

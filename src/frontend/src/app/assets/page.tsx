@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
+import { useFormAction } from '../../lib/use-form-action';
 import {
   PageHeader,
   Card,
@@ -17,28 +18,18 @@ import {
   Alert,
 } from '../../components/ui';
 import { formatNumber, formatDate } from '../../lib/utils';
-import type { ApiError } from '../../lib/types';
-
-const ASSET_TYPES = [
-  { value: 'Fund', label: 'Fund' },
-  { value: 'LP Interest', label: 'LP Interest' },
-  { value: 'SPV', label: 'SPV' },
-  { value: 'Real Estate', label: 'Real Estate' },
-  { value: 'Private Equity', label: 'Private Equity' },
-  { value: 'Other', label: 'Other' },
-];
+import { ASSET_TYPES } from '../../lib/constants';
 
 export default function AssetsPage() {
   const [showForm, setShowForm] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
+  const createForm = useFormAction();
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
   const assets = useAsync(() => api.getAssets());
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setFormError(null);
     setFormSuccess(null);
 
     const form = new FormData(e.currentTarget);
@@ -47,17 +38,18 @@ export default function AssetsPage() {
     const total_units = Number(form.get('total_units'));
 
     if (!name || !asset_type || !total_units || total_units <= 0) {
-      setFormError('All fields are required. Total units must be positive.');
+      createForm.setError('All fields are required. Total units must be positive.');
       return;
     }
 
-    try {
-      await api.createAsset({ name, asset_type, total_units });
+    const ok = await createForm.execute(
+      () => api.createAsset({ name, asset_type, total_units }),
+      'Failed to create asset',
+    );
+    if (ok) {
       setFormSuccess('Asset created successfully.');
       setShowForm(false);
       assets.refetch();
-    } catch (err) {
-      setFormError((err as ApiError).message || 'Failed to create asset');
     }
   };
 
@@ -88,7 +80,7 @@ export default function AssetsPage() {
         title="Create Asset"
       >
         <form onSubmit={handleCreate} className="space-y-4">
-          {formError && <Alert variant="error">{formError}</Alert>}
+          {createForm.error && <Alert variant="error">{createForm.error}</Alert>}
           <Input label="Asset Name" name="name" required placeholder="e.g., Growth Fund I" />
           <Select
             label="Asset Type"
@@ -168,25 +160,25 @@ function AssetDetailModal({
 }) {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const action = useFormAction();
 
   const asset = useAsync(() => api.getAsset(assetId), [assetId]);
   const utilization = useAsync(() => api.getAssetUtilization(assetId), [assetId]);
 
   const handleDelete = async () => {
-    setError(null);
-    try {
-      await api.deleteAsset(assetId);
+    const ok = await action.execute(
+      () => api.deleteAsset(assetId),
+      'Failed to delete asset',
+    );
+    if (ok) {
       onDeleted();
-    } catch (err) {
-      setError((err as ApiError).message || 'Failed to delete asset');
+    } else {
       setDeleting(false);
     }
   };
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
 
     const form = new FormData(e.currentTarget);
     const name = form.get('name') as string;
@@ -194,15 +186,16 @@ function AssetDetailModal({
     const total_units = Number(form.get('total_units'));
 
     if (!name || !asset_type || !total_units || total_units <= 0) {
-      setError('All fields are required. Total units must be positive.');
+      action.setError('All fields are required. Total units must be positive.');
       return;
     }
 
-    try {
-      await api.updateAsset(assetId, { name, asset_type, total_units });
+    const ok = await action.execute(
+      () => api.updateAsset(assetId, { name, asset_type, total_units }),
+      'Failed to update asset',
+    );
+    if (ok) {
       onUpdated();
-    } catch (err) {
-      setError((err as ApiError).message || 'Failed to update asset');
     }
   };
 
@@ -210,7 +203,7 @@ function AssetDetailModal({
     return (
       <Modal open={true} onClose={() => setDeleting(false)} title="Delete Asset">
         <div className="space-y-4">
-          {error && <Alert variant="error">{error}</Alert>}
+          {action.error && <Alert variant="error">{action.error}</Alert>}
           <p className="text-sm text-ink-secondary">
             Are you sure you want to delete <strong className="text-ink">{asset.data?.name}</strong>?
             This action cannot be undone.
@@ -240,7 +233,7 @@ function AssetDetailModal({
     return (
       <Modal open={true} onClose={() => setEditing(false)} title="Edit Asset">
         <form onSubmit={handleUpdate} className="space-y-4">
-          {error && <Alert variant="error">{error}</Alert>}
+          {action.error && <Alert variant="error">{action.error}</Alert>}
           <Input
             label="Asset Name"
             name="name"
