@@ -106,7 +106,7 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({ data, o
               key={d.name}
               className={classNames(
                 'flex items-center justify-between text-xs',
-                onTypeClick && 'cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-surface-subtle transition-colors'
+                onTypeClick && 'cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-bg-tertiary transition-colors'
               )}
               onClick={onTypeClick ? () => onTypeClick(d.rawType) : undefined}
             >
@@ -221,7 +221,7 @@ export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({ data, onS
     <ChartCard title="KYC Status Overview" subtitle="Investor KYC verification status">
       <div className="space-y-4">
         {/* Segmented bar */}
-        <div className="flex h-6 w-full overflow-hidden rounded-full bg-surface-subtle">
+        <div className="flex h-6 w-full overflow-hidden rounded-full bg-bg-tertiary">
           {segments.map((seg) => (
             <div
               key={seg.key}
@@ -243,7 +243,7 @@ export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({ data, onS
               key={seg.key}
               className={classNames(
                 'flex items-center gap-2 text-xs',
-                onStatusClick && 'cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-surface-subtle transition-colors'
+                onStatusClick && 'cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-bg-tertiary transition-colors'
               )}
               onClick={onStatusClick ? () => onStatusClick(seg.key) : undefined}
             >
@@ -255,7 +255,7 @@ export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({ data, onS
         </div>
 
         {/* Summary stats */}
-        <div className="flex items-center justify-between rounded-lg bg-surface-subtle px-3 py-2">
+        <div className="flex items-center justify-between rounded-lg bg-bg-tertiary px-3 py-2">
           <span className="text-xs text-ink-secondary">Total investors</span>
           <span className="text-sm font-semibold text-ink">{total}</span>
         </div>
@@ -278,8 +278,8 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({ d
       <ChartCard title="Rule Violations" subtitle="Top assets by compliance violations">
         <div className="flex h-[200px] items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
-              <svg className="h-5 w-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-accent-500/10">
+              <svg className="h-5 w-5 text-accent-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -383,10 +383,10 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
               : '#16A34A';
           const riskBg =
             riskLevel === 'high'
-              ? 'bg-red-50'
+              ? 'bg-red-500/100/10'
               : riskLevel === 'medium'
               ? 'bg-orange-50'
-              : 'bg-brand-50';
+              : 'bg-accent-500/10';
 
           return (
             <div key={fund.fund_name} className="rounded-lg border border-edge-subtle p-3">
@@ -426,7 +426,7 @@ function ConcentrationBar({ label, value, color }: { label: string; value: numbe
     <div className="flex items-center gap-2">
       <span className="w-24 text-[11px] text-ink-tertiary">{label}</span>
       <div className="flex-1">
-        <div className="h-1.5 w-full rounded-full bg-surface-subtle">
+        <div className="h-1.5 w-full rounded-full bg-bg-tertiary">
           <div
             className="h-1.5 rounded-full transition-all"
             style={{ width: `${Math.min(value, 100)}%`, backgroundColor: color }}
@@ -452,7 +452,7 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-edge bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-edge bg-bg-secondary p-5 shadow-sm">
       <div className="mb-4">
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
         {subtitle && <p className="mt-0.5 text-xs text-ink-tertiary">{subtitle}</p>}

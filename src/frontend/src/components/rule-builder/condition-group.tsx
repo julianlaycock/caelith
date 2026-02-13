@@ -50,7 +50,7 @@ export function ConditionGroup({ operator, conditions, onOperatorChange, onCondi
       <button
         type="button"
         onClick={handleAdd}
-        className="inline-flex items-center gap-1 rounded-lg border border-dashed border-edge px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink hover:border-edge-strong hover:bg-surface-subtle transition-colors"
+        className="inline-flex items-center gap-1 rounded-lg border border-dashed border-edge px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink hover:border-edge-strong hover:bg-bg-tertiary transition-colors"
       >
         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

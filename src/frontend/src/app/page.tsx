@@ -22,10 +22,10 @@ interface FundReportPair {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-xl border border-edge bg-white px-4 py-3 shadow-sm animate-pulse">
-      <div className="h-2.5 w-20 rounded bg-surface-subtle mb-2" />
-      <div className="h-5 w-14 rounded bg-surface-subtle mb-1" />
-      <div className="h-2.5 w-28 rounded bg-surface-subtle" />
+    <div className="rounded-xl border border-edge bg-bg-secondary px-4 py-3 shadow-sm animate-pulse">
+      <div className="h-2.5 w-20 rounded bg-bg-tertiary mb-2" />
+      <div className="h-5 w-14 rounded bg-bg-tertiary mb-1" />
+      <div className="h-2.5 w-28 rounded bg-bg-tertiary" />
     </div>
   );
 }
@@ -34,20 +34,20 @@ function SkeletonRow() {
   return (
     <div className="flex items-center justify-between px-6 py-3 animate-pulse">
       <div className="flex items-center gap-3">
-        <div className="h-4 w-20 rounded bg-surface-subtle" />
-        <div className="h-4 w-32 rounded bg-surface-subtle" />
+        <div className="h-4 w-20 rounded bg-bg-tertiary" />
+        <div className="h-4 w-32 rounded bg-bg-tertiary" />
       </div>
-      <div className="h-4 w-16 rounded bg-surface-subtle" />
+      <div className="h-4 w-16 rounded bg-bg-tertiary" />
     </div>
   );
 }
 
 function SkeletonChart() {
   return (
-    <div className="rounded-xl border border-edge bg-white p-5 shadow-sm animate-pulse">
-      <div className="h-3.5 w-32 rounded bg-surface-subtle mb-2" />
-      <div className="h-3 w-48 rounded bg-surface-subtle mb-4" />
-      <div className="h-[200px] rounded bg-surface-subtle" />
+    <div className="rounded-xl border border-edge bg-bg-secondary p-5 shadow-sm animate-pulse">
+      <div className="h-3.5 w-32 rounded bg-bg-tertiary mb-2" />
+      <div className="h-3 w-48 rounded bg-bg-tertiary mb-4" />
+      <div className="h-[200px] rounded bg-bg-tertiary" />
     </div>
   );
 }
@@ -343,7 +343,7 @@ export default function DashboardPage() {
           <h1 className="text-xl font-semibold tracking-tight text-ink">Command Center</h1>
           <p className="mt-0.5 text-sm text-ink-secondary">Compliance engine overview</p>
         </div>
-        <span className="rounded-lg bg-[#000042] px-3 py-1.5 text-xs font-medium text-white shadow-sm">{today}</span>
+        <span className="rounded-lg bg-accent-500 px-3 py-1.5 text-xs font-medium text-white shadow-sm">{today}</span>
       </div>
 
       {/* Metric Cards — compact */}
@@ -395,7 +395,7 @@ export default function DashboardPage() {
       {/* Data Visualization Charts */}
       {loading ? (
         <div className="mb-6">
-          <div className="h-4 w-40 rounded bg-surface-subtle mb-4 animate-pulse" />
+          <div className="h-4 w-40 rounded bg-bg-tertiary mb-4 animate-pulse" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <SkeletonChart />
             <SkeletonChart />
@@ -433,12 +433,12 @@ export default function DashboardPage() {
 
       {!loading && allRiskFlags.length === 0 && fundReports.length > 0 && (
         <div className="mb-6">
-          <div className="rounded-xl border border-brand-200 bg-brand-50 p-4">
+          <div className="rounded-xl border border-accent-500/20 bg-accent-500/10 p-4">
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-brand-500" />
-              <p className="text-sm font-medium text-brand-800">All Clear</p>
+              <span className="h-2 w-2 rounded-full bg-accent-500/100" />
+              <p className="text-sm font-medium text-accent-200">All Clear</p>
             </div>
-            <p className="mt-1 text-sm text-brand-700">No risk flags detected across any fund structures.</p>
+            <p className="mt-1 text-sm text-accent-300">No risk flags detected across any fund structures.</p>
           </div>
         </div>
       )}
@@ -474,7 +474,7 @@ export default function DashboardPage() {
                   </p>
                   <Link
                     href={`/funds/${fund.id}`}
-                    className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors"
+                    className="text-xs font-medium text-accent-400 hover:text-accent-300 transition-colors"
                   >
                     View Compliance Report &rarr;
                   </Link>
@@ -487,25 +487,25 @@ export default function DashboardPage() {
 
       {loading && (
         <div className="mb-6">
-          <div className="h-4 w-32 rounded bg-surface-subtle mb-4 animate-pulse" />
+          <div className="h-4 w-32 rounded bg-bg-tertiary mb-4 animate-pulse" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-edge bg-white p-6 shadow-sm animate-pulse">
-              <div className="h-4 w-40 rounded bg-surface-subtle mb-3" />
+            <div className="rounded-xl border border-edge bg-bg-secondary p-6 shadow-sm animate-pulse">
+              <div className="h-4 w-40 rounded bg-bg-tertiary mb-3" />
               <div className="flex gap-2 mb-4">
-                <div className="h-5 w-12 rounded bg-surface-subtle" />
-                <div className="h-5 w-10 rounded bg-surface-subtle" />
+                <div className="h-5 w-12 rounded bg-bg-tertiary" />
+                <div className="h-5 w-10 rounded bg-bg-tertiary" />
               </div>
-              <div className="h-2 w-full rounded bg-surface-subtle mb-3" />
-              <div className="h-3 w-32 rounded bg-surface-subtle" />
+              <div className="h-2 w-full rounded bg-bg-tertiary mb-3" />
+              <div className="h-3 w-32 rounded bg-bg-tertiary" />
             </div>
-            <div className="rounded-xl border border-edge bg-white p-6 shadow-sm animate-pulse">
-              <div className="h-4 w-40 rounded bg-surface-subtle mb-3" />
+            <div className="rounded-xl border border-edge bg-bg-secondary p-6 shadow-sm animate-pulse">
+              <div className="h-4 w-40 rounded bg-bg-tertiary mb-3" />
               <div className="flex gap-2 mb-4">
-                <div className="h-5 w-12 rounded bg-surface-subtle" />
-                <div className="h-5 w-10 rounded bg-surface-subtle" />
+                <div className="h-5 w-12 rounded bg-bg-tertiary" />
+                <div className="h-5 w-10 rounded bg-bg-tertiary" />
               </div>
-              <div className="h-2 w-full rounded bg-surface-subtle mb-3" />
-              <div className="h-3 w-32 rounded bg-surface-subtle" />
+              <div className="h-2 w-full rounded bg-bg-tertiary mb-3" />
+              <div className="h-3 w-32 rounded bg-bg-tertiary" />
             </div>
           </div>
         </div>
@@ -535,7 +535,7 @@ export default function DashboardPage() {
                       ? 'red'
                       : 'gray';
                     return (
-                      <tr key={d.id} className="hover:bg-surface-subtle transition-colors">
+                      <tr key={d.id} className="hover:bg-bg-tertiary transition-colors">
                         <td className="px-6 py-3 text-xs tabular-nums text-ink-secondary">
                           {formatDateTime(d.decided_at)}
                         </td>
@@ -563,7 +563,7 @@ export default function DashboardPage() {
 
       {loading && (
         <div>
-          <div className="h-4 w-32 rounded bg-surface-subtle mb-4 animate-pulse" />
+          <div className="h-4 w-32 rounded bg-bg-tertiary mb-4 animate-pulse" />
           <Card padding={false}>
             <SkeletonRow />
             <SkeletonRow />
@@ -577,7 +577,7 @@ export default function DashboardPage() {
         <Card>
           <div className="py-8 text-center">
             <p className="text-sm font-medium text-ink">No fund structures found</p>
-            <p className="mt-1 text-sm text-ink-secondary">Run <code className="rounded bg-surface-subtle px-1 py-0.5 font-mono text-xs">npm run seed:showcase</code> in the project root, then refresh.</p>
+            <p className="mt-1 text-sm text-ink-secondary">Run <code className="rounded bg-bg-tertiary px-1 py-0.5 font-mono text-xs">npm run seed:showcase</code> in the project root, then refresh.</p>
           </div>
         </Card>
       )}
@@ -585,13 +585,13 @@ export default function DashboardPage() {
       {/* Risk Detail Slide-Out Panel */}
       {selectedRisk && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-brand-950/40 backdrop-blur-sm" onClick={() => setSelectedRisk(null)} />
-          <div className="ml-auto relative z-10 w-full max-w-md h-full bg-white shadow-xl border-l border-edge overflow-y-auto">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-edge bg-white px-6 py-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedRisk(null)} />
+          <div className="ml-auto relative z-10 w-full max-w-md h-full bg-bg-secondary shadow-xl border-l border-edge overflow-y-auto">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-edge bg-bg-secondary px-6 py-4">
               <h2 className="text-base font-semibold text-ink">Risk Flag Detail</h2>
               <button
                 onClick={() => setSelectedRisk(null)}
-                className="rounded-lg p-1 text-ink-tertiary hover:bg-surface-subtle hover:text-ink transition-colors"
+                className="rounded-lg p-1 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink transition-colors"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -604,9 +604,9 @@ export default function DashboardPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Severity</p>
                 <span className={classNames(
                   'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold uppercase tracking-wider',
-                  selectedRisk.severity === 'high' && 'bg-red-100 text-red-700',
-                  selectedRisk.severity === 'medium' && 'bg-amber-100 text-amber-700',
-                  selectedRisk.severity === 'low' && 'bg-brand-100 text-brand-700',
+                  selectedRisk.severity === 'high' && 'bg-red-500/100/15 text-red-400',
+                  selectedRisk.severity === 'medium' && 'bg-amber-500/100/15 text-amber-400',
+                  selectedRisk.severity === 'low' && 'bg-accent-500/15 text-accent-300',
                 )}>
                   {selectedRisk.severity}
                 </span>
@@ -629,12 +629,12 @@ export default function DashboardPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Recommended Actions</p>
                 <div className={classNames(
                   'rounded-lg border p-4 space-y-2',
-                  selectedRisk.severity === 'high' ? 'border-red-200 bg-red-50' : selectedRisk.severity === 'medium' ? 'border-amber-200 bg-amber-50' : 'border-brand-200 bg-brand-50',
+                  selectedRisk.severity === 'high' ? 'border-red-500/20 bg-red-500/100/10' : selectedRisk.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/100/10' : 'border-accent-500/20 bg-accent-500/10',
                 )}>
                   {selectedRisk.severity === 'high' && (
                     <>
-                      <p className="text-sm text-red-800 font-medium">Immediate attention required</p>
-                      <ul className="space-y-1 text-sm text-red-700">
+                      <p className="text-sm text-red-300 font-medium">Immediate attention required</p>
+                      <ul className="space-y-1 text-sm text-red-400">
                         <li>&bull; Review and remediate the flagged condition</li>
                         <li>&bull; Escalate to compliance officer if unresolved</li>
                         <li>&bull; Document remediation steps taken</li>
@@ -644,7 +644,7 @@ export default function DashboardPage() {
                   {selectedRisk.severity === 'medium' && (
                     <>
                       <p className="text-sm text-amber-800 font-medium">Review within 7 days</p>
-                      <ul className="space-y-1 text-sm text-amber-700">
+                      <ul className="space-y-1 text-sm text-amber-400">
                         <li>&bull; Investigate the flagged condition</li>
                         <li>&bull; Schedule follow-up action if needed</li>
                         <li>&bull; Monitor for escalation</li>
@@ -653,8 +653,8 @@ export default function DashboardPage() {
                   )}
                   {selectedRisk.severity === 'low' && (
                     <>
-                      <p className="text-sm text-brand-800 font-medium">Monitor and review</p>
-                      <ul className="space-y-1 text-sm text-brand-700">
+                      <p className="text-sm text-accent-200 font-medium">Monitor and review</p>
+                      <ul className="space-y-1 text-sm text-accent-300">
                         <li>&bull; Note for next periodic review</li>
                         <li>&bull; No immediate action required</li>
                       </ul>
@@ -664,7 +664,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Timestamp */}
-              <div className="rounded-lg bg-surface-subtle px-4 py-3">
+              <div className="rounded-lg bg-bg-tertiary px-4 py-3">
                 <p className="text-xs text-ink-tertiary">Flagged at: {today}</p>
               </div>
             </div>
@@ -707,25 +707,25 @@ export default function DashboardPage() {
                           key={ci}
                           className={classNames(
                             'flex items-start gap-2 rounded-md px-3 py-2 text-xs',
-                            check.passed ? 'bg-brand-50' : 'bg-red-50'
+                            check.passed ? 'bg-accent-500/10' : 'bg-red-500/100/10'
                           )}
                         >
                           <span className="mt-0.5 flex-shrink-0">
                             {check.passed ? (
-                              <svg className="h-3.5 w-3.5 text-brand-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                              <svg className="h-3.5 w-3.5 text-accent-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
                             ) : (
-                              <svg className="h-3.5 w-3.5 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                              <svg className="h-3.5 w-3.5 text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                               </svg>
                             )}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <p className={classNames('font-medium', check.passed ? 'text-brand-800' : 'text-red-800')}>
+                            <p className={classNames('font-medium', check.passed ? 'text-accent-200' : 'text-red-300')}>
                               {check.rule}
                             </p>
-                            <p className={classNames('mt-0.5', check.passed ? 'text-brand-700' : 'text-red-700')}>
+                            <p className={classNames('mt-0.5', check.passed ? 'text-accent-300' : 'text-red-400')}>
                               {check.message}
                             </p>
                           </div>
@@ -736,7 +736,7 @@ export default function DashboardPage() {
 
                   {/* Regulatory citations from eligibility criteria */}
                   {eligCriteria.length > 0 && (
-                    <div className="mt-3 rounded-md border border-edge-subtle bg-surface-subtle px-3 py-2">
+                    <div className="mt-3 rounded-md border border-edge-subtle bg-bg-tertiary px-3 py-2">
                       <p className="text-[10px] font-medium uppercase tracking-wider text-ink-tertiary mb-1">Regulatory Citations</p>
                       <div className="space-y-0.5">
                         {eligCriteria

@@ -186,8 +186,8 @@ export default function DecisionAuditTrailPage() {
           className={classNames(
             'mb-4 rounded-lg border px-4 py-3 text-sm',
             chainStatus.valid
-              ? 'border-brand-200 bg-brand-50 text-brand-800'
-              : 'border-red-200 bg-red-50 text-red-800'
+              ? 'border-accent-500/20 bg-accent-500/10 text-accent-200'
+              : 'border-red-500/20 bg-red-500/100/10 text-red-300'
           )}
         >
           {chainStatus.valid ? 'Valid:' : 'Invalid:'} {chainStatus.message}
@@ -246,7 +246,7 @@ export default function DecisionAuditTrailPage() {
               <div
                 key={d.id}
                 className={classNames(
-                  'rounded-xl border border-edge bg-white p-5 shadow-sm border-l-[3px]',
+                  'rounded-xl border border-edge bg-bg-secondary p-5 shadow-sm border-l-[3px]',
                   resultBorderClass(d.result)
                 )}
               >
@@ -278,7 +278,7 @@ export default function DecisionAuditTrailPage() {
                     title="Copy full hash"
                   >
                     {copiedId === d.id ? (
-                      <svg className="h-3.5 w-3.5 text-brand-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <svg className="h-3.5 w-3.5 text-accent-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                       </svg>
                     ) : (
@@ -313,11 +313,11 @@ export default function DecisionAuditTrailPage() {
                           <div key={i}>
                             <div className="flex items-start gap-1.5 text-sm">
                               {check.passed ? (
-                                <svg className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                <svg className="mt-0.5 h-4 w-4 shrink-0 text-accent-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                 </svg>
                               ) : (
-                                <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                               )}
@@ -367,7 +367,7 @@ export default function DecisionAuditTrailPage() {
                     Show raw provenance
                   </button>
                   {isExpanded && (
-                    <pre className="mt-2 font-mono text-xs bg-surface-subtle rounded-lg border border-edge p-4 overflow-x-auto text-ink-secondary">
+                    <pre className="mt-2 font-mono text-xs bg-bg-tertiary rounded-lg border border-edge p-4 overflow-x-auto text-ink-secondary">
                       {JSON.stringify(
                         {
                           input_snapshot: d.input_snapshot ?? {},

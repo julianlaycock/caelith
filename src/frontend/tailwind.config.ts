@@ -6,72 +6,107 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  safelist: [
-    'bg-navy-875',
-    'text-navy-875',
-    'hover:bg-navy-900',
-    'focus:ring-navy-875',
-    'focus:border-navy-875',
-    'border-navy-875',
-    'ring-navy-875',
-    'bg-navy-50',
-  ],
   theme: {
     extend: {
       colors: {
-        // Primary greens — institutional forest palette
-        brand: {
-          50:  '#F0FDF6',
-          100: '#DCFCE8',
-          200: '#BBF7D1',
-          300: '#86EFAD',
-          400: '#4ADE80',
-          500: '#22C55E',
-          600: '#16A34A',
-          700: '#15803D',
-          800: '#166534',
-          900: '#14532D',
-          950: '#0B2E1F',
+        // ── Surfaces ──────────────────────────────────
+        bg: {
+          primary:   '#0A0E1A',  // main background
+          secondary: '#111827',  // cards, panels
+          tertiary:  '#1A2035',  // hover, elevated
+          sidebar:   '#0D1117',  // sidebar
         },
-        // Navy blue accents — elegant complement
-        navy: {
-          50:  '#EFF3FB',
-          100: '#DBE3F5',
-          200: '#BFCCED',
-          300: '#94A7D6',
-          400: '#6B7FBC',
-          500: '#4B5EA5',
-          600: '#3B4A8A',
-          700: '#323D70',
-          800: '#2C355E',
-          875: '#000042',
-          850: '#253568',
-          900: '#1E2540',
-          950: '#141929',
-        },
-        // Surface colors
         surface: {
-          DEFAULT: '#FFFFFF',
-          muted: '#F8FAF9',
-          subtle: '#F0F4F2',
+          DEFAULT: '#111827',
+          muted:   '#0A0E1A',
+          subtle:  '#1A2035',
         },
-        // Text colors
+
+        // ── Accent (Cyan) ─────────────────────────────
+        accent: {
+          50:  '#ECFEFF',
+          100: '#CFFAFE',
+          200: '#A5F3FC',
+          300: '#67E8F9',
+          400: '#22D3EE',
+          500: '#06B6D4',
+          600: '#0891B2',
+          700: '#0E7490',
+          800: '#155E75',
+          900: '#164E63',
+          950: '#083344',
+        },
+
+        // ── Text ──────────────────────────────────────
         ink: {
-          DEFAULT: '#0F1D18',
-          secondary: '#4B6358',
-          tertiary: '#7A9488',
-          placeholder: '#A3BBAF',
+          DEFAULT:     '#F1F5F9',
+          secondary:   '#94A3B8',
+          tertiary:    '#64748B',
+          muted:       '#475569',
+          placeholder: '#334155',
         },
-        // Border colors
+
+        // ── Borders ───────────────────────────────────
         edge: {
-          DEFAULT: '#D1DDD7',
-          subtle: '#E8EFE9',
-          strong: '#A3BBAF',
+          DEFAULT: '#334155',
+          subtle:  '#1E293B',
+          strong:  '#475569',
+        },
+
+        // ── Semantic ──────────────────────────────────
+        semantic: {
+          success: '#34D399',
+          warning: '#FBBF24',
+          danger:  '#F87171',
+          info:    '#22D3EE',
+        },
+
+        // ── Legacy compat (will phase out) ────────────
+        brand: {
+          50:  '#ECFEFF',
+          100: '#CFFAFE',
+          200: '#A5F3FC',
+          300: '#67E8F9',
+          400: '#22D3EE',
+          500: '#06B6D4',
+          600: '#0891B2',
+          700: '#0E7490',
+          800: '#155E75',
+          900: '#164E63',
+          950: '#0D1117',
         },
       },
       fontFamily: {
-        sans: ['DM Sans', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        sans: ['Geist', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Geist Mono', 'ui-monospace', 'monospace'],
+      },
+      fontSize: {
+        'xs':   ['0.75rem',   { lineHeight: '1rem' }],
+        'sm':   ['0.8125rem', { lineHeight: '1.25rem' }],
+        'base': ['0.875rem',  { lineHeight: '1.5rem' }],
+        'lg':   ['1rem',      { lineHeight: '1.5rem' }],
+        'xl':   ['1.25rem',   { lineHeight: '1.75rem' }],
+        '2xl':  ['1.5rem',    { lineHeight: '2rem' }],
+        '3xl':  ['1.875rem',  { lineHeight: '2.25rem' }],
+      },
+      animation: {
+        'fade-in': 'fadeIn 150ms ease-out',
+        'slide-up': 'slideUp 150ms ease-out',
+        'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        pulseSubtle: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.5' },
+        },
       },
     },
   },

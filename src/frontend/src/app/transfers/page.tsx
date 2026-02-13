@@ -175,9 +175,9 @@ export default function TransfersPage() {
       {/* ── Custom Draggable Transfer Modal ──────────────── */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]">
-          <div className="fixed inset-0 bg-brand-950/40 backdrop-blur-sm" onClick={resetForm} />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={resetForm} />
           <div
-            className="relative z-10 w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-edge bg-white shadow-xl"
+            className="relative z-10 w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-edge bg-bg-secondary shadow-xl"
             style={{ transform: `translate(${dragPos.x}px, ${dragPos.y}px)` }}
           >
             {/* Draggable Header */}
@@ -193,7 +193,7 @@ export default function TransfersPage() {
               </div>
               <button
                 onClick={resetForm}
-                className="rounded-lg p-1 text-ink-tertiary hover:bg-surface-subtle hover:text-ink transition-colors"
+                className="rounded-lg p-1 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink transition-colors"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -215,11 +215,11 @@ export default function TransfersPage() {
                 {validationResult && (
                   <div className={classNames(
                     'rounded-lg border p-4',
-                    validationResult.valid ? 'border-brand-200 bg-brand-50' : 'border-red-200 bg-red-50'
+                    validationResult.valid ? 'border-accent-500/20 bg-accent-500/10' : 'border-red-500/20 bg-red-500/100/10'
                   )}>
                     <p className={classNames(
                       'mb-1 text-sm font-semibold',
-                      validationResult.valid ? 'text-brand-800' : 'text-red-800'
+                      validationResult.valid ? 'text-accent-200' : 'text-red-300'
                     )}>
                       {validationResult.valid ? '✓ Validation Passed' : '✗ Validation Failed'}
                     </p>
@@ -230,7 +230,7 @@ export default function TransfersPage() {
                       <div className="mt-2 space-y-1">
                         {validationResult.checks.map((check, i) => (
                           <div key={i} className="flex items-center gap-2 text-sm">
-                            <span className={check.passed ? 'text-brand-600' : 'text-red-600'}>
+                            <span className={check.passed ? 'text-accent-400' : 'text-red-400'}>
                               {check.passed ? '✓' : '✗'}
                             </span>
                             <span className="font-medium text-ink">{check.rule}</span>
@@ -242,7 +242,7 @@ export default function TransfersPage() {
                     {(!validationResult.checks || validationResult.checks.length === 0) && validationResult.violations.length > 0 && (
                       <ul className="mt-2 space-y-1">
                         {validationResult.violations.map((v, i) => (
-                          <li key={i} className="text-sm text-red-700">• {v}</li>
+                          <li key={i} className="text-sm text-red-400">• {v}</li>
                         ))}
                       </ul>
                     )}
@@ -252,7 +252,7 @@ export default function TransfersPage() {
             </div>
 
             {/* Fixed Footer */}
-            <div className="px-6 py-4 border-t border-edge bg-surface-muted rounded-b-xl flex-shrink-0">
+            <div className="px-6 py-4 border-t border-edge bg-bg-primary rounded-b-xl flex-shrink-0">
               <div className="flex justify-end gap-3">
                 <Button variant="secondary" type="button" onClick={resetForm}>Cancel</Button>
                 <Button type="submit" form="transfer-form" disabled={simulating}>
@@ -301,7 +301,7 @@ export default function TransfersPage() {
             </thead>
             <tbody className="divide-y divide-edge-subtle">
               {history.data.map((t) => (
-                <tr key={t.id} className="transition-colors hover:bg-surface-subtle">
+                <tr key={t.id} className="transition-colors hover:bg-bg-tertiary">
                   <td className="px-5 py-3 text-ink-tertiary">{formatDateTime(t.executed_at)}</td>
                   <td className="px-5 py-3 font-medium text-ink">{t.from_name}</td>
                   <td className="px-5 py-3 font-medium text-ink">{t.to_name}</td>

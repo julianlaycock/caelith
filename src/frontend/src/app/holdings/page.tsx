@@ -120,9 +120,9 @@ export default function HoldingsPage() {
                 {formatPercentage(utilization.data.utilization_percentage)}
               </span>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-surface-subtle">
+            <div className="h-1.5 w-full rounded-full bg-bg-tertiary">
               <div
-                className="h-1.5 rounded-full bg-brand-500 transition-all"
+                className="h-1.5 rounded-full bg-accent-500/100 transition-all"
                 style={{ width: `${Math.min(utilization.data.utilization_percentage, 100)}%` }}
               />
             </div>
@@ -150,14 +150,14 @@ export default function HoldingsPage() {
             </thead>
             <tbody className="divide-y divide-edge-subtle">
               {capTable.data.map((entry) => (
-                <tr key={entry.investor_id} className="transition-colors hover:bg-surface-subtle">
+                <tr key={entry.investor_id} className="transition-colors hover:bg-bg-tertiary">
                   <td className="px-5 py-3 font-medium text-ink">{entry.investor_name}</td>
                   <td className="px-5 py-3 text-right font-mono text-ink-secondary">{formatNumber(entry.units)}</td>
                   <td className="px-5 py-3 text-right font-mono font-medium text-ink">{formatPercentage(entry.percentage)}</td>
                   <td className="px-5 py-3">
-                    <div className="h-1.5 w-full max-w-[120px] rounded-full bg-surface-subtle">
+                    <div className="h-1.5 w-full max-w-[120px] rounded-full bg-bg-tertiary">
                       <div
-                        className="h-1.5 rounded-full bg-brand-500"
+                        className="h-1.5 rounded-full bg-accent-500/100"
                         style={{ width: `${Math.min(entry.percentage, 100)}%` }}
                       />
                     </div>

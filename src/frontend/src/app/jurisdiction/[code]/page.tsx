@@ -293,7 +293,7 @@ export default function JurisdictionPage() {
       <Card className="mb-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-ink">Regulatory Context</h2>
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-[#000042] px-2.5 py-1 text-xs font-medium text-white">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-accent-500 px-2.5 py-1 text-xs font-medium text-white">
               {info.regulator}
             </span>
           </div>
@@ -388,7 +388,7 @@ export default function JurisdictionPage() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-ink">
               Investors
-              <span className="ml-2 inline-flex items-center rounded-md bg-surface-subtle px-2 py-0.5 text-xs font-medium text-ink-secondary ring-1 ring-edge/50">
+              <span className="ml-2 inline-flex items-center rounded-md bg-bg-tertiary px-2 py-0.5 text-xs font-medium text-ink-secondary ring-1 ring-edge/50">
                 {investors.length}
               </span>
             </h2>
@@ -419,7 +419,7 @@ export default function JurisdictionPage() {
                   {investors.map((inv) => (
                     <tr
                       key={inv.id}
-                      className="transition-colors hover:bg-surface-subtle"
+                      className="transition-colors hover:bg-bg-tertiary"
                     >
                       <td className="px-5 py-3 font-medium text-ink">
                         {inv.name}

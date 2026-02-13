@@ -294,9 +294,9 @@ function AssetDetailModal({
           {utilization.data && (
             <div className="border-t border-edge pt-4">
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Utilization</p>
-              <div className="mb-2 h-1.5 w-full rounded-full bg-surface-subtle">
+              <div className="mb-2 h-1.5 w-full rounded-full bg-bg-tertiary">
                 <div
-                  className="h-1.5 rounded-full bg-brand-500"
+                  className="h-1.5 rounded-full bg-accent-500/100"
                   style={{ width: `${Math.min(utilization.data.utilization_percentage, 100)}%` }}
                 />
               </div>

@@ -23,11 +23,11 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       {isLoginPage ? (
         children
       ) : (
-        <div className="flex h-screen bg-surface-muted">
+        <div className="flex h-screen bg-bg-primary">
           {/* Mobile hamburger */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="fixed top-4 left-4 z-40 rounded-lg bg-brand-950 p-2 text-white shadow-lg md:hidden"
+            className="fixed top-4 left-4 z-40 rounded-lg bg-bg-sidebar border border-edge-subtle p-2 text-ink shadow-lg md:hidden"
             aria-label="Open menu"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">

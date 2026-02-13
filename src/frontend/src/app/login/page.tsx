@@ -18,7 +18,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { setUser } = useAuth();
 
-  // Restore remembered credentials on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(REMEMBER_KEY);
@@ -44,7 +43,6 @@ export default function LoginPage() {
       } else {
         result = await api.login(email, password);
       }
-      // Save or clear remembered credentials
       if (rememberMe) {
         localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email }));
       } else {
@@ -52,7 +50,7 @@ export default function LoginPage() {
       }
       localStorage.setItem('caelith_token', result.token);
       localStorage.setItem('caelith_user', JSON.stringify(result.user));
-      setUser(result.user); // Update AuthProvider state immediately
+      setUser(result.user);
       router.push('/');
     } catch (err) {
       setError((err as { message?: string }).message || 'Authentication failed');
@@ -64,42 +62,39 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left Panel — Branding */}
-      <div className="hidden w-1/2 flex-col justify-between bg-brand-950 p-12 lg:flex relative overflow-hidden">
-        {/* Subtle geometric pattern */}
+      <div className="hidden w-1/2 flex-col justify-between bg-bg-sidebar p-12 lg:flex relative overflow-hidden">
+        {/* Subtle grid pattern */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `linear-gradient(30deg, #4ADE80 12%, transparent 12.5%, transparent 87%, #4ADE80 87.5%, #4ADE80),
-            linear-gradient(150deg, #4ADE80 12%, transparent 12.5%, transparent 87%, #4ADE80 87.5%, #4ADE80),
-            linear-gradient(30deg, #4ADE80 12%, transparent 12.5%, transparent 87%, #4ADE80 87.5%, #4ADE80),
-            linear-gradient(150deg, #4ADE80 12%, transparent 12.5%, transparent 87%, #4ADE80 87.5%, #4ADE80),
-            linear-gradient(60deg, #22C55E77 25%, transparent 25.5%, transparent 75%, #22C55E77 75%, #22C55E77),
-            linear-gradient(60deg, #22C55E77 25%, transparent 25.5%, transparent 75%, #22C55E77 75%, #22C55E77)`,
-          backgroundSize: '80px 140px',
-          backgroundPosition: '0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px',
+          backgroundImage: `linear-gradient(rgba(34,211,238,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.3) 1px, transparent 1px)`,
+          backgroundSize: '60px 60px',
         }} />
+        {/* Gradient glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl" />
+
         <div className="relative">
-          <div className="mb-2 h-0.5 w-8 bg-brand-400" />
-          <span className="text-base font-bold uppercase tracking-[0.2em] text-white">
+          <div className="mb-2 h-0.5 w-8 bg-accent-400" />
+          <span className="text-base font-bold uppercase tracking-[0.2em] text-ink">
             CAELITH
           </span>
         </div>
         <div className="relative">
-          <p className="text-3xl font-semibold leading-tight tracking-tight text-white">
+          <p className="text-3xl font-semibold leading-tight tracking-tight text-ink">
             Compliance Intelligence<br />for Alternative Investments
           </p>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-brand-300/80">
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-secondary">
             Configure eligibility rules, manage investor onboarding, validate transfers against regulatory frameworks, and maintain a complete audit trail.
           </p>
         </div>
-        <p className="relative text-xs text-brand-400/40">
+        <p className="relative text-xs text-ink-muted font-mono">
           Institutional-grade compliance infrastructure
         </p>
       </div>
 
       {/* Right Panel — Form */}
-      <div className="flex w-full flex-col items-center justify-center bg-white px-8 lg:w-1/2">
+      <div className="flex w-full flex-col items-center justify-center bg-bg-primary px-8 lg:w-1/2">
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
-            <div className="mb-1 h-0.5 w-6 bg-brand-400" />
+            <div className="mb-1 h-0.5 w-6 bg-accent-400" />
             <span className="text-base font-bold uppercase tracking-[0.2em] text-ink">
               CAELITH
             </span>
@@ -114,7 +109,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <div className="rounded-lg border border-red-500/20 bg-red-500/100/100/5 px-3 py-2 text-sm text-red-400">
                 {error}
               </div>
             )}
@@ -126,7 +121,7 @@ export default function LoginPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="block w-full rounded-lg border border-edge px-3 py-2 text-sm focus:border-[#000042] focus:outline-none focus:ring-1 focus:ring-[#000042]"
+                  className="block w-full rounded-lg border border-edge bg-bg-secondary px-3 py-2 text-sm text-ink focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30 placeholder:text-ink-muted"
                   required
                 />
               </div>
@@ -138,7 +133,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-lg border border-edge px-3 py-2 text-sm focus:border-[#000042] focus:outline-none focus:ring-1 focus:ring-[#000042]"
+                className="block w-full rounded-lg border border-edge bg-bg-secondary px-3 py-2 text-sm text-ink focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30 placeholder:text-ink-muted"
                 required
               />
             </div>
@@ -150,7 +145,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={8}
-                className="block w-full rounded-lg border border-edge px-3 py-2 text-sm focus:border-[#000042] focus:outline-none focus:ring-1 focus:ring-[#000042]"
+                className="block w-full rounded-lg border border-edge bg-bg-secondary px-3 py-2 text-sm text-ink focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30 placeholder:text-ink-muted"
                 required
               />
             </div>
@@ -162,7 +157,7 @@ export default function LoginPage() {
                   id="remember-me"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-edge text-[#000042] focus:ring-[#000042]"
+                  className="h-4 w-4 rounded border-edge bg-bg-secondary text-accent-500 focus:ring-accent-400/30"
                 />
                 <label htmlFor="remember-me" className="text-sm text-ink-secondary">
                   Remember me
@@ -173,7 +168,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-[#000042] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#000033] disabled:opacity-50"
+              className="w-full rounded-lg bg-accent-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-400 active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? 'Please wait...' : isRegister ? 'Create Account' : 'Sign In'}
             </button>
@@ -183,7 +178,7 @@ export default function LoginPage() {
             {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               onClick={() => { setIsRegister(!isRegister); setError(null); }}
-              className="font-medium text-[#000042] hover:text-[#000033]"
+              className="font-medium text-accent-400 hover:text-accent-300"
             >
               {isRegister ? 'Sign in' : 'Create one'}
             </button>

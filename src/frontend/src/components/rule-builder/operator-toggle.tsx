@@ -21,8 +21,8 @@ export function OperatorToggle({ value, onChange }: OperatorToggleProps) {
           onClick={() => onChange(op)}
           className={
             op === value
-              ? 'px-4 py-1.5 text-xs font-semibold bg-[#000042] text-white transition-colors'
-              : 'px-4 py-1.5 text-xs font-semibold bg-white text-ink-secondary hover:bg-surface-subtle transition-colors'
+              ? 'px-4 py-1.5 text-xs font-semibold bg-accent-500 text-white transition-colors'
+              : 'px-4 py-1.5 text-xs font-semibold bg-bg-secondary text-ink-secondary hover:bg-bg-tertiary transition-colors'
           }
         >
           {op}

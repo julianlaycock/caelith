@@ -221,7 +221,7 @@ export default function FundsPage() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setEditFund(fund)}
-                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-surface-subtle hover:text-ink transition-colors"
+                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink transition-colors"
                     title="Edit"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -230,7 +230,7 @@ export default function FundsPage() {
                   </button>
                   <button
                     onClick={() => setDeleteFund(fund)}
-                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-red-50 hover:text-red-600 transition-colors"
+                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-red-500/100/100/100/10 hover:text-red-400 transition-colors"
                     title="Delete"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -252,7 +252,7 @@ export default function FundsPage() {
                 </p>
                 <Link
                   href={`/funds/${fund.id}`}
-                  className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors"
+                  className="text-xs font-medium text-accent-400 hover:text-accent-300 transition-colors"
                 >
                   View Compliance Report &rarr;
                 </Link>

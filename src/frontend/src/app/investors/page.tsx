@@ -150,9 +150,9 @@ function InvestorsContent() {
       {activeFilter && (
         <div className="mb-4 flex items-center gap-2">
           <span className="text-xs text-ink-tertiary">Filtered by:</span>
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 ring-1 ring-brand-600/20">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-accent-500/10 px-2.5 py-1 text-xs font-medium text-accent-300 ring-1 ring-accent-500/20">
             {activeFilter}
-            <button onClick={clearFilters} className="ml-0.5 text-brand-500 hover:text-brand-700">
+            <button onClick={clearFilters} className="ml-0.5 text-brand-500 hover:text-accent-300">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -214,7 +214,7 @@ function InvestorsContent() {
             </thead>
             <tbody className="divide-y divide-edge-subtle">
               {filteredInvestors.map((inv) => (
-                <tr key={inv.id} className="transition-colors hover:bg-surface-subtle">
+                <tr key={inv.id} className="transition-colors hover:bg-bg-tertiary">
                   <td className="px-5 py-3 font-medium text-ink">{inv.name}</td>
                   <td className="px-5 py-3 text-ink-secondary">{inv.jurisdiction}</td>
                   <td className="px-5 py-3">
@@ -233,10 +233,10 @@ function InvestorsContent() {
                       const expiry = daysUntilExpiry(inv.kyc_expiry);
                       if (!expiry) return <span className="text-xs text-ink-tertiary">—</span>;
                       const colors = {
-                        expired: 'text-red-600 bg-red-50',
-                        critical: 'text-red-600 bg-red-50',
-                        warning: 'text-amber-600 bg-amber-50',
-                        ok: 'text-brand-700 bg-brand-50',
+                        expired: 'text-red-400 bg-red-500/100/10',
+                        critical: 'text-red-400 bg-red-500/100/10',
+                        warning: 'text-amber-400 bg-amber-500/100/10',
+                        ok: 'text-accent-300 bg-accent-500/10',
                       };
                       return (
                         <span className={classNames('inline-flex rounded-md px-2 py-0.5 text-xs font-medium', colors[expiry.urgency])}>

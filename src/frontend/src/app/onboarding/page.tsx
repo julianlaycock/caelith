@@ -31,7 +31,7 @@ interface KanbanColumn {
 const COLUMNS: KanbanColumn[] = [
   { key: 'applied',   label: 'Applied',    statuses: ['applied'],              color: 'border-t-amber-400',  dotColor: 'bg-amber-400' },
   { key: 'eligible',  label: 'Eligible',   statuses: ['eligible'],             color: 'border-t-blue-400',   dotColor: 'bg-blue-400' },
-  { key: 'approved',  label: 'Approved',   statuses: ['approved'],             color: 'border-t-brand-500',  dotColor: 'bg-brand-500' },
+  { key: 'approved',  label: 'Approved',   statuses: ['approved'],             color: 'border-t-accent-400',  dotColor: 'bg-accent-500/100' },
   { key: 'allocated', label: 'Allocated',  statuses: ['allocated'],            color: 'border-t-brand-700',  dotColor: 'bg-brand-700' },
   { key: 'closed',    label: 'Closed',     statuses: ['rejected', 'ineligible', 'withdrawn'], color: 'border-t-red-400', dotColor: 'bg-red-400' },
 ];
@@ -436,11 +436,11 @@ export default function OnboardingPage() {
             </div>
 
             {selectedRecord.rejection_reasons && selectedRecord.rejection_reasons.length > 0 && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-red-700 mb-1">Rejection Reasons</p>
+              <div className="rounded-lg border border-red-500/20 bg-red-500/100/10 p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-red-400 mb-1">Rejection Reasons</p>
                 <ul className="space-y-0.5">
                   {selectedRecord.rejection_reasons.map((r, i) => (
-                    <li key={i} className="text-sm text-red-700">&bull; {r}</li>
+                    <li key={i} className="text-sm text-red-400">&bull; {r}</li>
                   ))}
                 </ul>
               </div>
@@ -539,7 +539,7 @@ export default function OnboardingPage() {
 
           return (
             <div className="space-y-4">
-              <div className="rounded-lg bg-surface-subtle p-3">
+              <div className="rounded-lg bg-bg-tertiary p-3">
                 <p className="text-sm text-ink">
                   Move <span className="font-semibold">{investorName}</span> to{' '}
                   <span className="font-semibold">{targetLabel}</span>
@@ -556,13 +556,13 @@ export default function OnboardingPage() {
                   </p>
                   <div className="space-y-1.5">
                     {guardrails.map((g, i) => (
-                      <div key={i} className="flex items-start gap-2 rounded-md bg-brand-50 px-3 py-2">
-                        <svg className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <div key={i} className="flex items-start gap-2 rounded-md bg-accent-500/10 px-3 py-2">
+                        <svg className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                         </svg>
                         <div>
-                          <p className="text-xs font-medium text-brand-800">{g.label}</p>
-                          <p className="text-[11px] text-brand-700">{g.description}</p>
+                          <p className="text-xs font-medium text-accent-200">{g.label}</p>
+                          <p className="text-[11px] text-accent-300">{g.description}</p>
                         </div>
                       </div>
                     ))}
@@ -597,12 +597,12 @@ export default function OnboardingPage() {
       >
         {eligibilityResult && (
           <div className="space-y-4">
-            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+            <div className="rounded-lg bg-red-500/100/10 border border-red-500/20 px-4 py-3">
               <div className="flex items-center gap-2">
                 <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                 </svg>
-                <p className="text-sm font-semibold text-red-800">Investor does not meet eligibility requirements</p>
+                <p className="text-sm font-semibold text-red-300">Investor does not meet eligibility requirements</p>
               </div>
             </div>
 
@@ -611,22 +611,22 @@ export default function OnboardingPage() {
               {eligibilityResult.checks.map((check, i) => (
                 <div key={i} className={classNames(
                   'flex items-start gap-2 rounded-lg px-3 py-2',
-                  check.passed ? 'bg-brand-50 border border-brand-200' : 'bg-red-50 border border-red-200'
+                  check.passed ? 'bg-accent-500/10 border border-accent-500/20' : 'bg-red-500/100/10 border border-red-500/20'
                 )}>
                   {check.passed ? (
-                    <svg className="h-4 w-4 mt-0.5 text-brand-600 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <svg className="h-4 w-4 mt-0.5 text-accent-400 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                     </svg>
                   ) : (
-                    <svg className="h-4 w-4 mt-0.5 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <svg className="h-4 w-4 mt-0.5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                     </svg>
                   )}
                   <div>
-                    <p className={classNames('text-sm font-medium', check.passed ? 'text-brand-800' : 'text-red-800')}>
+                    <p className={classNames('text-sm font-medium', check.passed ? 'text-accent-200' : 'text-red-300')}>
                       {check.rule.replace(/_/g, ' ')}
                     </p>
-                    <p className={classNames('text-xs', check.passed ? 'text-brand-700' : 'text-red-700')}>
+                    <p className={classNames('text-xs', check.passed ? 'text-accent-300' : 'text-red-400')}>
                       {check.message}
                     </p>
                   </div>
@@ -666,7 +666,7 @@ export default function OnboardingPage() {
       >
         {rejectTarget && (
           <div className="space-y-4">
-            <div className="rounded-lg bg-surface-subtle p-3">
+            <div className="rounded-lg bg-bg-tertiary p-3">
               <p className="text-sm text-ink">
                 Rejecting <span className="font-semibold">{investorMap[rejectTarget.record.investor_id] || rejectTarget.record.investor_id.slice(0, 8)}</span>
               </p>
@@ -679,10 +679,10 @@ export default function OnboardingPage() {
               <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Reason(s) for rejection</p>
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {REJECTION_REASONS.map((reason) => (
-                  <label key={reason} className="flex items-start gap-2 cursor-pointer rounded-md px-3 py-2 hover:bg-surface-subtle transition-colors">
+                  <label key={reason} className="flex items-start gap-2 cursor-pointer rounded-md px-3 py-2 hover:bg-bg-tertiary transition-colors">
                     <input
                       type="checkbox"
-                      className="mt-0.5 h-4 w-4 rounded border-edge text-brand-600 focus:ring-brand-500"
+                      className="mt-0.5 h-4 w-4 rounded border-edge text-accent-400 focus:ring-accent-400"
                       checked={rejectReasons.includes(reason)}
                       onChange={(e) => {
                         setRejectReasons(prev =>
@@ -701,7 +701,7 @@ export default function OnboardingPage() {
                 Additional details (optional)
               </label>
               <textarea
-                className="w-full rounded-lg border border-edge px-3 py-2 text-sm text-ink placeholder:text-ink-tertiary focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-lg border border-edge px-3 py-2 text-sm text-ink placeholder:text-ink-tertiary focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400"
                 rows={3}
                 placeholder="Provide additional context for the audit trail..."
                 value={rejectCustom}
@@ -710,7 +710,7 @@ export default function OnboardingPage() {
             </div>
 
             {rejectReasons.length === 0 && !rejectCustom.trim() && (
-              <p className="text-xs text-amber-600">Select at least one reason or provide details to proceed.</p>
+              <p className="text-xs text-amber-400">Select at least one reason or provide details to proceed.</p>
             )}
 
             <div className="flex justify-end gap-2 pt-2 border-t border-edge-subtle">
@@ -737,7 +737,7 @@ export default function OnboardingPage() {
           {/* Pipeline Summary Metrics */}
           <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
             {COLUMNS.map((col) => (
-              <div key={col.key} className={classNames('rounded-xl border border-edge border-t-[3px] bg-white p-4 shadow-sm', col.color)}>
+              <div key={col.key} className={classNames('rounded-xl border border-edge border-t-[3px] bg-bg-secondary p-4 shadow-sm', col.color)}>
                 <div className="flex items-center gap-2">
                   <span className={classNames('h-2 w-2 rounded-full', col.dotColor)} />
                   <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">{col.label}</p>
@@ -754,19 +754,19 @@ export default function OnboardingPage() {
                 key={col.key}
                 className={classNames(
                   'flex flex-col rounded-lg transition-colors',
-                  dragSupported && dropTarget === col.key && 'ring-2 ring-brand-500 bg-brand-50/30',
+                  dragSupported && dropTarget === col.key && 'ring-2 ring-accent-400 bg-accent-500/10/30',
                 )}
                 onDragOver={dragSupported ? (e) => handleDragOver(e, col.key) : undefined}
                 onDragLeave={dragSupported ? handleDragLeave : undefined}
                 onDrop={dragSupported ? (e) => handleDrop(e, col.key) : undefined}
               >
                 {/* Column Header */}
-                <div className={classNames('mb-3 flex items-center justify-between rounded-lg border border-edge border-t-[3px] bg-white px-3 py-2', col.color)}>
+                <div className={classNames('mb-3 flex items-center justify-between rounded-lg border border-edge border-t-[3px] bg-bg-secondary px-3 py-2', col.color)}>
                   <div className="flex items-center gap-2">
                     <span className={classNames('h-2 w-2 rounded-full', col.dotColor)} />
                     <span className="text-xs font-semibold uppercase tracking-wide text-ink">{col.label}</span>
                   </div>
-                  <span className="rounded-md bg-surface-subtle px-1.5 py-0.5 text-xs font-medium tabular-nums text-ink-secondary">
+                  <span className="rounded-md bg-bg-tertiary px-1.5 py-0.5 text-xs font-medium tabular-nums text-ink-secondary">
                     {columnRecords[col.key].length}
                   </span>
                 </div>
@@ -774,7 +774,7 @@ export default function OnboardingPage() {
                 {/* Cards */}
                 <div className="space-y-2 flex-1 min-h-[80px]">
                   {columnRecords[col.key].length === 0 && (
-                    <div className="rounded-lg border border-dashed border-edge bg-surface-subtle/50 px-3 py-6 text-center">
+                    <div className="rounded-lg border border-dashed border-edge bg-bg-tertiary/50 px-3 py-6 text-center">
                       <p className="text-xs text-ink-tertiary">
                         {dropTarget === col.key ? 'Drop here' : 'No records'}
                       </p>
@@ -788,7 +788,7 @@ export default function OnboardingPage() {
                       onDragEnd={dragSupported ? handleDragEnd : undefined}
                       onClick={() => setSelectedRecord(rec)}
                       className={classNames(
-                        'w-full rounded-lg border border-edge bg-white p-3 text-left shadow-sm transition-all hover:shadow-md hover:border-navy-300 cursor-pointer',
+                        'w-full rounded-lg border border-edge bg-bg-secondary p-3 text-left shadow-sm transition-all hover:shadow-md hover:border-accent-500/30 cursor-pointer',
                         dragSupported && 'cursor-grab active:cursor-grabbing',
                         draggedId === rec.id && 'opacity-40 scale-95',
                       )}
@@ -811,7 +811,7 @@ export default function OnboardingPage() {
                         </span>
                       </div>
                       {rec.rejection_reasons && rec.rejection_reasons.length > 0 && (
-                        <p className="mt-1.5 truncate rounded bg-red-50 px-1.5 py-0.5 text-[10px] text-red-600">
+                        <p className="mt-1.5 truncate rounded bg-red-500/100/10 px-1.5 py-0.5 text-[10px] text-red-400">
                           {rec.rejection_reasons[0]}
                         </p>
                       )}

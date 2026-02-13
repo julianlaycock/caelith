@@ -54,8 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (!ready || (!user && pathname !== '/login')) {
     return (
-      <div className="flex h-screen items-center justify-center bg-surface-muted">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-edge border-t-brand-500" />
+      <div className="flex h-screen items-center justify-center bg-bg-primary">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-edge-subtle border-t-accent-400" />
       </div>
     );
   }

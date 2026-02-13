@@ -15,7 +15,7 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-end justify-between">
+    <div className="mb-6 flex items-end justify-between animate-fade-in">
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
         {description && (
@@ -41,7 +41,7 @@ export function Card({
   return (
     <div
       className={classNames(
-        'rounded-xl border border-edge bg-white shadow-sm',
+        'rounded-xl border border-edge-subtle bg-bg-secondary transition-colors hover:border-edge',
         padding && 'p-6',
         className
       )}
@@ -69,18 +69,18 @@ export function MetricCard({
   onClick?: () => void;
 }) {
   const accentColors = {
-    success: 'border-l-brand-500',
-    warning: 'border-l-amber-500',
-    danger: 'border-l-red-500',
-    default: 'border-l-brand-500',
+    success: 'border-l-semantic-success',
+    warning: 'border-l-semantic-warning',
+    danger: 'border-l-semantic-danger',
+    default: 'border-l-accent-400',
   };
   return (
     <div
       className={classNames(
-        'rounded-xl border border-edge bg-white shadow-sm border-l-[3px]',
+        'rounded-xl border border-edge-subtle bg-bg-secondary border-l-[3px] transition-all',
         compact ? 'px-4 py-3' : 'p-6',
         accentColors[accent || 'default'],
-        onClick && 'cursor-pointer transition-shadow hover:shadow-md'
+        onClick && 'cursor-pointer hover:border-edge hover:-translate-y-px'
       )}
       onClick={onClick}
     >
@@ -89,7 +89,7 @@ export function MetricCard({
         compact ? 'text-[10px]' : 'text-xs'
       )}>{label}</p>
       <p className={classNames(
-        'font-semibold tabular-nums text-ink',
+        'font-semibold tabular-nums text-ink font-mono',
         compact ? 'text-lg' : 'mt-1 text-2xl'
       )}>{value}</p>
       {sub && <p className={classNames(
@@ -114,16 +114,16 @@ export function StatCard({
   changeType?: 'positive' | 'negative' | 'neutral';
 }) {
   const changeColors = {
-    positive: 'text-brand-600',
-    negative: 'text-red-600',
+    positive: 'text-semantic-success',
+    negative: 'text-semantic-danger',
     neutral: 'text-ink-tertiary',
   };
   return (
-    <div className="rounded-xl border border-edge bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-edge-subtle bg-bg-secondary p-4 transition-colors hover:border-edge">
       <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{value}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums text-ink font-mono">{value}</p>
       {change && (
-        <p className={classNames('mt-1 text-xs font-medium', changeColors[changeType || 'neutral'])}>
+        <p className={classNames('mt-1 text-xs font-medium font-mono', changeColors[changeType || 'neutral'])}>
           {change}
         </p>
       )}
@@ -147,13 +147,13 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    'inline-flex items-center justify-center font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center font-medium transition-all focus:outline-none focus:ring-1 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]';
   const variants = {
-    primary: 'bg-[#000042] text-white hover:bg-[#000033] focus:ring-[#000042] shadow-sm rounded-lg',
+    primary: 'bg-accent-500 text-white hover:bg-accent-400 focus:ring-accent-400/30 rounded-lg',
     secondary:
-      'bg-white text-ink border border-edge hover:bg-surface-subtle focus:ring-[#000042] rounded-lg',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm rounded-lg',
-    ghost: 'text-ink-secondary hover:text-ink hover:bg-surface-subtle focus:ring-[#000042] rounded-lg',
+      'bg-transparent text-ink-secondary border border-edge hover:text-ink hover:border-edge-strong focus:ring-accent-400/30 rounded-lg',
+    danger: 'bg-red-500/100/100/10 text-red-400 hover:bg-red-500/100/100/100/100/20 focus:ring-red-500/30 rounded-lg',
+    ghost: 'text-ink-secondary hover:text-ink hover:bg-bg-tertiary focus:ring-accent-400/30 rounded-lg',
   };
   const sizes = {
     sm: 'px-3 py-1.5 text-xs',
@@ -188,14 +188,14 @@ export function Input({ label, error, id, ...props }: InputProps) {
       <input
         id={inputId}
         className={classNames(
-          'block w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1',
+          'block w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 bg-bg-primary text-ink placeholder:text-ink-muted',
           error
-            ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-            : 'border-edge focus:border-[#000042] focus:ring-[#000042] bg-white'
+            ? 'border-red-500/50 focus:border-red-400 focus:ring-red-400/30'
+            : 'border-edge focus:border-accent-400 focus:ring-accent-400/30'
         )}
         {...props}
       />
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-semantic-danger">{error}</p>}
     </div>
   );
 }
@@ -218,10 +218,10 @@ export function Select({ label, options, error, id, ...props }: SelectProps) {
       <select
         id={selectId}
         className={classNames(
-          'block w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1',
+          'block w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 bg-bg-primary text-ink',
           error
-            ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-            : 'border-edge focus:border-[#000042] focus:ring-[#000042] bg-white'
+            ? 'border-red-500/50 focus:border-red-400 focus:ring-red-400/30'
+            : 'border-edge focus:border-accent-400 focus:ring-accent-400/30'
         )}
         {...props}
       >
@@ -229,7 +229,7 @@ export function Select({ label, options, error, id, ...props }: SelectProps) {
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-semantic-danger">{error}</p>}
     </div>
   );
 }
@@ -247,7 +247,7 @@ export function Checkbox({ label, id, ...props }: CheckboxProps) {
       <input
         type="checkbox"
         id={checkboxId}
-        className="h-4 w-4 rounded border-edge text-[#000042] focus:ring-[#000042]"
+        className="h-4 w-4 rounded border-edge bg-bg-primary text-accent-500 focus:ring-accent-400/30"
         {...props}
       />
       <label htmlFor={checkboxId} className="text-sm text-ink">{label}</label>
@@ -265,15 +265,15 @@ export function Badge({
   variant?: 'green' | 'red' | 'yellow' | 'blue' | 'gray';
 }) {
   const colors = {
-    green: 'bg-brand-100 text-brand-700 ring-1 ring-brand-600/20',
-    red: 'bg-red-100 text-red-700 ring-1 ring-red-600/20',
-    yellow: 'bg-amber-100 text-amber-700 ring-1 ring-amber-600/20',
-    blue: 'bg-blue-100 text-blue-700 ring-1 ring-blue-600/20',
-    gray: 'bg-surface-subtle text-ink-secondary ring-1 ring-edge/50',
+    green: 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20',
+    red: 'bg-red-500/100/100/10 text-red-400 ring-1 ring-red-500/20',
+    yellow: 'bg-amber-500/100/100/10 text-amber-400 ring-1 ring-amber-500/20',
+    blue: 'bg-cyan-500/10 text-cyan-400 ring-1 ring-cyan-500/20',
+    gray: 'bg-bg-secondary/5 text-ink-secondary ring-1 ring-white/10',
   };
   return (
     <span className={classNames(
-      'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium',
+      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium font-mono',
       colors[variant]
     )}>
       {children}
@@ -292,13 +292,11 @@ export function StatusDot({
 }) {
   const greenStatuses = new Set(['active', 'eligible', 'approved', 'allocated']);
   const amberStatuses = new Set(['applied', 'warning']);
-  // red: ineligible, rejected, expired
-  // gray: inactive
 
-  let dotColor = 'bg-red-500';
-  if (greenStatuses.has(status)) dotColor = 'bg-brand-500';
-  else if (amberStatuses.has(status)) dotColor = 'bg-amber-500';
-  else if (status === 'inactive') dotColor = 'bg-edge-strong';
+  let dotColor = 'bg-red-400';
+  if (greenStatuses.has(status)) dotColor = 'bg-emerald-400';
+  else if (amberStatuses.has(status)) dotColor = 'bg-amber-400';
+  else if (status === 'inactive') dotColor = 'bg-ink-muted';
 
   return (
     <span className="flex items-center gap-1.5">
@@ -320,9 +318,9 @@ export function RiskFlagCard({
   message: string;
 }) {
   const styles = {
-    high: 'border-l-red-500 bg-red-50',
-    medium: 'border-l-amber-500 bg-amber-50',
-    low: 'border-l-brand-400 bg-brand-50',
+    high: 'border-l-red-400 bg-red-500/100/100/5',
+    medium: 'border-l-amber-400 bg-amber-500/100/100/5',
+    low: 'border-l-emerald-400 bg-emerald-500/5',
   };
   const badgeVariant = {
     high: 'red' as const,
@@ -354,13 +352,13 @@ export function UtilizationBar({
   const pct = total > 0 ? Math.min(100, Math.round((allocated / total) * 100)) : 0;
   return (
     <div className={classNames('flex items-center gap-3', className)}>
-      <div className="flex-1 h-2 rounded-full bg-surface-subtle overflow-hidden">
+      <div className="flex-1 h-2 rounded-full bg-bg-tertiary overflow-hidden">
         <div
-          className="h-full rounded-full bg-brand-500 transition-all"
+          className="h-full rounded-full bg-accent-400 transition-all"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs font-medium tabular-nums text-ink-secondary">{pct}%</span>
+      <span className="text-xs font-medium tabular-nums text-ink-secondary font-mono">{pct}%</span>
     </div>
   );
 }
@@ -401,11 +399,56 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="py-10 text-center">
+    <div className="py-10 text-center animate-fade-in">
       {icon && <div className="mb-3 flex justify-center text-ink-tertiary">{icon}</div>}
       <p className="text-sm font-medium text-ink">{title}</p>
       {description && <p className="mt-1 text-sm text-ink-secondary">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
+    </div>
+  );
+}
+
+// ── Skeleton Loader ───────────────────────────────────
+
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={classNames('skeleton rounded-lg', className)} />;
+}
+
+export function SkeletonTable({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="space-y-3 animate-fade-in">
+      <div className="flex gap-4 px-4 py-2">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-28" />
+      </div>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex gap-4 px-4 py-3 border-t border-edge-subtle">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function SkeletonCards({ count = 4 }: { count?: number }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 animate-fade-in">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="rounded-xl border border-edge-subtle bg-bg-secondary p-6">
+          <Skeleton className="h-5 w-48 mb-3" />
+          <div className="flex gap-2 mb-4">
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-12 rounded-full" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+          <Skeleton className="h-3 w-32" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -415,7 +458,7 @@ export function EmptyState({
 export function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center py-12">
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-edge border-t-brand-500" />
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-edge-subtle border-t-accent-400" />
     </div>
   );
 }
@@ -428,10 +471,10 @@ export function ErrorMessage({
   onRetry?: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-      <p className="text-sm text-red-700">{message}</p>
+    <div className="rounded-xl border border-red-500/20 bg-red-500/100/100/5 p-4 animate-fade-in">
+      <p className="text-sm text-red-400">{message}</p>
       {onRetry && (
-        <button onClick={onRetry} className="mt-2 text-sm font-medium text-red-700 underline hover:text-red-800">
+        <button onClick={onRetry} className="mt-2 text-sm font-medium text-red-400 underline hover:text-red-300">
           Try again
         </button>
       )}
@@ -455,12 +498,12 @@ export function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]">
-      <div className="fixed inset-0 bg-brand-950/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-xl border border-edge bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] animate-fade-in">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-xl border border-edge-subtle bg-bg-secondary p-6 shadow-2xl shadow-black/20 border-t-accent-400/20">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-base font-semibold text-ink">{title}</h2>
-          <button onClick={onClose} className="rounded-lg p-1 text-ink-tertiary hover:bg-surface-subtle hover:text-ink transition-colors">
+          <button onClick={onClose} className="rounded-lg p-1 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink transition-colors">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -484,9 +527,9 @@ export function Alert({
   children: React.ReactNode;
 }) {
   const styles = {
-    success: 'border-brand-200 bg-brand-50 text-brand-800',
-    error: 'border-red-200 bg-red-50 text-red-800',
-    info: 'border-blue-200 bg-blue-50 text-blue-800',
+    success: 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400',
+    error: 'border-red-500/20 bg-red-500/100/100/5 text-red-400',
+    info: 'border-accent-500/20 bg-accent-500/5 text-accent-400',
   };
   return (
     <div className={classNames('rounded-xl border p-3', styles[variant])}>

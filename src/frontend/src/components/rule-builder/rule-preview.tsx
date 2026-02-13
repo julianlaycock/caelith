@@ -24,7 +24,7 @@ export function RulePreview({ name, description, assetId, operator, conditions }
   return (
     <div>
       <h3 className="text-xs font-medium uppercase tracking-wider text-ink-tertiary mb-2">JSON Preview</h3>
-      <pre className="rounded-xl border border-edge bg-surface-subtle p-4 text-xs leading-relaxed text-ink overflow-x-auto font-mono">
+      <pre className="rounded-xl border border-edge bg-bg-tertiary p-4 text-xs leading-relaxed text-ink overflow-x-auto font-mono">
         {JSON.stringify(payload, null, 2)}
       </pre>
     </div>

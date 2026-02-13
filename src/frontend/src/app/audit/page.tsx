@@ -129,10 +129,10 @@ export default function AuditPage() {
                 <div className="mt-1.5 flex items-center gap-4">
                   <span className="font-mono text-xs text-ink-tertiary">{event.entity_id}</span>
                   <details>
-                    <summary className="cursor-pointer text-xs font-medium text-brand-600 hover:text-brand-700">
+                    <summary className="cursor-pointer text-xs font-medium text-accent-400 hover:text-accent-300">
                       View payload
                     </summary>
-                    <pre className="mt-2 max-h-40 overflow-auto rounded-md border border-edge bg-surface-subtle p-3 font-mono text-xs text-ink-secondary">
+                    <pre className="mt-2 max-h-40 overflow-auto rounded-md border border-edge bg-bg-tertiary p-3 font-mono text-xs text-ink-secondary">
                       {JSON.stringify(event.payload, null, 2)}
                     </pre>
                   </details>

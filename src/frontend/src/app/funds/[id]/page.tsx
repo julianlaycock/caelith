@@ -45,7 +45,7 @@ export default function FundDetailPage() {
     return (
       <div>
         <div className="mb-6">
-          <Link href="/funds" className="text-xs font-medium text-brand-600 hover:text-brand-700">&larr; Back to Fund Structures</Link>
+          <Link href="/funds" className="text-xs font-medium text-accent-400 hover:text-accent-300">&larr; Back to Fund Structures</Link>
         </div>
         <Card>
           <div className="py-8 text-center">
@@ -63,7 +63,7 @@ export default function FundDetailPage() {
     return (
       <div>
         <div className="mb-6">
-          <Link href="/funds" className="text-xs font-medium text-brand-600 hover:text-brand-700">&larr; Back to Fund Structures</Link>
+          <Link href="/funds" className="text-xs font-medium text-accent-400 hover:text-accent-300">&larr; Back to Fund Structures</Link>
         </div>
         <LoadingSpinner />
       </div>
@@ -74,7 +74,7 @@ export default function FundDetailPage() {
     return (
       <div>
         <div className="mb-6">
-          <Link href="/funds" className="text-xs font-medium text-brand-600 hover:text-brand-700">&larr; Back to Fund Structures</Link>
+          <Link href="/funds" className="text-xs font-medium text-accent-400 hover:text-accent-300">&larr; Back to Fund Structures</Link>
         </div>
         <ErrorMessage message={fund.error} onRetry={fund.refetch} />
       </div>
@@ -98,7 +98,7 @@ export default function FundDetailPage() {
     <div>
       {/* Back link + Header */}
       <div className="mb-6">
-        <Link href="/funds" className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">&larr; Back to Fund Structures</Link>
+        <Link href="/funds" className="text-xs font-medium text-accent-400 hover:text-accent-300 transition-colors">&larr; Back to Fund Structures</Link>
         <div className="mt-3 flex items-end justify-between">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-ink">{f.name}</h1>
@@ -205,12 +205,12 @@ export default function FundDetailPage() {
 
           {r.risk_flags.length === 0 && (
             <div className="mb-6">
-              <div className="rounded-xl border border-brand-200 bg-brand-50 p-4">
+              <div className="rounded-xl border border-accent-500/20 bg-accent-500/10 p-4">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-brand-500" />
-                  <p className="text-sm font-medium text-brand-800">All Clear</p>
+                  <span className="h-2 w-2 rounded-full bg-accent-500/100" />
+                  <p className="text-sm font-medium text-accent-200">All Clear</p>
                 </div>
-                <p className="mt-1 text-sm text-brand-700">No risk flags detected for this fund structure.</p>
+                <p className="mt-1 text-sm text-accent-300">No risk flags detected for this fund structure.</p>
               </div>
             </div>
           )}
@@ -233,7 +233,7 @@ export default function FundDetailPage() {
                   </thead>
                   <tbody className="divide-y divide-edge-subtle">
                     {r.fund.assets.map((asset) => (
-                      <tr key={asset.id} className="hover:bg-surface-subtle transition-colors">
+                      <tr key={asset.id} className="hover:bg-bg-tertiary transition-colors">
                         <td className="px-6 py-3 text-sm font-medium text-ink">{asset.name}</td>
                         <td className="px-6 py-3"><Badge variant="gray">{asset.asset_type}</Badge></td>
                         <td className="px-6 py-3 text-sm tabular-nums text-ink-secondary">{formatNumber(asset.total_units)}</td>
@@ -267,7 +267,7 @@ export default function FundDetailPage() {
                     </thead>
                     <tbody className="divide-y divide-edge-subtle">
                       {r.eligibility_criteria.map((c, i) => (
-                        <tr key={i} className="hover:bg-surface-subtle transition-colors">
+                        <tr key={i} className="hover:bg-bg-tertiary transition-colors">
                           <td className="px-6 py-3 text-sm text-ink">{c.investor_type}</td>
                           <td className="px-6 py-3 text-sm text-ink">{c.jurisdiction}</td>
                           <td className="px-6 py-3 text-sm tabular-nums text-ink-secondary">{formatNumber(c.minimum_investment_eur)}</td>
@@ -303,7 +303,7 @@ export default function FundDetailPage() {
                     {r.investor_breakdown.kyc_expiring_within_90_days.map((inv) => (
                       <div key={inv.investor_id} className="flex items-center justify-between px-6 py-3">
                         <span className="text-sm text-ink">{inv.investor_name}</span>
-                        <span className="text-xs tabular-nums text-red-600">{formatDate(inv.kyc_expiry)}</span>
+                        <span className="text-xs tabular-nums text-red-400">{formatDate(inv.kyc_expiry)}</span>
                       </div>
                     ))}
                   </div>
@@ -377,7 +377,7 @@ export default function FundDetailPage() {
                           ? 'red'
                           : 'gray';
                         return (
-                          <tr key={d.id} className="hover:bg-surface-subtle transition-colors">
+                          <tr key={d.id} className="hover:bg-bg-tertiary transition-colors">
                             <td className="px-6 py-3 text-xs tabular-nums text-ink-secondary">
                               {formatDateTime(d.decided_at)}
                             </td>

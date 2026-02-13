@@ -87,7 +87,7 @@ export function RuleTestPanel({ operator, conditions }: RuleTestPanelProps) {
           type="button"
           onClick={runTest}
           disabled={loading || conditions.length === 0}
-          className="inline-flex items-center gap-1 rounded-lg bg-white border border-edge px-3 py-1 text-xs font-medium text-ink-secondary hover:text-ink hover:bg-surface-subtle transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded-lg bg-bg-secondary border border-edge px-3 py-1 text-xs font-medium text-ink-secondary hover:text-ink hover:bg-bg-tertiary transition-colors disabled:opacity-50"
         >
           {loading ? (
             <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -103,12 +103,12 @@ export function RuleTestPanel({ operator, conditions }: RuleTestPanelProps) {
         </button>
       </div>
 
-      {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+      {error && <p className="text-xs text-red-400 mb-2">{error}</p>}
 
       {results && (
-        <div className="rounded-xl border border-edge bg-surface-subtle p-3 space-y-2">
+        <div className="rounded-xl border border-edge bg-bg-tertiary p-3 space-y-2">
           <p className="text-sm font-medium text-ink">
-            Would block <span className="text-red-600">{blockedCount}</span> of {totalCount} investors
+            Would block <span className="text-red-400">{blockedCount}</span> of {totalCount} investors
           </p>
 
           <div className="max-h-48 overflow-y-auto space-y-1">
@@ -122,11 +122,11 @@ export function RuleTestPanel({ operator, conditions }: RuleTestPanelProps) {
                   <span className="text-ink-tertiary ml-1">({r.investor.jurisdiction})</span>
                 </span>
                 {r.blocked ? (
-                  <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-200">
+                  <span className="inline-flex items-center rounded-full bg-red-500/100/10 px-2 py-0.5 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/20">
                     blocked
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-200">
+                  <span className="inline-flex items-center rounded-full bg-accent-500/10 px-2 py-0.5 text-xs font-medium text-accent-300 ring-1 ring-inset ring-accent-500/20">
                     pass
                   </span>
                 )}
