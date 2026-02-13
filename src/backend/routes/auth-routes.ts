@@ -1,13 +1,15 @@
 /**
  * Auth Routes
  *
- * POST /auth/register - Create new user
- * POST /auth/login    - Login and get token
- * GET  /auth/me       - Get current user info
+ * POST /auth/register  - Create new user (with password complexity)
+ * POST /auth/login     - Login and get token + refresh token
+ * POST /auth/refresh   - Refresh access token
+ * POST /auth/logout    - Revoke refresh tokens
+ * GET  /auth/me        - Get current user info
  */
 
 import express from 'express';
-import { registerUser, loginUser } from '../services/auth-service.js';
+import { registerUser, loginUser, validatePasswordComplexity, refreshAccessToken, revokeRefreshTokens } from '../services/auth-service.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -27,10 +29,22 @@ router.post('/register', async (req, res): Promise<void> => {
       return;
     }
 
-    if (password.length < 8) {
+    // Email format validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       res.status(400).json({
         error: 'VALIDATION_ERROR',
-        message: 'Password must be at least 8 characters',
+        message: 'Invalid email format',
+      });
+      return;
+    }
+
+    // Password complexity validation
+    const passwordErrors = validatePasswordComplexity(password);
+    if (passwordErrors.length > 0) {
+      res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        message: passwordErrors.join('; '),
+        details: { passwordErrors },
       });
       return;
     }
@@ -62,14 +76,60 @@ router.post('/login', async (req, res): Promise<void> => {
       return;
     }
 
-    const result = await loginUser(email, password);
+    const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+    const result = await loginUser(email, password, ipAddress);
     res.json(result);
   } catch (error) {
-    res.status(401).json({
-      error: 'UNAUTHORIZED',
-      message: 'Invalid email or password',
+    const message = error instanceof Error ? error.message : 'Invalid email or password';
+    const isLocked = message.includes('temporarily locked');
+    res.status(isLocked ? 429 : 401).json({
+      error: isLocked ? 'ACCOUNT_LOCKED' : 'UNAUTHORIZED',
+      message,
     });
   }
+});
+
+/**
+ * POST /auth/refresh — exchange refresh token for new access + refresh token pair
+ */
+router.post('/refresh', async (req, res): Promise<void> => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        message: 'Missing refreshToken',
+      });
+      return;
+    }
+
+    const result = await refreshAccessToken(refreshToken);
+    if (!result) {
+      res.status(401).json({
+        error: 'UNAUTHORIZED',
+        message: 'Invalid or expired refresh token',
+      });
+      return;
+    }
+
+    res.json(result);
+  } catch {
+    res.status(401).json({
+      error: 'UNAUTHORIZED',
+      message: 'Token refresh failed',
+    });
+  }
+});
+
+/**
+ * POST /auth/logout — revoke all refresh tokens for the authenticated user
+ */
+router.post('/logout', authenticate, async (req, res): Promise<void> => {
+  if (req.user) {
+    await revokeRefreshTokens(req.user.userId);
+  }
+  res.json({ message: 'Logged out' });
 });
 
 /**
