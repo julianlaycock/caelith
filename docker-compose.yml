@@ -5,14 +5,14 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: caelith
-      POSTGRES_PASSWORD: caelith
-      POSTGRES_DB: caelith
+      POSTGRES_USER: ${POSTGRES_USER:-caelith}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-caelith}
+      POSTGRES_DB: ${POSTGRES_DB:-caelith}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U caelith"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-caelith}"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -24,13 +24,19 @@ services:
     ports:
       - "3001:3001"
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3001
-      DATABASE_URL: postgresql://caelith:caelith@db:5432/caelith
-      JWT_SECRET: caelith-change-this-in-production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-caelith}:${POSTGRES_PASSWORD:-caelith}@db:5432/${POSTGRES_DB:-caelith}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (min 32 chars)}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@caelith.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
 
   frontend:
     build:
@@ -39,9 +45,10 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
     depends_on:
       - backend
+    restart: unless-stopped
 
 volumes:
   pgdata:

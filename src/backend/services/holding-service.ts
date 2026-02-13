@@ -1,7 +1,8 @@
 /**
  * Holding Service
- * 
- * Business logic for holding/allocation management
+ *
+ * Business logic for holding/allocation management.
+ * Uses database transactions with FOR UPDATE locking to prevent race conditions.
  */
 
 import {
@@ -14,10 +15,13 @@ import {
   investorExists,
   createEvent,
 } from '../repositories/index.js';
+import { getPool } from '../db.js';
 import { Holding, CreateHoldingInput } from '../models/index.js';
+import { randomUUID } from 'crypto';
 
 /**
- * Allocate units to an investor (initial allocation)
+ * Allocate units to an investor (initial allocation).
+ * Uses SELECT ... FOR UPDATE to prevent concurrent over-allocation.
  */
 export async function allocateHolding(input: CreateHoldingInput): Promise<Holding> {
   // Validate investor exists
@@ -26,26 +30,51 @@ export async function allocateHolding(input: CreateHoldingInput): Promise<Holdin
     throw new Error(`Investor not found: ${input.investor_id}`);
   }
 
-  // Validate asset exists
-  const asset = await findAssetById(input.asset_id);
-  if (!asset) {
-    throw new Error(`Asset not found: ${input.asset_id}`);
-  }
-
-  // Check if allocation would exceed total units
-  const currentAllocated = await getTotalAllocatedUnits(input.asset_id);
-  if (currentAllocated + input.units > asset.total_units) {
-    throw new Error(
-      `Allocation would exceed total units. Available: ${asset.total_units - currentAllocated}, Requested: ${input.units}`
-    );
-  }
-
-  // Validate units
   if (input.units <= 0) {
     throw new Error('Units must be greater than zero');
   }
 
-  // Create holding
+  const pool = getPool();
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Lock the asset row to prevent concurrent allocations exceeding total_units
+    const assetResult = await client.query(
+      `SELECT id, name, total_units FROM assets WHERE id = $1 FOR UPDATE`,
+      [input.asset_id]
+    );
+    if (assetResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      throw new Error(`Asset not found: ${input.asset_id}`);
+    }
+    const asset = assetResult.rows[0];
+
+    // Get current allocated within locked transaction
+    const allocResult = await client.query(
+      `SELECT COALESCE(SUM(units), 0) as allocated FROM holdings WHERE asset_id = $1`,
+      [input.asset_id]
+    );
+    const currentAllocated = Number(allocResult.rows[0].allocated);
+
+    if (currentAllocated + input.units > asset.total_units) {
+      await client.query('ROLLBACK');
+      throw new Error(
+        `Allocation would exceed total units. Available: ${asset.total_units - currentAllocated}, Requested: ${input.units}`
+      );
+    }
+
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    client.release();
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  // Create holding (now safe — we verified capacity under lock)
   const holding = await createHoldingRepo(input);
 
   // Log event

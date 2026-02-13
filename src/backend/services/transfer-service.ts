@@ -367,6 +367,7 @@ export async function executeTransfer(
     // Execute the transfer atomically within a database transaction
     const pool = getPool();
     const client = await pool.connect();
+    let transfer: Transfer;
 
     try {
       await client.query('BEGIN');
@@ -415,25 +416,37 @@ export async function executeTransfer(
         );
       }
 
+      // Create transfer record INSIDE the transaction for audit integrity
+      const transferId = randomUUID();
+      const transferNow = new Date().toISOString();
+      await client.query(
+        `INSERT INTO transfers (id, asset_id, from_investor_id, to_investor_id, units, executed_at, decision_record_id, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [transferId, request.asset_id, request.from_investor_id, request.to_investor_id, request.units, request.execution_date, decisionRecordId, transferNow]
+      );
+
       await client.query('COMMIT');
+
+      // Build transfer object from what we just inserted
+      transfer = {
+        id: transferId,
+        asset_id: request.asset_id,
+        from_investor_id: request.from_investor_id,
+        to_investor_id: request.to_investor_id,
+        units: request.units,
+        executed_at: request.execution_date,
+        decision_record_id: decisionRecordId,
+        created_at: transferNow,
+      } as Transfer;
+
     } catch (txError) {
-      await client.query('ROLLBACK');
+      await client.query('ROLLBACK').catch(() => {});
       throw txError;
     } finally {
       client.release();
     }
 
-    // Record the transfer with decision provenance link (outside transaction — audit log)
-    const transfer = await createTransfer({
-      asset_id: request.asset_id,
-      from_investor_id: request.from_investor_id,
-      to_investor_id: request.to_investor_id,
-      units: request.units,
-      executed_at: request.execution_date,
-      decision_record_id: decisionRecordId,
-    });
-
-    // Log execution event
+    // Log execution event (outside transaction — non-critical)
     await createEvent({
       event_type: 'transfer.executed',
       entity_type: 'transfer',

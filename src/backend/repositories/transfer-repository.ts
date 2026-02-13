@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute } from '../db.js';
+import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Transfer, CreateTransferInput } from '../models/index.js';
 
 /**
@@ -17,10 +17,11 @@ export async function createTransfer(
   const decision_record_id = input.decision_record_id ?? null;
 
   await execute(
-    `INSERT INTO transfers (id, asset_id, from_investor_id, to_investor_id, units, decision_record_id, executed_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO transfers (id, tenant_id, asset_id, from_investor_id, to_investor_id, units, decision_record_id, executed_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
+      DEFAULT_TENANT_ID,
       input.asset_id,
       input.from_investor_id,
       input.to_investor_id,
@@ -51,7 +52,7 @@ export async function createTransfer(
 export async function findTransfersByAsset(
   assetId: string
 ): Promise<Transfer[]> {
-  return await query<Transfer>(
+  return await queryWithTenant<Transfer>(
     'SELECT * FROM transfers WHERE asset_id = ? ORDER BY executed_at DESC',
     [assetId]
   );
@@ -74,9 +75,8 @@ export async function findTransferById(
  * Find all transfers
  */
 export async function findAllTransfers(): Promise<Transfer[]> {
-  return await query<Transfer>(
-    'SELECT * FROM transfers ORDER BY executed_at DESC',
-    []
+  return await queryWithTenant<Transfer>(
+    'SELECT * FROM transfers ORDER BY executed_at DESC'
   );
 }
 
@@ -103,8 +103,8 @@ export async function getTransferHistory(assetId: string): Promise<
 export async function findTransfersByInvestor(
   investorId: string
 ): Promise<Transfer[]> {
-  return await query<Transfer>(
-    'SELECT * FROM transfers WHERE from_investor_id = ? OR to_investor_id = ? ORDER BY executed_at DESC',
+  return await queryWithTenant<Transfer>(
+    'SELECT * FROM transfers WHERE (from_investor_id = ? OR to_investor_id = ?) ORDER BY executed_at DESC',
     [investorId, investorId]
   );
 }

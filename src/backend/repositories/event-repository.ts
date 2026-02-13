@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, parseJSON, stringifyJSON } from '../db.js';
+import { query, execute, parseJSON, stringifyJSON, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Event, CreateEventInput, EventType, EntityType } from '../models/index.js';
 import { dispatchEvent } from '../services/webhook-service.js';
 
@@ -38,10 +38,11 @@ export async function createEvent(input: CreateEventInput): Promise<Event> {
   const now = new Date().toISOString();
 
   await execute(
-    `INSERT INTO events (id, event_type, entity_type, entity_id, payload, timestamp)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO events (id, tenant_id, event_type, entity_type, entity_id, payload, timestamp)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
+      DEFAULT_TENANT_ID,
       input.event_type,
       input.entity_type,
       input.entity_id,
@@ -85,7 +86,7 @@ export async function findEventById(id: string): Promise<Event | null> {
  * Find all events for an entity
  */
 export async function findEventsByEntity(entityType: EntityType, entityId: string): Promise<Event[]> {
-  const results = await query<EventRow>(
+  const results = await queryWithTenant<EventRow>(
     'SELECT * FROM events WHERE entity_type = ? AND entity_id = ? ORDER BY timestamp DESC',
     [entityType, entityId]
   );
@@ -97,7 +98,7 @@ export async function findEventsByEntity(entityType: EntityType, entityId: strin
  * Find events by type
  */
 export async function findEventsByType(eventType: EventType): Promise<Event[]> {
-  const results = await query<EventRow>(
+  const results = await queryWithTenant<EventRow>(
     'SELECT * FROM events WHERE event_type = ? ORDER BY timestamp DESC',
     [eventType]
   );
@@ -109,7 +110,7 @@ export async function findEventsByType(eventType: EventType): Promise<Event[]> {
  * Find all events (audit trail)
  */
 export async function findAllEvents(limit: number = 100): Promise<Event[]> {
-  const results = await query<EventRow>(
+  const results = await queryWithTenant<EventRow>(
     'SELECT * FROM events ORDER BY timestamp DESC LIMIT ?',
     [limit]
   );
@@ -121,7 +122,7 @@ export async function findAllEvents(limit: number = 100): Promise<Event[]> {
  * Find events within a date range
  */
 export async function findEventsByDateRange(startDate: string, endDate: string): Promise<Event[]> {
-  const results = await query<EventRow>(
+  const results = await queryWithTenant<EventRow>(
     'SELECT * FROM events WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp DESC',
     [startDate, endDate]
   );

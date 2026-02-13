@@ -104,6 +104,16 @@ const navSections: NavSection[] = [
         ),
       },
       {
+        href: '/rules/builder',
+        label: 'Rule Builder',
+        icon: (
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.1-3.18M15.54 8.75l5.1 3.18m-16.5-.53c.2-.2.5-.3.8-.3h0c1.1 0 2 .9 2 2v0c0 1.1-.9 2-2 2h0c-.3 0-.6-.1-.8-.3M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9" />
+          </svg>
+        ),
+      },
+      {
         href: '/audit',
         label: 'Audit Log',
         icon: (
@@ -130,7 +140,7 @@ const navSections: NavSection[] = [
   },
 ];
 
-export function Sidebar({ onCopilotToggle }: { onCopilotToggle?: () => void } = {}) {
+export function Sidebar({ onCopilotToggle, mobileOpen, onMobileClose }: { onCopilotToggle?: () => void; mobileOpen?: boolean; onMobileClose?: () => void } = {}) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
@@ -147,13 +157,30 @@ export function Sidebar({ onCopilotToggle }: { onCopilotToggle?: () => void } = 
     : '??';
 
   return (
-    <aside className="flex h-screen w-60 flex-col bg-brand-950">
+    <aside className={classNames(
+      'flex h-screen w-60 flex-col bg-brand-950 transition-transform duration-200',
+      'fixed z-50 md:static md:translate-x-0',
+      mobileOpen ? 'translate-x-0' : '-translate-x-full'
+    )}>
       {/* Brand */}
-      <div className="px-6 pt-6 pb-4">
-        <div className="mb-1 h-0.5 w-6 bg-brand-400" />
-        <span className="text-sm font-bold uppercase tracking-[0.2em] text-white">
-          CAELITH
-        </span>
+      <div className="px-6 pt-6 pb-4 flex items-center justify-between">
+        <div>
+          <div className="mb-1 h-0.5 w-6 bg-brand-400" />
+          <span className="text-sm font-bold uppercase tracking-[0.2em] text-white">
+            CAELITH
+          </span>
+        </div>
+        {onMobileClose && (
+          <button
+            onClick={onMobileClose}
+            className="rounded-md p-1 text-brand-400 hover:text-white md:hidden"
+            aria-label="Close menu"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Navigation */}

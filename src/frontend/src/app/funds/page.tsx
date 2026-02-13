@@ -78,6 +78,7 @@ export default function FundsPage() {
   const [editFund, setEditFund] = useState<FundStructure | null>(null);
   const [deleteFund, setDeleteFund] = useState<FundStructure | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -86,6 +87,7 @@ export default function FundsPage() {
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError(null);
+    setFieldErrors({});
 
     const form = new FormData(e.currentTarget);
     const name = form.get('name') as string;
@@ -94,8 +96,14 @@ export default function FundsPage() {
     const regulatory_framework = form.get('regulatory_framework') as string;
     const aifm_name = form.get('aifm_name') as string;
 
-    if (!name || !legal_form || !domicile || !regulatory_framework) {
-      setFormError('Name, legal form, domicile, and regulatory framework are required.');
+    const errors: Record<string, string> = {};
+    if (!name.trim()) errors.name = 'Fund name is required.';
+    if (!legal_form) errors.legal_form = 'Legal form is required.';
+    if (!domicile) errors.domicile = 'Domicile is required.';
+    if (!regulatory_framework) errors.regulatory_framework = 'Regulatory framework is required.';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -183,13 +191,13 @@ export default function FundsPage() {
       )}
 
       {/* Create Modal */}
-      <Modal open={showForm} onClose={() => { setShowForm(false); setFormError(null); }} title="Create Fund Structure">
-        <form onSubmit={handleCreate} className="space-y-4">
+      <Modal open={showForm} onClose={() => { setShowForm(false); setFormError(null); setFieldErrors({}); }} title="Create Fund Structure">
+        <form onSubmit={handleCreate} noValidate className="space-y-4">
           {formError && <Alert variant="error">{formError}</Alert>}
-          <Input label="Fund Name" name="name" required placeholder="e.g., European Growth Fund I" />
-          <Select label="Legal Form" name="legal_form" options={LEGAL_FORMS} required />
-          <Select label="Domicile" name="domicile" options={DOMICILES} required />
-          <Select label="Regulatory Framework" name="regulatory_framework" options={FRAMEWORKS} required />
+          <Input label="Fund Name" name="name" placeholder="e.g., European Growth Fund I" error={fieldErrors.name} />
+          <Select label="Legal Form" name="legal_form" options={LEGAL_FORMS} error={fieldErrors.legal_form} />
+          <Select label="Domicile" name="domicile" options={DOMICILES} error={fieldErrors.domicile} />
+          <Select label="Regulatory Framework" name="regulatory_framework" options={FRAMEWORKS} error={fieldErrors.regulatory_framework} />
           <Input label="AIFM Name" name="aifm_name" placeholder="Optional — managing entity name" />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Cancel</Button>

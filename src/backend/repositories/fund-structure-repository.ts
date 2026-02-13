@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query } from '../db.js';
+import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import {
   FundStructure,
   CreateFundStructureInput,
@@ -11,11 +11,11 @@ export async function createFundStructure(input: CreateFundStructureInput): Prom
   const now = new Date().toISOString();
 
   const result = await query(
-    `INSERT INTO fund_structures (id, name, legal_form, domicile, regulatory_framework,
+    `INSERT INTO fund_structures (id, tenant_id, name, legal_form, domicile, regulatory_framework,
        aifm_name, aifm_lei, inception_date, target_size, currency, status, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
     [
-      id, input.name, input.legal_form, input.domicile, input.regulatory_framework,
+      id, DEFAULT_TENANT_ID, input.name, input.legal_form, input.domicile, input.regulatory_framework,
       input.aifm_name ?? null, input.aifm_lei ?? null, input.inception_date ?? null,
       input.target_size ?? null, input.currency ?? 'EUR', input.status ?? 'active',
       now, now,
@@ -31,13 +31,13 @@ export async function findFundStructureById(id: string): Promise<FundStructure |
 }
 
 export async function findAllFundStructures(): Promise<FundStructure[]> {
-  const result = await query('SELECT * FROM fund_structures ORDER BY created_at DESC');
+  const result = await queryWithTenant('SELECT * FROM fund_structures ORDER BY created_at DESC');
   return result.map(rowToFundStructure);
 }
 
 export async function findFundStructuresByDomicile(domicile: string): Promise<FundStructure[]> {
-  const result = await query(
-    'SELECT * FROM fund_structures WHERE domicile = $1 ORDER BY name',
+  const result = await queryWithTenant(
+    'SELECT * FROM fund_structures WHERE domicile = ? ORDER BY name',
     [domicile]
   );
   return result.map(rowToFundStructure);

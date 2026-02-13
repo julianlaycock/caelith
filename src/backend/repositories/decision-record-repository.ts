@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query } from '../db.js';
+import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import {
   DecisionRecord,
   CreateDecisionRecordInput,
@@ -32,11 +32,11 @@ export async function createDecisionRecord(input: CreateDecisionRecordInput): Pr
 
   const result = await query<DecisionRecordRow>(
     `INSERT INTO decision_records
-       (id, decision_type, asset_id, subject_id, input_snapshot,
+       (id, tenant_id, decision_type, asset_id, subject_id, input_snapshot,
         rule_version_snapshot, result, result_details, decided_by, decided_at, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
     [
-      id, input.decision_type, input.asset_id ?? null, input.subject_id,
+      id, DEFAULT_TENANT_ID, input.decision_type, input.asset_id ?? null, input.subject_id,
       JSON.stringify(input.input_snapshot), JSON.stringify(input.rule_version_snapshot),
       input.result, JSON.stringify(input.result_details),
       input.decided_by ?? null, now, now,
@@ -58,16 +58,16 @@ export async function findDecisionRecordById(id: string): Promise<DecisionRecord
 }
 
 export async function findDecisionsByAsset(assetId: string): Promise<DecisionRecord[]> {
-  const result = await query<DecisionRecordRow>(
-    'SELECT * FROM decision_records WHERE asset_id = $1 ORDER BY decided_at DESC',
+  const result = await queryWithTenant<DecisionRecordRow>(
+    'SELECT * FROM decision_records WHERE asset_id = ? ORDER BY decided_at DESC',
     [assetId]
   );
   return result.map(rowToDecisionRecord);
 }
 
 export async function findDecisionsBySubject(subjectId: string): Promise<DecisionRecord[]> {
-  const result = await query<DecisionRecordRow>(
-    'SELECT * FROM decision_records WHERE subject_id = $1 ORDER BY decided_at DESC',
+  const result = await queryWithTenant<DecisionRecordRow>(
+    'SELECT * FROM decision_records WHERE subject_id = ? ORDER BY decided_at DESC',
     [subjectId]
   );
   return result.map(rowToDecisionRecord);

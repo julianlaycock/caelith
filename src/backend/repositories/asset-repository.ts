@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute } from '../db.js';
+import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Asset, CreateAssetInput, UpdateAssetInput } from '../models/index.js';
 
 /**
@@ -17,9 +17,9 @@ export async function createAsset(input: CreateAssetInput): Promise<Asset> {
   const unit_price = input.unit_price ?? null;
 
   await execute(
-    `INSERT INTO assets (id, name, asset_type, total_units, fund_structure_id, unit_price, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [id, input.name, input.asset_type, input.total_units, fund_structure_id, unit_price, now]
+    `INSERT INTO assets (id, tenant_id, name, asset_type, total_units, fund_structure_id, unit_price, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, DEFAULT_TENANT_ID, input.name, input.asset_type, input.total_units, fund_structure_id, unit_price, now]
   );
 
   const asset: Asset = {
@@ -51,7 +51,7 @@ export async function findAssetById(id: string): Promise<Asset | null> {
  * Find all assets
  */
 export async function findAllAssets(): Promise<Asset[]> {
-  return await query<Asset>('SELECT * FROM assets ORDER BY created_at DESC');
+  return await queryWithTenant<Asset>('SELECT * FROM assets ORDER BY created_at DESC');
 }
 
 /**

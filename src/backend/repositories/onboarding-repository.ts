@@ -6,7 +6,7 @@
  */
 
 import { randomUUID } from 'crypto';
-import { query, execute } from '../db.js';
+import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import {
   OnboardingRecord,
   CreateOnboardingRecordInput,
@@ -24,9 +24,9 @@ export async function createOnboardingRecord(
 
   await execute(
     `INSERT INTO onboarding_records
-       (id, investor_id, asset_id, status, requested_units, applied_at, created_at, updated_at)
-     VALUES ($1, $2, $3, 'applied', $4, $5, $5, $5)`,
-    [id, input.investor_id, input.asset_id, input.requested_units, now]
+       (id, tenant_id, investor_id, asset_id, status, requested_units, applied_at, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, 'applied', $5, $6, $6, $6)`,
+    [id, DEFAULT_TENANT_ID, input.investor_id, input.asset_id, input.requested_units, now]
   );
 
   return {
@@ -66,8 +66,8 @@ export async function findOnboardingById(
 export async function findOnboardingByAsset(
   assetId: string
 ): Promise<OnboardingRecord[]> {
-  const results = await query<any>(
-    'SELECT * FROM onboarding_records WHERE asset_id = $1 ORDER BY applied_at DESC',
+  const results = await queryWithTenant<any>(
+    'SELECT * FROM onboarding_records WHERE asset_id = ? ORDER BY applied_at DESC',
     [assetId]
   );
   return results.map(rowToOnboardingRecord);
@@ -79,8 +79,8 @@ export async function findOnboardingByAsset(
 export async function findOnboardingByInvestor(
   investorId: string
 ): Promise<OnboardingRecord[]> {
-  const results = await query<any>(
-    'SELECT * FROM onboarding_records WHERE investor_id = $1 ORDER BY applied_at DESC',
+  const results = await queryWithTenant<any>(
+    'SELECT * FROM onboarding_records WHERE investor_id = ? ORDER BY applied_at DESC',
     [investorId]
   );
   return results.map(rowToOnboardingRecord);

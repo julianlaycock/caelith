@@ -49,14 +49,33 @@ for (const envVar of REQUIRED_ENV_VARS) {
   }
 }
 
+// Validate JWT_SECRET strength (HS256 requires >= 256 bits = 32 bytes)
+if ((process.env.JWT_SECRET as string).length < 32) {
+  console.error('FATAL: JWT_SECRET must be at least 32 characters for HS256 security');
+  process.exit(1);
+}
+
+// Validate conditional API keys
+const EMBEDDING_PROVIDER = process.env.EMBEDDING_PROVIDER || 'openai';
+if (EMBEDDING_PROVIDER === 'openai' && !process.env.OPENAI_API_KEY) {
+  console.warn('WARNING: OPENAI_API_KEY not set but EMBEDDING_PROVIDER=openai — embeddings will fail');
+}
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.warn('WARNING: ANTHROPIC_API_KEY not set — copilot and NL compiler will be unavailable');
+}
+
 /**
  * Ensure the default admin user exists in the database.
  * Idempotent — safe to call on every startup.
  */
 async function ensureAdminUser(): Promise<void> {
-  const ADMIN_EMAIL = 'admin@caelith.com';
-  const ADMIN_PASSWORD = 'admin1234';
-  const ADMIN_NAME = 'Admin';
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@caelith.com';
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
+  const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin';
+
+  if (!process.env.ADMIN_PASSWORD && process.env.NODE_ENV === 'production') {
+    console.warn('WARNING: Using default admin password in production — set ADMIN_PASSWORD env var');
+  }
 
   try {
     const existing = await dbQuery<{ id: string }>(
@@ -94,8 +113,8 @@ const ALLOWED_ORIGINS = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
   : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003'];
 
-app.use(cors({
-  origin: (origin, callback) => {
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
@@ -103,14 +122,38 @@ app.use(cors({
     }
   },
   credentials: true,
-}));
+};
 
-app.use(express.json());
+// Handle preflight OPTIONS requests quickly before any async middleware
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
+
+app.use(express.json({ limit: '1mb' }));
 app.use(sanitizeInput);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
+// Request ID middleware — attach unique ID to every request for tracing
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const requestId = (req.headers['x-request-id'] as string) || randomUUID();
+  res.setHeader('X-Request-Id', requestId);
+  (req as express.Request & { requestId?: string }).requestId = requestId;
+  next();
+});
+
+// Health check endpoints
+const healthHandler = (req: express.Request, res: express.Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+};
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
+
+// Deep health check — verifies database connectivity
+app.get('/api/health/ready', async (_req: express.Request, res: express.Response) => {
+  try {
+    await dbQuery('SELECT 1');
+    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: 'degraded', database: 'disconnected', timestamp: new Date().toISOString() });
+  }
 });
 
 // API info endpoint

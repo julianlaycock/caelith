@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query } from '../db.js';
+import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import {
   EligibilityCriteria,
   CreateEligibilityCriteriaInput,
@@ -12,12 +12,12 @@ export async function createEligibilityCriteria(input: CreateEligibilityCriteria
 
   const result = await query(
     `INSERT INTO eligibility_criteria
-       (id, fund_structure_id, jurisdiction, investor_type, minimum_investment,
+       (id, tenant_id, fund_structure_id, jurisdiction, investor_type, minimum_investment,
         maximum_allocation_pct, documentation_required, suitability_required,
         source_reference, effective_date, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
     [
-      id, input.fund_structure_id, input.jurisdiction, input.investor_type,
+      id, DEFAULT_TENANT_ID, input.fund_structure_id, input.jurisdiction, input.investor_type,
       input.minimum_investment, input.maximum_allocation_pct ?? null,
       JSON.stringify(input.documentation_required ?? []),
       input.suitability_required ?? false, input.source_reference ?? null,
@@ -45,18 +45,18 @@ export async function findApplicableCriteria(
   investorJurisdiction: string,
   investorType: InvestorType
 ): Promise<EligibilityCriteria | null> {
-  const result = await query(
+  const result = await queryWithTenant(
     `SELECT * FROM eligibility_criteria
-     WHERE fund_structure_id = $1
-       AND investor_type = $2
-       AND (jurisdiction = $3 OR jurisdiction = '*')
+     WHERE fund_structure_id = ?
+       AND investor_type = ?
+       AND (jurisdiction = ? OR jurisdiction = '*')
        AND effective_date <= CURRENT_DATE
        AND superseded_at IS NULL
      ORDER BY
-       CASE WHEN jurisdiction = $3 THEN 0 ELSE 1 END,
+       CASE WHEN jurisdiction = ? THEN 0 ELSE 1 END,
        effective_date DESC
      LIMIT 1`,
-    [fundStructureId, investorType, investorJurisdiction]
+    [fundStructureId, investorType, investorJurisdiction, investorJurisdiction]
   );
 
   return result[0] ? rowToEligibilityCriteria(result[0]) : null;
@@ -66,9 +66,9 @@ export async function findApplicableCriteria(
  * Find all active criteria for a fund structure (for display / template export)
  */
 export async function findCriteriaByFundStructure(fundStructureId: string): Promise<EligibilityCriteria[]> {
-  const result = await query(
+  const result = await queryWithTenant(
     `SELECT * FROM eligibility_criteria
-     WHERE fund_structure_id = $1
+     WHERE fund_structure_id = ?
        AND superseded_at IS NULL
      ORDER BY jurisdiction, investor_type`,
     [fundStructureId]
