@@ -76,7 +76,7 @@ const navItems: NavItem[] = [
   },
 ];
 
-export function Sidebar({ onCopilotToggle, mobileOpen, onMobileClose }: { onCopilotToggle?: () => void; mobileOpen?: boolean; onMobileClose?: () => void } = {}) {
+export function Sidebar({ onCopilotToggle, onSearchToggle, mobileOpen, onMobileClose }: { onCopilotToggle?: () => void; onSearchToggle?: () => void; mobileOpen?: boolean; onMobileClose?: () => void } = {}) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
@@ -159,6 +159,18 @@ export function Sidebar({ onCopilotToggle, mobileOpen, onMobileClose }: { onCopi
 
       {/* Bottom section */}
       <div className="border-t border-edge-subtle px-3 py-4">
+        {onSearchToggle && (
+          <button
+            onClick={onSearchToggle}
+            className="mb-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-ink-secondary transition-all hover:text-ink hover:bg-white/[0.04]"
+          >
+            <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <span className="flex-1 text-left">Search</span>
+            <kbd className="text-[10px] font-mono text-ink-muted">⌘K</kbd>
+          </button>
+        )}
         {onCopilotToggle && (
           <button
             onClick={onCopilotToggle}

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { AuthProvider } from './auth-provider';
 import { Sidebar } from './sidebar';
 import { CopilotPanel, CopilotToggleButton } from './copilot';
+import { CommandPalette } from './command-palette';
 import { ErrorBoundary } from './error-boundary';
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -12,11 +13,24 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
   const isLoginPage = pathname === '/login';
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
+
+  // Global Cmd+K / Ctrl+K listener
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   return (
     <AuthProvider>
@@ -45,6 +59,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
 
           <Sidebar
             onCopilotToggle={() => setCopilotOpen(true)}
+            onSearchToggle={() => setCommandPaletteOpen(true)}
             mobileOpen={sidebarOpen}
             onMobileClose={() => setSidebarOpen(false)}
           />
@@ -53,6 +68,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           </main>
           <CopilotToggleButton onClick={() => setCopilotOpen(true)} />
           <CopilotPanel open={copilotOpen} onClose={() => setCopilotOpen(false)} />
+          <CommandPalette open={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
         </div>
       )}
     </AuthProvider>

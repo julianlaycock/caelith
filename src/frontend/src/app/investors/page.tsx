@@ -19,7 +19,9 @@ import {
   EmptyState,
   Badge,
   Alert,
+  SortableHeader,
 } from '../../components/ui';
+import { useSort } from '../../lib/use-sort';
 import { formatDate, classNames } from '../../lib/utils';
 import { JURISDICTIONS } from '../../lib/constants';
 import type { Investor } from '../../lib/types';
@@ -75,6 +77,8 @@ function InvestorsContent() {
 
     return filtered;
   }, [investors.data, typeFilter, kycFilter]);
+
+  const { sorted: sortedInvestors, sort, toggle } = useSort(filteredInvestors);
 
   const clearFilters = () => {
     router.push('/investors');

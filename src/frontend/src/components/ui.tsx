@@ -538,3 +538,42 @@ export function Alert({
     </div>
   );
 }
+
+// ── Sortable Header ───────────────────────────────────
+
+export function SortableHeader<T>({
+  label,
+  sortKey,
+  sort,
+  onToggle,
+  align,
+  className,
+}: {
+  label: string;
+  sortKey: keyof T;
+  sort: { key: keyof T | null; direction: 'asc' | 'desc' | null };
+  onToggle: (key: keyof T) => void;
+  align?: 'left' | 'right';
+  className?: string;
+}) {
+  const active = sort.key === sortKey;
+  return (
+    <th
+      className={classNames(
+        'px-5 py-3 text-xs font-medium uppercase tracking-wider cursor-pointer select-none transition-colors hover:text-ink-secondary',
+        active ? 'text-accent-300' : 'text-ink-tertiary',
+        align === 'right' && 'text-right',
+        className
+      )}
+      onClick={() => onToggle(sortKey)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <span className="inline-flex flex-col text-[8px] leading-none">
+          <span className={active && sort.direction === 'asc' ? 'text-accent-400' : 'text-ink-muted'}>▲</span>
+          <span className={active && sort.direction === 'desc' ? 'text-accent-400' : 'text-ink-muted'}>▼</span>
+        </span>
+      </span>
+    </th>
+  );
+}
