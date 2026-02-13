@@ -1,9 +1,16 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { api } from '../lib/api';
 import type { User } from '../lib/types';
+
+interface AuthContextType {
+  user: User | null;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType>({ user: null, logout: () => {} });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -37,7 +44,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('auth:expired', handler);
   }, [router]);
 
-  if (!ready) {
+  // Bug 1 fix: redirect in useEffect instead of during render
+  useEffect(() => {
+    if (ready && !user && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [ready, user, pathname, router]);
+
+  if (!ready || (!user && pathname !== '/login')) {
     return (
       <div className="flex h-screen items-center justify-center bg-surface-muted">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-edge border-t-brand-500" />
@@ -45,38 +59,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Not logged in and not on login page — redirect to login
-  if (!user && pathname !== '/login') {
-    router.push('/login');
-    return (
-      <div className="flex h-screen items-center justify-center bg-surface-muted">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-edge border-t-brand-500" />
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
-
-export function useAuth(): { user: User | null; logout: () => void } {
-  const router = useRouter();
-
+  // Bug 2 fix: provide user + logout via Context
   const logout = () => {
     api.logout();
     localStorage.removeItem('caelith_token');
     localStorage.removeItem('caelith_user');
+    setUser(null);
     router.push('/login');
   };
 
-  const stored = typeof window !== 'undefined' ? localStorage.getItem('caelith_user') : null;
-  let user: User | null = null;
-  if (stored) {
-    try {
-      user = JSON.parse(stored);
-    } catch {
-      localStorage.removeItem('caelith_user');
-    }
-  }
+  return (
+    <AuthContext.Provider value={{ user, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
 
-  return { user, logout };
+// Bug 2 fix: useAuth consumes Context instead of reading localStorage
+export function useAuth(): { user: User | null; logout: () => void } {
+  return useContext(AuthContext);
 }

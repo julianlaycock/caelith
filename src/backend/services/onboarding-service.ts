@@ -187,17 +187,26 @@ export async function checkEligibility(
 
             // Minimum investment
             if (criteria.minimum_investment > 0) {
-              const investmentAmount = onboarding.requested_units * (asset.unit_price ? Number(asset.unit_price) : 0);
-              const investmentCents = Math.round(investmentAmount * 100);
-              const passed = investmentCents >= criteria.minimum_investment;
-              const minEuros = criteria.minimum_investment / 100;
-              checks.push({
-                rule: 'minimum_investment',
-                passed,
-                message: passed
-                  ? `Investment €${investmentAmount.toLocaleString()} meets minimum €${minEuros.toLocaleString()} (${criteria.source_reference || 'fund rules'})`
-                  : `Investment €${investmentAmount.toLocaleString()} is below minimum €${minEuros.toLocaleString()} for ${investorType} investors (${criteria.source_reference || 'fund rules'})`,
-              });
+              const unitPriceEur = asset.unit_price ? Number(asset.unit_price) : 0;
+              if (unitPriceEur === 0) {
+                checks.push({
+                  rule: 'minimum_investment',
+                  passed: true,
+                  message: `Unit price not configured — minimum investment check skipped (${criteria.source_reference || 'fund rules'})`,
+                });
+              } else {
+                const investmentEur = onboarding.requested_units * unitPriceEur;
+                const investmentCents = Math.round(investmentEur * 100);
+                const passed = investmentCents >= criteria.minimum_investment;
+                const minEuros = criteria.minimum_investment / 100;
+                checks.push({
+                  rule: 'minimum_investment',
+                  passed,
+                  message: passed
+                    ? `Investment €${investmentEur.toLocaleString()} (${onboarding.requested_units.toLocaleString()} units × €${unitPriceEur.toLocaleString()}/unit) meets minimum €${minEuros.toLocaleString()} (${criteria.source_reference || 'fund rules'})`
+                    : `Investment €${investmentEur.toLocaleString()} (${onboarding.requested_units.toLocaleString()} units × €${unitPriceEur.toLocaleString()}/unit) is below minimum €${minEuros.toLocaleString()} for ${investorType} investors (${criteria.source_reference || 'fund rules'})`,
+                });
+              }
             } else {
               checks.push({
                 rule: 'minimum_investment',

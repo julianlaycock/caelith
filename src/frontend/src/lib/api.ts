@@ -92,9 +92,18 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (response.status === 401) {
-        this.token = null;
-        window.dispatchEvent(new CustomEvent('auth:expired'));
-        throw { error: 'UNAUTHORIZED', message: 'Session expired' } as ApiError;
+        const errorBody = await response.json().catch(() => ({
+          error: 'UNAUTHORIZED',
+          message: 'Session expired',
+        }));
+
+        // Only treat as session expiry for non-auth endpoints
+        if (!path.startsWith('/auth/')) {
+          this.token = null;
+          window.dispatchEvent(new CustomEvent('auth:expired'));
+        }
+
+        throw errorBody as ApiError;
       }
 
       if (!response.ok) {
@@ -432,10 +441,10 @@ class ApiClient {
   }
 
   // ── NL Rule Compiler ──────────────────────────────────
-  async compileNaturalLanguageRule(prompt: string, assetId: string): Promise<NLRuleResponse> {
+  async compileNaturalLanguageRule(description: string, assetId: string): Promise<NLRuleResponse> {
     return this.request<NLRuleResponse>('/nl-rules/from-natural-language', {
       method: 'POST',
-      body: JSON.stringify({ prompt, asset_id: assetId }),
+      body: JSON.stringify({ description, asset_id: assetId }),
     });
   }
 

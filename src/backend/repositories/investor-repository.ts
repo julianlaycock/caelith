@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute } from '../db.js';
+import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Investor, CreateInvestorInput, UpdateInvestorInput } from '../models/index.js';
 
 /**
@@ -55,9 +55,9 @@ export async function createInvestor(input: CreateInvestorInput): Promise<Invest
   const email = input.email ?? null;
 
   await execute(
-    `INSERT INTO investors (id, name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, input.name, input.jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, now, now]
+    `INSERT INTO investors (id, tenant_id, name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, DEFAULT_TENANT_ID, input.name, input.jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, now, now]
   );
 
   const investor: Investor = {
@@ -98,7 +98,7 @@ export async function findInvestorById(id: string): Promise<Investor | null> {
  * Find all investors
  */
 export async function findAllInvestors(): Promise<Investor[]> {
-  const results = await query<InvestorRow>(
+  const results = await queryWithTenant<InvestorRow>(
     'SELECT * FROM investors ORDER BY created_at DESC'
   );
 
@@ -201,7 +201,7 @@ export async function investorExists(id: string): Promise<boolean> {
 export async function findInvestorsByJurisdiction(
   jurisdiction: string
 ): Promise<Investor[]> {
-  const results = await query<InvestorRow>(
+  const results = await queryWithTenant<InvestorRow>(
     'SELECT * FROM investors WHERE jurisdiction = ? ORDER BY created_at DESC',
     [jurisdiction]
   );

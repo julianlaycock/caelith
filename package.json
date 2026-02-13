@@ -27,7 +27,8 @@
     "clean:frontend": "node scripts/clean-next-cache.js",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "mcp": "tsx src/mcp/server.ts"
   },
   "keywords": [
     "private-assets",
@@ -42,6 +43,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.1",

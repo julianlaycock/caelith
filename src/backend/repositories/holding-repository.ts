@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute } from '../db.js';
+import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Holding, CreateHoldingInput, UpdateHoldingInput } from '../models/index.js';
 
 /**
@@ -14,9 +14,9 @@ export async function createHolding(input: CreateHoldingInput): Promise<Holding>
   const now = new Date().toISOString();
 
   await execute(
-    `INSERT INTO holdings (id, investor_id, asset_id, units, acquired_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [id, input.investor_id, input.asset_id, input.units, input.acquired_at, now, now]
+    `INSERT INTO holdings (id, tenant_id, investor_id, asset_id, units, acquired_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, DEFAULT_TENANT_ID, input.investor_id, input.asset_id, input.units, input.acquired_at, now, now]
   );
 
   const holding: Holding = {
@@ -63,7 +63,7 @@ export async function findHoldingByInvestorAndAsset(
  * Find all holdings for an asset (cap table)
  */
 export async function findHoldingsByAsset(assetId: string): Promise<Holding[]> {
-  return await query<Holding>(
+  return await queryWithTenant<Holding>(
     'SELECT * FROM holdings WHERE asset_id = ? AND units > 0 ORDER BY units DESC',
     [assetId]
   );
@@ -73,7 +73,7 @@ export async function findHoldingsByAsset(assetId: string): Promise<Holding[]> {
  * Find all holdings for an investor
  */
 export async function findHoldingsByInvestor(investorId: string): Promise<Holding[]> {
-  return await query<Holding>(
+  return await queryWithTenant<Holding>(
     'SELECT * FROM holdings WHERE investor_id = ? AND units > 0 ORDER BY acquired_at DESC',
     [investorId]
   );

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, parseJSON, stringifyJSON } from '../db.js';
+import { query, execute, parseJSON, stringifyJSON, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { RuleSet, CreateRuleSetInput, InvestorType } from '../models/index.js';
 
 /**
@@ -66,10 +66,11 @@ export async function createRuleSet(input: CreateRuleSetInput): Promise<RuleSet>
   const kyc_required = input.kyc_required ?? false;
 
   await execute(
-    `INSERT INTO rules (id, asset_id, version, qualification_required, lockup_days, jurisdiction_whitelist, transfer_whitelist, investor_type_whitelist, minimum_investment, maximum_investors, concentration_limit_pct, kyc_required, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO rules (id, tenant_id, asset_id, version, qualification_required, lockup_days, jurisdiction_whitelist, transfer_whitelist, investor_type_whitelist, minimum_investment, maximum_investors, concentration_limit_pct, kyc_required, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
+      DEFAULT_TENANT_ID,
       input.asset_id,
       version,
       input.qualification_required,
@@ -117,7 +118,7 @@ export async function findRuleSetById(id: string): Promise<RuleSet | null> {
  * Find active rule set for an asset
  */
 export async function findRuleSetByAsset(assetId: string): Promise<RuleSet | null> {
-  const results = await query<RuleSetRow>(
+  const results = await queryWithTenant<RuleSetRow>(
     'SELECT * FROM rules WHERE asset_id = ?',
     [assetId]
   );
@@ -129,7 +130,7 @@ export async function findRuleSetByAsset(assetId: string): Promise<RuleSet | nul
  * Check if rules exist for an asset
  */
 export async function ruleSetExists(assetId: string): Promise<boolean> {
-  const results = await query<{ count: number }>(
+  const results = await queryWithTenant<{ count: number }>(
     'SELECT COUNT(*) as count FROM rules WHERE asset_id = ?',
     [assetId]
   );

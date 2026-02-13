@@ -99,7 +99,7 @@ export default function HoldingsPage() {
       <Modal open={showForm} onClose={() => { setShowForm(false); setFormError(null); }} title="Allocate Units">
         <form onSubmit={handleAllocate} className="space-y-4">
           {formError && <Alert variant="error">{formError}</Alert>}
-          <Select label="Asset" name="asset_id" options={assetOptions} required />
+          <Select label="Asset" name="asset_id" options={assetOptions} required defaultValue={selectedAssetId} />
           <Select label="Investor" name="investor_id" options={investorOptions} required />
           <Input label="Units" name="units" type="number" min={1} required placeholder="e.g., 10000" />
           <div className="flex justify-end gap-3 pt-2">

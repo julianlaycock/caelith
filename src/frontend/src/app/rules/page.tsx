@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import {
@@ -44,6 +45,7 @@ const CONDITION_OPERATORS = [
 ];
 
 export default function RulesPage() {
+  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [showCompositeForm, setShowCompositeForm] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
@@ -269,7 +271,12 @@ export default function RulesPage() {
       <PageHeader
         title="Transfer Rules"
         description="Configure built-in and custom compliance rules per asset"
-        action={<Button onClick={() => openForm()}>+ Create Rules</Button>}
+        action={
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => router.push('/rules/builder')}>Visual Builder</Button>
+            <Button onClick={() => openForm()}>+ Create Rules</Button>
+          </div>
+        }
       />
 
       {successMsg && (

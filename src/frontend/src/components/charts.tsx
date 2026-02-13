@@ -292,7 +292,7 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({ d
 
   const sorted = [...data].sort((a, b) => b.violation_count - a.violation_count).slice(0, 5);
   const chartData = sorted.map((d) => ({
-    name: d.asset_name.length > 18 ? d.asset_name.slice(0, 16) + '…' : d.asset_name,
+    name: d.asset_name,
     fullName: d.asset_name,
     violations: d.violation_count,
     decisions: d.total_decisions,
@@ -322,12 +322,16 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({ d
             <YAxis
               type="category"
               dataKey="name"
-              width={100}
-              tick={{ fontSize: 11, fill: '#4B6358' }}
+              width={160}
+              tick={{ fontSize: 10, fill: '#4B6358' }}
               axisLine={false}
               tickLine={false}
             />
             <Tooltip
+              labelFormatter={(label) => {
+                const entry = chartData.find((d) => d.name === label);
+                return entry?.fullName ?? label;
+              }}
               formatter={(value, name) => [
                 Number(value),
                 name === 'violations' ? 'Violations' : 'Total Decisions',

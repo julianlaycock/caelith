@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface UseAsyncState<T> {
   data: T | null;
@@ -17,12 +17,17 @@ export function useAsync<T>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [trigger, setTrigger] = useState(0);
+  const inFlightRef = useRef<string | null>(null);
 
   const refetch = useCallback(() => {
     setTrigger((t) => t + 1);
   }, []);
 
   useEffect(() => {
+    const key = JSON.stringify([trigger, ...deps]);
+    if (inFlightRef.current === key) return;
+    inFlightRef.current = key;
+
     let cancelled = false;
     setLoading(true);
     setError(null);

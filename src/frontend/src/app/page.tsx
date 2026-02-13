@@ -13,7 +13,7 @@ import {
   ConcentrationRiskGrid,
 } from '../components/charts';
 import { formatNumber, formatDateTime, classNames, getErrorMessage } from '../lib/utils';
-import type { FundStructure, ComplianceReport, CapTableEntry, DecisionRecord } from '../lib/types';
+import type { FundStructure, ComplianceReport, CapTableEntry, DecisionRecord, Investor } from '../lib/types';
 
 interface FundReportPair {
   fund: FundStructure;
@@ -54,63 +54,81 @@ function SkeletonChart() {
 
 // ── Chart data aggregation helpers ───────────────────────
 
-function aggregateByType(reports: ComplianceReport[]) {
-  const map = new Map<string, { count: number; total_units: number }>();
+function aggregateByType(investors: Investor[], reports: ComplianceReport[]) {
+  // Deduplicated counts from canonical investor list
+  const countMap = new Map<string, number>();
+  for (const inv of investors) {
+    countMap.set(inv.investor_type, (countMap.get(inv.investor_type) || 0) + 1);
+  }
+
+  // Unit totals from reports (units are per-asset, valid to sum across funds)
+  const unitsMap = new Map<string, number>();
   for (const r of reports) {
     for (const entry of r.investor_breakdown.by_type) {
-      const existing = map.get(entry.type) || { count: 0, total_units: 0 };
-      map.set(entry.type, {
-        count: existing.count + entry.count,
-        total_units: existing.total_units + entry.total_units,
-      });
+      unitsMap.set(entry.type, (unitsMap.get(entry.type) || 0) + entry.total_units);
     }
   }
-  return Array.from(map.entries()).map(([type, data]) => ({ type, ...data }));
+
+  const allTypes = new Set([...Array.from(countMap.keys()), ...Array.from(unitsMap.keys())]);
+  return Array.from(allTypes).map((type) => ({
+    type,
+    count: countMap.get(type) || 0,
+    total_units: unitsMap.get(type) || 0,
+  }));
 }
 
-function aggregateByJurisdiction(reports: ComplianceReport[]) {
-  const map = new Map<string, { count: number; total_units: number }>();
+function aggregateByJurisdiction(investors: Investor[], reports: ComplianceReport[]) {
+  // Deduplicated counts from canonical investor list
+  const countMap = new Map<string, number>();
+  for (const inv of investors) {
+    countMap.set(inv.jurisdiction, (countMap.get(inv.jurisdiction) || 0) + 1);
+  }
+
+  // Unit totals from reports (units are per-asset, valid to sum across funds)
+  const unitsMap = new Map<string, number>();
   for (const r of reports) {
     for (const entry of r.investor_breakdown.by_jurisdiction) {
-      const existing = map.get(entry.jurisdiction) || { count: 0, total_units: 0 };
-      map.set(entry.jurisdiction, {
-        count: existing.count + entry.count,
-        total_units: existing.total_units + entry.total_units,
-      });
+      unitsMap.set(entry.jurisdiction, (unitsMap.get(entry.jurisdiction) || 0) + entry.total_units);
     }
   }
-  return Array.from(map.entries()).map(([jurisdiction, data]) => ({ jurisdiction, ...data }));
+
+  const allJurisdictions = new Set([...Array.from(countMap.keys()), ...Array.from(unitsMap.keys())]);
+  return Array.from(allJurisdictions).map((jurisdiction) => ({
+    jurisdiction,
+    count: countMap.get(jurisdiction) || 0,
+    total_units: unitsMap.get(jurisdiction) || 0,
+  }));
 }
 
-function aggregateKycData(reports: ComplianceReport[]) {
+function aggregateKycData(investors: Investor[]) {
   let verified = 0;
   let pending = 0;
   let expired = 0;
   let expiring_soon = 0;
 
-  for (const r of reports) {
-    for (const entry of r.investor_breakdown.by_kyc_status) {
-      if (entry.status === 'verified') verified += entry.count;
-      else if (entry.status === 'pending') pending += entry.count;
-      else if (entry.status === 'expired') expired += entry.count;
-    }
+  const now = new Date();
+  const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-    // Split kyc_expiring_within_90_days into already-expired vs expiring-soon
-    const now = new Date();
-    for (const inv of r.investor_breakdown.kyc_expiring_within_90_days) {
-      const expiryDate = new Date(inv.kyc_expiry);
-      if (expiryDate < now) {
-        // Already expired but kyc_status still shows 'verified'
-        expired += 1;
-        verified = Math.max(0, verified - 1);
+  for (const inv of investors) {
+    if (inv.kyc_status === 'verified') {
+      if (inv.kyc_expiry) {
+        const expiryDate = new Date(inv.kyc_expiry);
+        if (expiryDate < now) {
+          expired += 1;
+        } else if (expiryDate <= ninetyDaysFromNow) {
+          expiring_soon += 1;
+        } else {
+          verified += 1;
+        }
       } else {
-        expiring_soon += 1;
+        verified += 1;
       }
+    } else if (inv.kyc_status === 'pending') {
+      pending += 1;
+    } else if (inv.kyc_status === 'expired') {
+      expired += 1;
     }
   }
-
-  // Subtract expiring_soon from verified since they're a subset
-  verified = Math.max(0, verified - expiring_soon);
 
   return { verified, pending, expired, expiring_soon };
 }
@@ -188,6 +206,7 @@ interface RiskFlag {
 export default function DashboardPage() {
   const router = useRouter();
   const [fundReports, setFundReports] = useState<FundReportPair[]>([]);
+  const [allInvestors, setAllInvestors] = useState<Investor[]>([]);
   const [capTables, setCapTables] = useState<Map<string, CapTableEntry[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -200,7 +219,11 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const funds = await api.getFundStructures();
+      const [funds, investors] = await Promise.all([
+        api.getFundStructures(),
+        api.getInvestors(),
+      ]);
+      setAllInvestors(investors);
       const pairs: FundReportPair[] = [];
       for (const fund of funds) {
         try {
@@ -273,7 +296,7 @@ export default function DashboardPage() {
 
   // Aggregate metrics
   const totalFunds = fundReports.length;
-  const totalInvestors = fundReports.reduce((sum, { report }) => sum + report.fund.total_investors, 0);
+  const totalInvestors = allInvestors.filter((inv) => inv.kyc_status === 'verified').length;
   const totalAllocated = fundReports.reduce((sum, { report }) => sum + report.fund.total_allocated_units, 0);
   const allRiskFlags = useMemo(() => fundReports.flatMap(({ report }) => report.risk_flags), [fundReports]);
   const actionRequired = allRiskFlags.filter((f) => f.severity === 'high' || f.severity === 'medium').length;
@@ -288,9 +311,9 @@ export default function DashboardPage() {
   );
 
   // Memoized chart data aggregations
-  const typeData = useMemo(() => aggregateByType(reports), [reports]);
-  const jurisdictionData = useMemo(() => aggregateByJurisdiction(reports), [reports]);
-  const kycData = useMemo(() => aggregateKycData(reports), [reports]);
+  const typeData = useMemo(() => aggregateByType(allInvestors, reports), [allInvestors, reports]);
+  const jurisdictionData = useMemo(() => aggregateByJurisdiction(allInvestors, reports), [allInvestors, reports]);
+  const kycData = useMemo(() => aggregateKycData(allInvestors), [allInvestors]);
   const violationData = useMemo(() => aggregateViolations(reports, assetNameMap), [reports, assetNameMap]);
   const concentrationData = useMemo(() => computeConcentration(fundReports, capTables), [fundReports, capTables]);
 
@@ -358,7 +381,7 @@ export default function DashboardPage() {
             <MetricCard
               label="Actions Required"
               value={actionRequired}
-              sub={actionRequired === 0 ? 'All clear' : `${actionRequired} flag${actionRequired !== 1 ? 's' : ''} need attention`}
+              sub={actionRequired === 0 ? 'All clear' : `High + Medium severity flags`}
               accent={actionRequired > 0 ? 'danger' : 'success'}
               compact
               onClick={actionRequired > 0 ? () => {
