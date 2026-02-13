@@ -423,18 +423,65 @@ async function handleRegulatoryQa(message: string, tenantId: string): Promise<Co
   }
 
   if (results.length === 0) {
-    return {
-      intent: 'regulatory_qa',
-      message: 'No regulatory documents have been ingested yet. Upload documents through /api/regulatory/ingest first.',
-      citations: [],
-      suggestedActions: [
-        {
-          label: 'Ingest Documents',
-          action: 'hint',
-          payload: { endpoint: '/api/regulatory/ingest' },
-        },
-      ],
-    };
+    // Fallback: use Claude's built-in regulatory knowledge
+    try {
+      const fallbackResponse = await callAnthropic({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 800,
+        temperature: 0.2,
+        system: `You are the Caelith Compliance Copilot, an expert on Luxembourg fund regulation and EU financial compliance.
+
+You have deep knowledge of:
+- Luxembourg SIF (Specialized Investment Fund) Law of 13 February 2007
+- RAIF (Reserved Alternative Investment Fund) regime
+- AIFMD (Alternative Investment Fund Managers Directive) 2011/61/EU
+- UCITS Directive 2009/65/EC
+- CSSF (Commission de Surveillance du Secteur Financier) circulars and guidance
+- EU Anti-Money Laundering Directives (AMLD 4/5/6)
+- MiFID II investor categorization
+- Luxembourg Company Law (1915 as amended)
+- SCSp, SCA, SICAV, SICAF structures
+- Well-informed investor requirements (€125,000 minimum or professional certification)
+- KYC/AML requirements for fund administrators
+
+Answer the user's regulatory question accurately and concisely. Cite specific articles, laws, or directives when relevant. Format your answer clearly.
+
+If the question is outside your regulatory knowledge, say so honestly.
+
+Note: This answer is based on regulatory knowledge, not from ingested documents. For document-specific analysis, regulatory documents can be uploaded through the platform.`,
+        messages: [{ role: 'user', content: message }],
+      });
+
+      const textBlock = fallbackResponse.content.find(block => block.type === 'text');
+      const answer = textBlock?.text?.trim() || 'Unable to generate a response.';
+
+      return {
+        intent: 'regulatory_qa',
+        message: answer,
+        citations: [],
+        suggestedActions: [
+          {
+            label: 'Upload Documents for Enhanced Analysis',
+            action: 'hint',
+            payload: { endpoint: '/api/regulatory/ingest' },
+          },
+        ],
+      };
+    } catch (err: any) {
+      console.warn('Regulatory QA fallback failed:', err.message);
+      return {
+        intent: 'regulatory_qa',
+        message: 'I\'m unable to answer regulatory questions right now. Please ensure the Anthropic API key is configured, or upload regulatory documents through /api/regulatory/ingest for document-based answers.',
+        citations: [],
+        suggestedActions: [
+          {
+            label: 'Upload Documents',
+            action: 'hint',
+            payload: { endpoint: '/api/regulatory/ingest' },
+          },
+        ],
+      };
+    }
   }
 
   const answer = await summarizeRagAnswer(message, results);

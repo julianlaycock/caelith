@@ -49,11 +49,12 @@ function getApiKey(provider: EmbeddingProvider): string {
     return apiKey;
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.VOYAGE_API_KEY || process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error(
-      'ANTHROPIC_API_KEY is required when EMBEDDING_PROVIDER=anthropic. ' +
-      'Set it in .env or use EMBEDDING_PROVIDER=openai with OPENAI_API_KEY.'
+      'VOYAGE_API_KEY (or ANTHROPIC_API_KEY) is required when EMBEDDING_PROVIDER=anthropic. ' +
+      'Voyage AI embeddings require a separate API key from api.voyageai.com. ' +
+      'Set VOYAGE_API_KEY in .env, or use EMBEDDING_PROVIDER=openai with OPENAI_API_KEY.'
     );
   }
   return apiKey;
