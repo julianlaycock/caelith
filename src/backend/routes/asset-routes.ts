@@ -107,7 +107,12 @@ router.get('/:id/utilization', async (req, res): Promise<void> => {
       return;
     }
 
-    res.json(utilization);
+    res.json({
+      ...utilization,
+      asset_id: utilization.asset.id,
+      asset_name: utilization.asset.name,
+      total_units: utilization.asset.total_units,
+    });
   } catch (error) {
     res.status(500).json({
       error: 'INTERNAL_ERROR',
