@@ -1,7 +1,7 @@
 # CAELITH — Development Handoff Context
-## Last updated: 2026-02-13 (post Sprint 3)
+## Last updated: 2026-02-13 (post security hardening + assessment)
 
-Paste this at the start of any new Claude conversation to resume development seamlessly. This document contains everything needed to continue building Caelith without repeating prior decisions.
+Single source of truth for development context. Contains everything needed to continue building Caelith.
 
 ---
 
