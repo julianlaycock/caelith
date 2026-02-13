@@ -1,5 +1,5 @@
 # CAELITH — Development Handoff Context
-## Last updated: 2026-02-13
+## Last updated: 2026-02-13 (post Sprint 3)
 
 Paste this at the start of any new Claude conversation to resume development seamlessly. This document contains everything needed to continue building Caelith without repeating prior decisions.
 
@@ -7,7 +7,7 @@ Paste this at the start of any new Claude conversation to resume development sea
 
 ## 1. WHAT IS CAELITH
 
-Caelith is an AIFMD compliance orchestration platform for sub-€500M Luxembourg alternative investment fund managers (AIFMs). It automates investor eligibility checking, onboarding workflows, transfer validation, and decision provenance for SIF and RAIF fund structures under AIFMD 2.0 (effective April 16, 2026 — 63 days from Feb 13, 2026).
+Caelith is an AIFMD compliance orchestration platform for sub-€500M Luxembourg alternative investment fund managers (AIFMs). It automates investor eligibility checking, onboarding workflows, transfer validation, and decision provenance for SIF and RAIF fund structures under AIFMD 2.0 (effective April 16, 2026 — 62 days from Feb 13, 2026).
 
 **Target user:** Compliance officers and fund administrators at small-mid AIFMs who currently manage eligibility and onboarding in spreadsheets.
 
@@ -23,51 +23,56 @@ Caelith is an AIFMD compliance orchestration platform for sub-€500M Luxembourg
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Node.js + Express.js + TypeScript |
-| Database | PostgreSQL 16 (Docker locally on port 5433, Railway in production) |
-| Frontend | Next.js 14 + Tailwind CSS + TypeScript |
-| AI | @anthropic-ai/sdk (Claude Sonnet) for NL rule compiler + upcoming copilot |
+| Backend | Node.js 20 + Express.js 4.18 + TypeScript 5 (strict) |
+| Database | PostgreSQL 16 + pgvector 0.8.1 (Docker locally on port 5432) |
+| Frontend | Next.js 14 + Tailwind CSS + TypeScript + Recharts |
+| AI — Copilot/NL | @anthropic-ai/sdk ^0.74.0 (Claude Sonnet) for copilot + NL rule compiler |
+| AI — Embeddings | OpenAI text-embedding-3-small (1536 dimensions) via openai SDK |
+| MCP | @modelcontextprotocol/sdk ^1.26.0 for AI agent integration |
 | PDF | PDFKit for cap table PDF export |
 | Testing | Vitest (96 tests, all passing) |
-| Auth | JWT (bcryptjs + jsonwebtoken), 3 RBAC roles |
+| Auth | JWT (bcrypt + jsonwebtoken), 3 RBAC roles (admin, compliance_officer, viewer) |
 | Integrity | Server-side SHA-256 hash chain on decision records |
 | Hosting | Railway.app (backend + frontend + PostgreSQL) |
 | Domain | caelith.tech via IONOS |
 
-**Ports (local):** Backend: 3001, Frontend: 3000, PostgreSQL: 5433
+**Ports (local):** Backend: 3001, Frontend: 3000, PostgreSQL: 5432
 
 **Environment variables:**
 ```
-DATABASE_URL=postgresql://codex:codex@localhost:5433/codex
+DATABASE_URL=postgresql://caelith:caelith@localhost:5432/caelith
 JWT_SECRET=<random 32+ chars>
 NODE_ENV=development
 PORT=3001
 FRONTEND_URL=http://localhost:3000
-ANTHROPIC_API_KEY=<your-key>  # Required for Sprint 2 (RAG + Copilot)
+ANTHROPIC_API_KEY=<your-key>       # Copilot, NL compiler
+OPENAI_API_KEY=<your-key>          # Embeddings only
+EMBEDDING_PROVIDER=openai
+LOG_LEVEL=info
 ```
 
 **Running the project:**
 ```powershell
-# Terminal 1 — Backend
+# Terminal 1 — Database (Docker must be running)
+docker-compose up -d db
+
+# Terminal 2 — Backend
 cd C:\Users\julia\projects\private-asset-registry_Caelith_v2
 npx tsx src/backend/server.ts
 
-# Terminal 2 — Frontend
+# Terminal 3 — Frontend
 cd C:\Users\julia\projects\private-asset-registry_Caelith_v2\src\frontend
 npm run dev
-
-# Terminal 3 — Database (Docker must be running)
-# PostgreSQL runs via Docker on port 5433
 ```
 
 **Key commands:**
 ```powershell
-npx tsc --project tsconfig.backend.json --noEmit  # Backend TypeScript check
-cd src/frontend && npm run build                   # Frontend build check
-npx vitest run                                     # Run all 96 tests (backend must be running)
-npx tsx scripts/seed-demo.ts                       # Seed demo data (idempotent)
-npx tsx scripts/seed-showcase.ts                   # Seed showcase data (richer)
-npm run seed                                       # Alias for seed-demo
+npx tsc --project tsconfig.backend.json --noEmit   # Backend TypeScript check
+cd src/frontend && npm run build                    # Frontend build check
+npx vitest run                                      # Run all 96 tests (backend must be running)
+npx tsx scripts/seed-demo.ts                        # Seed demo data (idempotent)
+npx tsx scripts/seed-showcase.ts                    # Seed showcase data (richer)
+npx tsx scripts/ingest-regulations.ts               # Ingest 6 regulatory PDFs into RAG pipeline
 ```
 
 **Default admin credentials:** `admin@caelith.com` / `admin1234`
@@ -79,55 +84,54 @@ npm run seed                                       # Alias for seed-demo
 ```
 src/
   backend/
-    server.ts                    # Express app, route mounting, /api/reset endpoint, CORS
-    db.ts                        # PostgreSQL pool, query(), execute(), getPool(), DEFAULT_TENANT_ID, withTenant()
+    server.ts                    # Express app, route mounting, ensureAdminUser(), CORS
+    db.ts                        # PostgreSQL pool, query(), execute(), withTenant() (splice-based param ordering)
     middleware/
       auth.ts                    # JWT authenticate + authorize middleware (extracts tenantId from JWT)
+      security.ts                # Rate limiting, security headers, sanitizeInput
     models/
-      index.ts                   # All TypeScript interfaces (includes tenantId on User, chain fields on DecisionRecord)
+      index.ts                   # All TypeScript interfaces
     repositories/
-      asset-repository.ts
-      investor-repository.ts
-      holding-repository.ts
-      rules-repository.ts
-      event-repository.ts
-      fund-structure-repository.ts
+      asset-repository.ts        investor-repository.ts
+      holding-repository.ts      rules-repository.ts
+      event-repository.ts        fund-structure-repository.ts
       eligibility-criteria-repository.ts
       decision-record-repository.ts  # Calls sealRecord() after every INSERT
-      onboarding-repository.ts
+      onboarding-repository.ts   transfer-repository.ts
     services/
-      transfer-service.ts        # simulateTransfer + executeTransfer with AIFMD eligibility
+      auth-service.ts            # JWT, password hashing, account lockout
       eligibility-service.ts     # 6-check eligibility logic
+      transfer-service.ts        # simulateTransfer + executeTransfer with AIFMD eligibility
       onboarding-service.ts      # 4-step workflow: apply → checkEligibility → review → allocate
-      compliance-report-service.ts # Fund-level compliance snapshot with risk flags
+      compliance-report-service.ts  # Fund-level compliance snapshot with risk flags
+      integrity-service.ts       # Hash chain: computeRecordHash(), sealRecord(), verifyChain()
+      nl-rule-compiler.ts        # Claude API: NL → composite rule JSON (LIVE)
+      rag-service.ts             # NEW (Sprint 2) — ingest, query, suggestRules via pgvector
+      embedding-service.ts       # NEW (Sprint 2) — OpenAI text-embedding-3-small wrapper
+      copilot-service.ts         # NEW (Sprint 2) — 4-intent classification + orchestration
       composite-rules-service.ts
       webhook-service.ts
       cap-table-pdf.ts
-      nl-rule-compiler.ts        # Claude API: NL → composite rule JSON (code-complete, needs ANTHROPIC_API_KEY)
-      auth-service.ts            # JWT generation (includes tenantId in payload)
-      integrity-service.ts       # NEW (Sprint 1) — hash chain: computeRecordHash(), sealRecord(), verifyChain(), sealAllUnsealed()
+      holding-service.ts
+      investor-service.ts
+      asset-service.ts
+      rules-service.ts
     routes/
-      asset-routes.ts
-      investor-routes.ts
+      asset-routes.ts            investor-routes.ts
+      auth-routes.ts             nl-rules-routes.ts
+      compliance-report-routes.ts  onboarding-routes.ts
+      composite-rules-routes.ts  regulatory-routes.ts    # NEW (Sprint 2)
+      copilot-routes.ts          rules-routes.ts         # NEW (Sprint 2)
+      decision-record-routes.ts  template-routes.ts
+      eligibility-routes.ts      tenant-routes.ts
+      event-routes.ts            transfer-routes.ts
+      fund-structure-routes.ts   webhook-routes.ts
       holding-routes.ts
-      rules-routes.ts
-      transfer-routes.ts
-      event-routes.ts
-      fund-structure-routes.ts
-      eligibility-routes.ts      # POST /check + POST /criteria
-      decision-record-routes.ts  # Includes /verify-chain, /seal-all, tenant filtering
-      onboarding-routes.ts
-      compliance-report-routes.ts
-      nl-rules-routes.ts         # POST /from-natural-language
-      composite-rules-routes.ts
-      webhook-routes.ts
-      auth-routes.ts
-      tenant-routes.ts           # NEW (Sprint 1) — GET /current, GET / (admin)
   frontend/
     src/
       app/
-        page.tsx                 # Command Center Dashboard (empty-state suggests seed:showcase)
-        layout.tsx
+        page.tsx                 # Command Center Dashboard
+        layout.tsx               # Root layout + copilot toggle
         globals.css              # Green institutional palette
         login/page.tsx           # Split-screen login
         funds/page.tsx           # Fund Structures list
@@ -136,57 +140,54 @@ src/
         holdings/page.tsx
         onboarding/page.tsx      # Onboarding pipeline (Kanban)
         transfers/page.tsx
-        decisions/page.tsx       # Decision audit trail — server-side hash chain display + "Verify Chain" button
+        decisions/page.tsx       # Decision audit trail — hash chain + "Verify Chain"
         rules/page.tsx
+        rules/builder/page.tsx   # NEW (Sprint 3) — Visual rule builder
         audit/page.tsx           # Legacy audit trail
         assets/page.tsx          # Legacy assets page
+        jurisdiction/[code]/page.tsx
+        not-found.tsx
       components/
         sidebar.tsx              # Dark green sidebar with section groups
         ui.tsx                   # Card, MetricCard, Badge, StatusDot, etc.
         charts.tsx               # Dashboard data visualizations (5 charts)
+        copilot.tsx              # NEW (Sprint 2) — Slide-out chat panel
+        error-boundary.tsx       # NEW (Sprint 3)
         auth-provider.tsx
         auth-layout.tsx
+        rule-builder/            # NEW (Sprint 3) — 8 files
+          index.ts, condition-group.tsx, condition-row.tsx,
+          field-config.ts, nl-integration.tsx,
+          operator-toggle.tsx, rule-preview.tsx, rule-test-panel.tsx
       lib/
-        api.ts                   # ApiClient class — includes verifyDecisionChain()
-        types.ts                 # Frontend types — DecisionRecord includes sequence_number, integrity_hash, previous_hash
+        api.ts                   # ApiClient class
+        types.ts                 # Frontend types
         utils.ts
         hooks.ts
-    tailwind.config.ts           # Custom green palette (brand, surface, ink, edge tokens)
+  mcp/                           # NEW (Sprint 3)
+    server.ts                    # MCP server — 7 read-only tools
 migrations/
-  001_initial_schema.sql through 017_integrity_chain.sql  # 17 migrations total
+  001_initial_schema.sql through 019_security_hardening.sql  # 19 migrations total
 scripts/
-  seed-demo.ts                   # Idempotent demo data seeder (creates default tenant, seals decision records)
-  seed-showcase.ts               # Richer showcase seeder
+  seed-demo.ts                   seed-showcase.ts
+  seed-data.ts                   ingest-regulations.ts      # NEW (Sprint 2)
+  migrate.ts                     normalize-admin-user.ts
+  test-api.ts                    rebuild-init-sql.sh
+  clean-next-cache.js            free-port.js
+  run-tests.ps1
 docker/
-  init.sql                       # All 17 migrations concatenated
-tests/
-  e2e/
-    happy-path.test.ts           # 10 tests
-    validation-failures.test.ts  # 8 tests
-    audit-trail.test.ts          # 10 tests
-    composite-rules.test.ts      # 6 tests
-    eligibility.test.ts          # 8 tests
-    onboarding.test.ts           # 12 tests
-    compliance-report.test.ts    # 6 tests
-    transfer-eligibility.test.ts # 5 tests
-  unit/
-    repositories.test.ts         # 2 tests
-  fixtures/
-    api-helper.ts                # test HTTP helper + resetDb()
-src/rules-engine/
-  validator.test.ts              # 20 tests
-  composite.test.ts              # 9 tests
+  init.sql                       # Combined migration for fresh Docker builds
 ```
 
 ---
 
-## 4. DATABASE SCHEMA (17 migrations applied)
+## 4. DATABASE SCHEMA (19 migrations applied)
 
 **Core tables:** users, assets, investors, holdings, transfers, rules, rule_versions, composite_rules, events, webhooks, webhook_deliveries
 
-**Vertical B tables (AIFMD):** fund_structures, eligibility_criteria, decision_records, onboarding_records, regulatory_documents
+**AIFMD tables:** fund_structures, eligibility_criteria, decision_records, onboarding_records, regulatory_documents
 
-**Multi-tenancy table (Sprint 1):** tenants
+**Infrastructure tables:** tenants, login_attempts (019), refresh_tokens (019)
 
 **Key relationships:**
 - `assets.fund_structure_id` → `fund_structures.id`
@@ -212,6 +213,22 @@ decision_records additions: sequence_number (SERIAL, UNIQUE INDEX),
 ```
 Genesis hash: `0000000000000000000000000000000000000000000000000000000000000000`
 
+### Regulatory embeddings (Migration 018)
+```
+regulatory_documents additions: document_title VARCHAR(255),
+                                embedding vector(1536)
+Indexes: ivfflat (embedding vector_cosine_ops) WITH (lists=100),
+         btree (tenant_id, document_title),
+         UNIQUE (source_name, chunk_index)
+```
+
+### Security hardening (Migration 019)
+```
+login_attempts: id, user_id, ip_address, success, created_at
+refresh_tokens: id, user_id, token_hash, expires_at, revoked, created_at
++ RLS policies on core tables
+```
+
 ### Critical CHECK constraints
 - `fund_structures.legal_form` IN ('SICAV', 'SIF', 'RAIF', 'SCSp', 'SCA', 'ELTIF', 'Spezial_AIF', 'Publikums_AIF', 'QIAIF', 'RIAIF', 'LP', 'other')
 - `fund_structures.regulatory_framework` IN ('AIFMD', 'UCITS', 'ELTIF', 'national')
@@ -229,70 +246,34 @@ Genesis hash: `0000000000000000000000000000000000000000000000000000000000000000`
 
 All routes require JWT auth (`Authorization: Bearer <token>`) except `/api/auth/register` and `/api/auth/login`.
 
-```
-POST   /api/auth/register
-POST   /api/auth/login                       # JWT now includes tenantId claim
+**Base URL:** `http://localhost:3001/api`
 
-GET    /api/assets
-POST   /api/assets
-GET    /api/assets/:id
-GET    /api/assets/:id/utilization
+### Core CRUD
+- Assets: POST, GET, GET /:id, GET /:id/utilization
+- Investors: POST, GET, GET /:id, PATCH /:id
+- Holdings: POST, GET (?assetId, ?investorId), GET /cap-table/:assetId
+- Rules: POST, GET /:assetId
+- Transfers: POST /simulate, POST, GET (?assetId), GET /history/:assetId
+- Events: GET (?entityType, ?entityId, ?eventType)
 
-GET    /api/investors
-POST   /api/investors
-GET    /api/investors/:id
-PATCH  /api/investors/:id
+### AIFMD Compliance
+- Eligibility: POST /check, POST /criteria
+- Fund Structures: POST, GET, GET /:id, PATCH /:id
+- Decision Records: GET, GET /:id, GET /verify-chain, POST /seal-all
+- Onboarding: POST /apply, POST /:id/check-eligibility, POST /:id/review, POST /:id/allocate, GET, GET /:id
+- Compliance Reports: GET /fund/:fundId
 
-GET    /api/holdings?assetId=X
-POST   /api/holdings
-GET    /api/holdings/cap-table/:assetId
-GET    /api/holdings/cap-table/:assetId/pdf
+### AI Layer (Sprint 2)
+- Regulatory: POST /ingest (admin), POST /query, POST /suggest-rules
+- Copilot: POST /chat
+- NL Rules: POST /from-natural-language
 
-GET    /api/rules/:assetId
-POST   /api/rules
-GET    /api/rules/:assetId/versions
-
-GET    /api/composite-rules?assetId=X
-POST   /api/composite-rules
-PATCH  /api/composite-rules/:id
-DELETE /api/composite-rules/:id
-
-POST   /api/transfers/simulate
-POST   /api/transfers
-GET    /api/transfers
-GET    /api/transfers/history/:assetId
-
-GET    /api/fund-structures
-POST   /api/fund-structures
-GET    /api/fund-structures/:id
-
-POST   /api/eligibility/check
-POST   /api/eligibility/criteria
-
-GET    /api/decisions/verify-chain           # Sprint 1 — verify integrity hash chain
-POST   /api/decisions/seal-all              # Sprint 1 — backfill unsealed records (admin)
-GET    /api/decisions                       # Lists all — includes sequence_number, integrity_hash, previous_hash
-GET    /api/decisions/:id
-GET    /api/decisions/asset/:assetId
-GET    /api/decisions/investor/:investorId
-
-POST   /api/onboarding
-POST   /api/onboarding/:id/check-eligibility
-POST   /api/onboarding/:id/review
-POST   /api/onboarding/:id/allocate
-GET    /api/onboarding/:id
-GET    /api/onboarding?asset_id=X
-
-GET    /api/reports/compliance/:fundStructureId
-
-POST   /api/nl-rules/from-natural-language   # Needs ANTHROPIC_API_KEY
-
-GET    /api/tenants/current                  # Sprint 1 — current tenant info
-GET    /api/tenants                          # Sprint 1 — list all (admin)
-
-GET    /api/events
-POST   /api/reset                            # Dev only — gated by NODE_ENV
-```
+### Infrastructure
+- Auth: POST /register, POST /login
+- Tenants: GET /current, GET / (admin)
+- Templates: GET /
+- Composite Rules: POST, GET, GET /:id, DELETE /:id
+- Webhooks: POST, GET, DELETE /:id
 
 ---
 
@@ -304,38 +285,33 @@ POST   /api/reset                            # Dev only — gated by NODE_ENV
 - 7 built-in transfer validation rules + composite AND/OR/NOT rules
 - Transfer simulation + execution with decision records
 - Eligibility checking with 6 regulatory checks and citations
-- Onboarding workflow: 4-step state machine (applied → eligible → approved → allocated)
+- Onboarding workflow: 4-step state machine
 - Fund structure modeling (SIF, RAIF, ELTIF, etc.)
 - Investor classification (5-tier: institutional → retail)
 - Compliance PDF export, webhook system (HMAC-SHA256)
-- NL rule compiler (code-complete, untested live)
 - EU regulatory templates (MiFID II, AIFMD, DLT Pilot, MiCA, DACH)
-- Full frontend redesign: institutional green design system, 10+ pages
+- Full frontend redesign: institutional green design system, 15 pages
 - Dashboard with 5 data visualization charts
 
 ### Sprint 0: Stabilize (Feb 11-12) — ✅ COMPLETE, tag `sprint-0-stable`
-- 9 stress test fixes: PostgreSQL placeholders, transfer whitelist UI, eligibility modal, decisions hash chain, KYC chart, auth guards, admin normalization, PDF pagination, legacy page polish
-- `.gitignore` updated: `dist/` excluded
-- "New Application" button added to onboarding Kanban
+- 9 stress test fixes
+- `.gitignore` updated, "New Application" button added
 
 ### Sprint 1: Foundations (Feb 12-13) — ✅ COMPLETE, tag `sprint-1-foundations`
-**1A. Multi-Tenancy Infrastructure:**
-- Migration 016: `tenants` table + `tenant_id` column on all 16 core tables
-- Default tenant `00000000-0000-0000-0000-000000000099` ("Caelith Demo")
-- All existing data backfilled to default tenant
-- JWT carries `tenantId`, auth middleware extracts it
-- `DEFAULT_TENANT_ID` constant + `withTenant()` helper in db.ts
-- Tenant API routes: GET /current, GET / (admin)
-- RLS policies written as comments, ready to enable
+- **1A. Multi-Tenancy:** Migration 016, tenant_id on all tables, withTenant() helper, JWT carries tenantId
+- **1B. Blockchain Audit Log:** Migration 017, integrity-service.ts, sealRecord() on every decision insert, verify-chain endpoint
+- **Critical bug found & fixed:** withTenant() parameter ordering — splice-based insertion instead of append (was root cause of 27 test failures)
 
-**1B. Blockchain Audit Log (Server-Side Hash Chain):**
-- Migration 017: `sequence_number`, `integrity_hash`, `previous_hash` on decision_records
-- `integrity-service.ts`: computeRecordHash(), sealRecord(), verifyChain(), sealAllUnsealed()
-- decision-record-repository.ts calls sealRecord() after every INSERT
-- GET /api/decisions/verify-chain — walk chain, recompute hashes, detect tampering
-- POST /api/decisions/seal-all — backfill unsealed records
-- Frontend: server-side hashes replace client-side computation, "Verify Chain" button with green/red banner
-- Seed scripts call sealAllUnsealed() after seeding
+### Sprint 2: AI Layer (Feb 13) — ✅ COMPLETE, tag `sprint-2-ai-layer`
+- **2A. RAG Pipeline:** Migration 018 (pgvector embeddings), rag-service.ts, embedding-service.ts (OpenAI text-embedding-3-small), regulatory-routes.ts, ingest-regulations.ts script
+- **2B. NL Compiler Live:** nl-rule-compiler.ts tested with real Anthropic API, error handling added
+- **2C. Compliance Copilot:** copilot-service.ts (4-intent classification), copilot-routes.ts, copilot.tsx (slide-out panel)
+- **Corpus:** 6 regulatory PDFs ingested → 1,246 chunks with embeddings in regulatory_documents
+
+### Sprint 3: MCP + Rule Builder (Feb 13) — ✅ COMPLETE, tag `sprint-3-integration`
+- **3A. MCP Server:** src/mcp/server.ts with 7 read-only tools, tsconfig.mcp.json
+- **3B. Visual Rule Builder:** 8 component files in rule-builder/, rules/builder/page.tsx, NL integration
+- **Security:** Migration 019 (login_attempts, refresh_tokens, RLS policies), error-boundary component
 
 ---
 
@@ -345,22 +321,17 @@ POST   /api/reset                            # Dev only — gated by NODE_ENV
 |--------|-------|-------|--------|
 | 0 | Feb 11-12 | Stabilize + stress test fixes | ✅ DONE |
 | 1 | Feb 12-13 | Multi-tenancy + blockchain audit log | ✅ DONE |
-| **2** | **NEXT** | **RAG pipeline + NL compiler live + copilot chat** | **← START HERE** |
-| 3 | TBD | MCP server (7 tools) + visual rule builder | Planned |
-| 4 | TBD | On-chain export + investor detail + OpenAPI | Planned |
+| 2 | Feb 13 | RAG pipeline + NL compiler live + copilot chat | ✅ DONE |
+| 3 | Feb 13 | MCP server (7 tools) + visual rule builder + security | ✅ DONE |
+| **4** | **NEXT** | **On-chain export + investor detail + OpenAPI** | **← START HERE** |
 | 5 | Apr 14-16 | Polish + deploy + demo script | Planned |
 
-**Sprint 2 scope (AI Layer):**
-- 2A: RAG Pipeline — pgvector extension, ingest 6 regulatory PDFs (chunk by article/section, embed, store), query endpoint with cosine similarity + citations
-- 2B: NL Compiler Live — already code-complete, needs live API test + error handling + frontend integration
-- 2C: Compliance Copilot — slide-out chat panel, intent classification (explain decision / regulatory Q&A / draft rule / what-if), server-side orchestration with Claude API
+**Sprint 4 scope (from PILOT_EXECUTION_PLAN.md):**
+- On-chain export: ERC-3643 configuration JSON generated from sealed decision records
+- Investor detail page: full investor profile with eligibility history, holdings, onboarding status
+- OpenAPI: swagger annotations on all endpoints, served at /api/docs
 
-**Sprint 2 prerequisites (all met):**
-- ✅ Anthropic API credits funded
-- ☐ pgvector extension enabled in PostgreSQL: `CREATE EXTENSION IF NOT EXISTS vector;`
-- ☐ ANTHROPIC_API_KEY in .env and Railway
-
-See `PILOT_EXECUTION_PLAN.md` for full Sprint 2 file-level specification.
+See `PILOT_EXECUTION_PLAN.md` for full Sprint 4 file-level specification.
 
 ---
 
@@ -368,20 +339,18 @@ See `PILOT_EXECUTION_PLAN.md` for full Sprint 2 file-level specification.
 
 Run `npx tsx scripts/seed-demo.ts` to populate demo data (idempotent). Creates:
 
-| Entity | Details |
-|--------|---------|
-| **Tenant** | Caelith Demo (ID: ...0099) |
-| **Fund Structures** | Luxembourg SIF Alpha (ID: ...0001), Luxembourg RAIF Beta (ID: ...0002) |
-| **Eligibility Criteria** | 6 records: professional/semi_pro/institutional × SIF/RAIF |
-| **Assets** | SIF Class A (1M units @€1), SIF Class B (500K @€10), RAIF Class A (2M @€1) |
-| **Rules** | 3 permissive rule sets (one per asset) |
-| **Investors** | Marie Laurent (FR, professional), Klaus Schmidt (DE, semi_pro, KYC expires 2026-05-15), Acme Capital (LU, institutional) |
-| **Holdings** | Marie: 200K SIF-A, Klaus: 150K SIF-A, Acme: 400K SIF-A + 500K RAIF-A |
-| **Decision Records** | 3 sealed records with verified hash chain |
-
-**Risk flag triggers:** Acme at 40% concentration in SIF-A (>25% threshold), Klaus KYC expiring within ~90 days.
-
-Fixed UUIDs: Fund structures `...0001` (SIF), `...0002` (RAIF). Default tenant `...0099`.
+| Entity | Count | Details |
+|--------|-------|---------|
+| Tenant | 1 | Caelith Demo (ID: ...0099) |
+| Fund Structures | 4 | SIF, RAIF, + 2 others |
+| Eligibility Criteria | 13 | Per fund structure × investor type |
+| Assets | 9 | Multiple classes per fund |
+| Rules | 9 | Permissive rule sets |
+| Investors | 25 | Mix of professional, semi-professional, institutional |
+| Holdings | 34 | Various allocations |
+| Decision Records | 26 | All sealed with verified hash chain |
+| Users | 4 | 2 admin, 2 viewer |
+| Regulatory Documents | 1,246 | 6 PDFs chunked + embedded |
 
 ---
 
@@ -397,70 +366,64 @@ Fixed UUIDs: Fund structures `...0001` (SIF), `...0002` (RAIF). Default tenant `
 
 **DO NOT use** "SIF Law 13 Feb 2007" as the `regulatory_framework` value in fund_structures — the CHECK constraint requires one of: 'AIFMD', 'UCITS', 'ELTIF', 'national'. Use 'AIFMD'. The law citation goes in `eligibility_criteria.source_reference`.
 
+**RAG Corpus (ingested, 1,246 chunks):**
+| Document | Jurisdiction | Chunks |
+|----------|-------------|--------|
+| AIFMD Directive 2011/61/EU | EU | 338 |
+| ELTIF 2.0 Regulation (EU) 2023/606 | EU | 88 |
+| CSSF Circular 15/633 | LU | 5 |
+| CSSF Circular 18/698 | LU | 591 |
+| RAIF Law 23 Jul 2016 | LU | 138 |
+| CBI AIFMD Q&A | IE | 86 |
+
 ---
 
 ## 10. KNOWN ISSUES & DECISIONS
 
-1. **NL compiler live test pending** — Code complete, API credits funded, needs live validation in Sprint 2.
+1. **Multi-tenancy is schema-ready, not fully RLS-enforced** — tenant_id columns exist on all tables, JWT carries tenantId, migration 019 added RLS policies, but application-level filtering via `withTenant()` is the primary mechanism. RLS can be fully enabled without schema changes.
 
-2. **RAG pipeline next** — Table `regulatory_documents` exists with pgvector-ready column. 6 regulatory PDFs in project files. Sprint 2 will ingest and enable queries.
+2. **withTenant() uses splice-based parameter ordering** — Critical fix from Sprint 3: the tenant_id parameter is spliced at the correct insertion index (count of ? marks before the AND clause) rather than appended to the end of the params array. This prevents parameter misalignment when queries have ? marks in ORDER BY / CASE expressions.
 
-3. **Multi-tenancy is schema-ready, not RLS-enforced** — tenant_id columns exist on all tables, JWT carries tenantId, but PostgreSQL RLS policies are commented out. Application-level filtering via `withTenant()`. RLS can be enabled later without schema changes.
+3. **E2E tests require running backend** — `npx vitest run` needs `npx tsx src/backend/server.ts` running in another terminal. Unit tests (rules-engine, validator) run independently.
 
-4. **E2E tests require running backend** — `npx vitest run` needs `npx tsx src/backend/server.ts` running in another terminal. Unit tests (rules-engine) run independently.
+4. **`.env` is NOT in git** — Was accidentally committed early, caught by GitHub push protection. Removed from history via rebase. API keys rotated. `.env` is in `.gitignore`.
 
-5. **`.env` security** — `.env` was accidentally committed early in project history. Now in `.gitignore` and untracked. Old API keys rotated.
+5. **`/api/reset` endpoint** — gated behind `NODE_ENV !== 'production'`. Returns 403 in production.
 
-6. **`/api/reset` endpoint** — gated behind `NODE_ENV !== 'production'`. Returns 403 in production.
+6. **Production deployment** — Railway.app with PostgreSQL. Trial plan ($5 credit) — needs upgrade to Hobby ($5/month) for sustained use.
 
-7. **Production deployment** — Railway.app with PostgreSQL. Three services: backend, frontend, Postgres. Trial plan ($5 credit) — needs upgrade to Hobby ($5/month) soon.
+7. **decided_by field** — `decision_records.decided_by` is UUID FK to users, not a string. Automated eligibility checks use `NULL`.
 
-8. **decided_by field** — `decision_records.decided_by` is UUID FK to users, not a string. Automated eligibility checks use `NULL`.
+8. **Docker container name** — Local PostgreSQL container is `private-asset-registry_caelith_v2-db-1` (not `caelith-db`). Access via: `docker exec private-asset-registry_caelith_v2-db-1 psql -U caelith -d caelith`
+
+9. **sql.js dependency** — Listed in package.json but likely unused (legacy from SQLite era). Safe to remove in cleanup.
 
 ---
 
 ## 11. WORKFLOW & CONVENTIONS
 
-**Git workflow:** Direct to main (solo developer). Commit after each sprint.
-**Tags:** `phase-3-complete`, `sprint-0-stable`, `sprint-1-foundations`
-**Commit message format:** `feat:`, `fix:`, `test:`, `docs:`
+**Git workflow:** Direct to main (solo developer). Commit after each logical unit. PowerShell: use `;` not `&&` for command chaining.
+**Tags:** `phase-3-complete`, `sprint-0-stable`, `sprint-1-foundations`, `sprint-2-ai-layer`, `sprint-3-integration`
+**Commit message format:** `feat:`, `fix:`, `test:`, `docs:`, `chore:`
 
-**TypeScript:** Backend: `npx tsc --project tsconfig.backend.json --noEmit`. Frontend: `npm run build`. Both must be clean.
+**TypeScript:** Backend: `npx tsc --project tsconfig.backend.json --noEmit`. Frontend: `cd src/frontend && npm run build`. Both must be clean.
 
 **Route handler pattern:** `async (req: Request, res: Response): Promise<void>` with explicit `return;` after `res.status().json()`.
 **Error pattern:** `err: unknown` + `instanceof Error`. Codes: `VALIDATION_ERROR`, `NOT_FOUND`, `INTERNAL_ERROR`.
 
 **Frontend:** All colors use design system tokens (brand, surface, ink, edge). No raw slate/blue/emerald/indigo. Font: DM Sans (body) + JetBrains Mono (data/IDs).
 
-**Agent workflow:** For complex multi-file changes, we generate detailed prompts (markdown files) with exact file paths, constraints, DB CHECK values, and verification commands to feed to Claude agent in VS Code.
+**Agent workflow:** For complex multi-file changes, generate detailed prompts (markdown files) with exact file paths, constraints, DB CHECK values, and verification commands to feed to Claude agent in VS Code.
 
 ---
 
-## 12. PROJECT FILES IN CONTEXT
-
-These files are available in `/mnt/project/` and contain the full specifications:
-
-| File | Contents |
-|------|----------|
-| `PILOT_EXECUTION_PLAN.md` | 6-sprint execution plan with file-level specs for each sprint |
-| `HANDOFF_CONTEXT.md` | This document |
-| `20260210_Technical_Report.md` | Technical architecture report |
-| `cssf15_633eng.pdf` | CSSF Circular 15/633 (financial reporting — NOT SIF eligibility) |
-| `L_230716_RAIF_eng.pdf` | RAIF Law 23 Jul 2016 |
-| `CELEX_32023R0606_EN_TXT.pdf` | ELTIF 2.0 Regulation (EU) 2023/606 |
-| `CBI_AIFMD_QA.pdf` | Central Bank of Ireland AIFMD Q&A |
-| `CELEX_32011L0061_EN_TXT.pdf` | AIFMD Directive 2011/61/EU |
-| `cssf18_698eng.pdf` | CSSF Circular 18/698 |
-
----
-
-## 13. QUICK START FOR NEW CONVERSATION
+## 12. QUICK START FOR NEW CONVERSATION
 
 After pasting this document, say:
 
-> "I'm continuing Caelith development. Sprints 0 and 1 are complete (multi-tenancy + blockchain audit log). API credits are funded. Generate the Sprint 2 prompt: RAG pipeline + NL compiler live + Compliance copilot. See PILOT_EXECUTION_PLAN.md for the detailed spec."
+> "I'm continuing Caelith development. Sprints 0–3 are complete (multi-tenancy, blockchain audit log, RAG pipeline with 1,246 chunks, copilot, MCP server, visual rule builder). Sprint 4 is next: on-chain export + investor detail + OpenAPI. See PILOT_EXECUTION_PLAN.md for the detailed spec."
 
 The AI should then:
-1. Search project knowledge for PILOT_EXECUTION_PLAN.md (Sprint 2 section)
+1. Search project knowledge for PILOT_EXECUTION_PLAN.md (Sprint 4 section)
 2. Check current file structure and existing services
-3. Generate Sprint 2 prompt with exact file paths, constraints, and verification commands
+3. Generate Sprint 4 prompt with exact file paths, constraints, and verification commands
