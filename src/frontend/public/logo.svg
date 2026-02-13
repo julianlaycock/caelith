@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" fill="none">
+  <!-- Logo 1: The Accent Mark — Shield-C with cyan accent bar -->
+  <rect width="400" height="120" fill="#0A0E1A"/>
+  
+  <!-- Shield/C icon -->
+  <g transform="translate(24, 16)">
+    <!-- Outer shield shape (C-like) -->
+    <path d="M44 0C19.7 0 0 19.7 0 44C0 68.3 19.7 88 44 88C56.2 88 67.2 83.2 75 75.2" 
+          stroke="#22D3EE" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <!-- Inner accent bar cutting through -->
+    <line x1="20" y1="44" x2="65" y2="44" stroke="#22D3EE" stroke-width="5" stroke-linecap="round"/>
+    <!-- Small dot accent -->
+    <circle cx="72" cy="44" r="3" fill="#22D3EE"/>
+  </g>
+  
+  <!-- Wordmark -->
+  <text x="120" y="72" font-family="Space Grotesk, system-ui, sans-serif" font-weight="700" font-size="42" letter-spacing="0.15em" fill="#F1F5F9">CAELITH</text>
+  
+  <!-- Accent bar above wordmark -->
+  <rect x="120" y="24" width="28" height="2.5" rx="1.25" fill="#22D3EE"/>
+</svg>

@@ -105,14 +105,13 @@ export function Sidebar({ onCopilotToggle, mobileOpen, onMobileClose }: { onCopi
       {/* Brand */}
       <div className="px-5 pt-6 pb-6 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          {/* Hash Chain Logo Mark */}
+          {/* Accent Mark Logo */}
           <svg viewBox="0 0 32 32" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-            <g transform="translate(2, 1)">
-              <rect x="7" y="0" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
-              <rect x="0" y="11" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
-              <rect x="7" y="22" width="16" height="8" rx="4" stroke="#22D3EE" strokeWidth="2" fill="none"/>
-              <line x1="14" y1="8" x2="14" y2="11" stroke="#22D3EE" strokeWidth="2"/>
-              <line x1="8" y1="19" x2="8" y2="22" stroke="#22D3EE" strokeWidth="2"/>
+            <g transform="translate(3, 3)">
+              <path d="M13 0C5.82 0 0 5.82 0 13C0 20.18 5.82 26 13 26C16.6 26 19.85 24.58 22.16 22.22"
+                    stroke="#22D3EE" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+              <line x1="6" y1="13" x2="19" y2="13" stroke="#22D3EE" strokeWidth="2.5" strokeLinecap="round"/>
+              <circle cx="21.5" cy="13" r="1.5" fill="#22D3EE"/>
             </g>
           </svg>
           <span className="text-[13px] font-bold uppercase tracking-[0.12em] text-ink">

@@ -1,7 +1,7 @@
 /**
  * Cap Table PDF Export Service
  *
- * Generates institutional-grade PDF cap table reports with Caelith green branding.
+ * Generates institutional-grade PDF cap table reports with Midnight Signal dark theme.
  */
 
 import PDFDocument from 'pdfkit';
@@ -32,28 +32,20 @@ interface FundInfo {
   regulatory_framework: string;
 }
 
-// ── Caelith Design Tokens ────────────────────────────────
+// ── Midnight Signal Design Tokens ─────────────────────────
 const C = {
-  brand950:  '#0B2E1F',
-  brand800:  '#166534',
-  brand700:  '#15803D',
-  brand600:  '#16A34A',
-  brand500:  '#22C55E',
-  brand400:  '#4ADE80',
-  brand200:  '#BBF7D1',
-  brand100:  '#DCFCE8',
-  brand50:   '#F0FDF6',
-  navy800:   '#2C355E',
-  navy700:   '#323D70',
-  ink:       '#0F1D18',
-  inkSec:    '#4B6358',
-  inkTert:   '#7A9488',
-  surface:   '#F0F4F2',
-  surfMuted: '#F8FAF9',
-  edge:      '#D1DDD7',
-  edgeSub:   '#E8EFE9',
+  bg:        '#0A0E1A',   // dark navy background
+  bgSec:     '#111827',   // secondary background
+  accent:    '#22D3EE',   // cyan brand accent
+  accentDim: '#0E7490',   // dimmed accent for subtle use
+  ink:       '#F1F5F9',   // primary text
+  inkSec:    '#94A3B8',   // secondary text
+  inkTert:   '#64748B',   // tertiary text
+  edge:      '#1E293B',   // borders/edges
+  surface:   '#111827',   // card surfaces
+  surfMuted: '#0F172A',   // muted surface (alt rows)
   white:     '#FFFFFF',
-  red:       '#DC2626',
+  red:       '#EF4444',
 };
 
 export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
@@ -133,20 +125,20 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
 
     // ─── Top Banner ──────────────────────────────────────
     doc.save();
-    doc.rect(0, 0, doc.page.width, 80).fill(C.brand950);
+    doc.rect(0, 0, doc.page.width, 80).fill(C.bg);
 
     // Accent line
-    doc.rect(L, 68, 32, 2).fill(C.brand500);
+    doc.rect(L, 68, 32, 2).fill(C.accent);
 
     // Brand name
-    doc.fontSize(8).fillColor(C.brand400)
+    doc.fontSize(8).fillColor(C.accent)
       .text('CAELITH', L, 20, { characterSpacing: 3 });
 
-    doc.fontSize(7).fillColor(C.brand400)
+    doc.fontSize(7).fillColor(C.accent)
       .text('COMPLIANCE ENGINE', L, 32);
 
     // Right side: date + report ID
-    doc.fontSize(7).fillColor(C.brand200)
+    doc.fontSize(7).fillColor(C.inkSec)
       .text(`Report ${reportId}`, L, 20, { width: W, align: 'right' })
       .text(`Generated ${now}`, L, 32, { width: W, align: 'right' });
     doc.restore();
@@ -180,17 +172,17 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
     const cardH = 54;
 
     const cards = [
-      { label: 'TOTAL UNITS', value: fmtNum(asset.total_units), color: C.brand600 },
-      { label: 'ALLOCATED', value: fmtNum(allocated), color: C.brand600 },
-      { label: 'UTILIZATION', value: `${utilPct.toFixed(1)}%`, color: utilPct > 90 ? C.red : C.brand600 },
-      { label: 'HOLDERS', value: String(holders), color: C.navy700 },
+      { label: 'TOTAL UNITS', value: fmtNum(asset.total_units), color: C.accent },
+      { label: 'ALLOCATED', value: fmtNum(allocated), color: C.accent },
+      { label: 'UTILIZATION', value: `${utilPct.toFixed(1)}%`, color: utilPct > 90 ? C.red : C.accent },
+      { label: 'HOLDERS', value: String(holders), color: C.accentDim },
     ];
 
     cards.forEach((card, i) => {
       const cx = L + i * (cardW + 6);
       // Card background
       doc.save();
-      doc.rect(cx, y, cardW, cardH).fill(C.brand50);
+      doc.rect(cx, y, cardW, cardH).fill(C.surface);
       // Left accent bar
       doc.rect(cx, y, 3, cardH).fill(card.color);
       doc.restore();
@@ -205,9 +197,9 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
     y += cardH + 16;
 
     doc.save();
-    doc.roundedRect(L, y, W, 8, 4).fill(C.surface);
+    doc.roundedRect(L, y, W, 8, 4).fill(C.edge);
     const barW = Math.max((utilPct / 100) * W, 4);
-    doc.roundedRect(L, y, barW, 8, 4).fill(C.brand500);
+    doc.roundedRect(L, y, barW, 8, 4).fill(C.accent);
     doc.restore();
 
     doc.fontSize(7).fillColor(C.inkTert)
@@ -232,10 +224,10 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
 
     // Table header
     doc.save();
-    doc.rect(L, y - 4, W, 20).fill(C.brand950);
+    doc.rect(L, y - 4, W, 20).fill(C.bg);
     doc.restore();
 
-    doc.fontSize(6.5).fillColor(C.brand200);
+    doc.fontSize(6.5).fillColor(C.accent);
     doc.text('INVESTOR', cols.name.x, y, { characterSpacing: 0.5 });
     doc.text('JURISDICTION', cols.jur.x, y, { characterSpacing: 0.5 });
     doc.text('ACCREDITED', cols.accr.x, y, { characterSpacing: 0.5 });
@@ -266,7 +258,7 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
         .text(entry.jurisdiction, cols.jur.x, y);
 
       // Accredited badge
-      const accColor = entry.accredited ? C.brand600 : C.inkTert;
+      const accColor = entry.accredited ? C.accent : C.inkTert;
       doc.fontSize(7.5).fillColor(accColor)
         .text(entry.accredited ? 'Yes' : 'No', cols.accr.x, y);
 
@@ -280,8 +272,8 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
       const barMaxW = cols.bar.w - 8;
       const ownerBarW = (Number(entry.percentage) / 100) * barMaxW;
       doc.save();
-      doc.roundedRect(cols.bar.x, y + 1, barMaxW, 7, 3).fill(C.surface);
-      doc.roundedRect(cols.bar.x, y + 1, Math.max(ownerBarW, 2), 7, 3).fill(C.brand500);
+      doc.roundedRect(cols.bar.x, y + 1, barMaxW, 7, 3).fill(C.edge);
+      doc.roundedRect(cols.bar.x, y + 1, Math.max(ownerBarW, 2), 7, 3).fill(C.accent);
       doc.restore();
 
       y += 22;
@@ -304,7 +296,7 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
     // ─── Total Row ───────────────────────────────────────
     y += 22;
     doc.save();
-    doc.rect(L, y - 4, W, 22).fill(C.brand950);
+    doc.rect(L, y - 4, W, 22).fill(C.bg);
     doc.restore();
 
     doc.fontSize(8.5).fillColor(C.white).font('Helvetica-Bold')
@@ -335,7 +327,7 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
 
     // Mini table header
     doc.save();
-    doc.rect(L, y - 3, W, 16).fill(C.surface);
+    doc.rect(L, y - 3, W, 16).fill(C.bg);
     doc.restore();
 
     doc.fontSize(6.5).fillColor(C.inkTert);
@@ -380,7 +372,7 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
       }
       const cnt = Number(row.count);
       const pct = kycTotal > 0 ? ((cnt / kycTotal) * 100).toFixed(1) : '0';
-      const statusColor = row.status === 'verified' ? C.brand600 : row.status === 'expired' ? C.red : C.inkTert;
+      const statusColor = row.status === 'verified' ? C.accent : row.status === 'expired' ? C.red : C.inkTert;
 
       doc.save();
       doc.rect(L, y - 2, W, 18).fill(C.surfMuted);
@@ -398,11 +390,11 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
     y += 40;
     if (y < doc.page.height - 140) {
       doc.save();
-      doc.rect(L, y, W, 48).fill(C.brand50);
-      doc.rect(L, y, 3, 48).fill(C.brand500);
+      doc.rect(L, y, W, 48).fill(C.bgSec);
+      doc.rect(L, y, 3, 48).fill(C.accent);
       doc.restore();
 
-      doc.fontSize(7).fillColor(C.brand800)
+      doc.fontSize(7).fillColor(C.accent)
         .text('CONFIDENTIAL — INSTITUTIONAL USE ONLY', L + 14, y + 10, { characterSpacing: 0.5 });
       doc.fontSize(6.5).fillColor(C.inkSec)
         .text(
@@ -426,7 +418,7 @@ function addFooter(doc: PDFKit.PDFDocument, L: number, W: number, date: string, 
 
   // Footer accent
   doc.save();
-  doc.rect(L, footerY, 20, 2).fill(C.brand500);
+  doc.rect(L, footerY, 20, 2).fill(C.accent);
   doc.restore();
 
   doc.fontSize(6.5).fillColor(C.inkTert)
