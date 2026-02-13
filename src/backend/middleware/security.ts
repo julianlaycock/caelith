@@ -101,7 +101,7 @@ export function rateLimit(options: RateLimitOptions) {
 
 export const apiRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  maxRequests: 200,
+  maxRequests: process.env.NODE_ENV === 'production' ? 200 : 2000,
 });
 
 export const authRateLimit = rateLimit({
