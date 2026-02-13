@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import { useFormAction } from '../../lib/use-form-action';
@@ -215,7 +216,11 @@ function InvestorsContent() {
             <tbody className="divide-y divide-edge-subtle">
               {filteredInvestors.map((inv) => (
                 <tr key={inv.id} className="transition-colors hover:bg-bg-tertiary">
-                  <td className="px-5 py-3 font-medium text-ink">{inv.name}</td>
+                  <td className="px-5 py-3 font-medium text-ink">
+                    <Link href={`/investors/${inv.id}`} className="text-accent-400 hover:text-accent-300 transition-colors">
+                      {inv.name}
+                    </Link>
+                  </td>
                   <td className="px-5 py-3 text-ink-secondary">{inv.jurisdiction}</td>
                   <td className="px-5 py-3">
                     <Badge variant="gray">{inv.investor_type.replace(/_/g, ' ')}</Badge>
