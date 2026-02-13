@@ -13,7 +13,9 @@ import {
   ErrorMessage,
   EmptyState,
   Badge,
+  ExportMenu,
 } from '../../components/ui';
+import { exportCSV } from '../../lib/export-csv';
 import { formatDateTime } from '../../lib/utils';
 
 const EVENT_TYPE_OPTIONS = [
@@ -66,6 +68,20 @@ export default function AuditPage() {
       <PageHeader
         title="Audit Trail"
         description="Immutable event log of all operations"
+        action={
+          <ExportMenu
+            onExportCSV={() => {
+              if (!events.data) return;
+              exportCSV('caelith-audit.csv',
+                ['Event Type', 'Entity Type', 'Entity ID', 'Timestamp', 'Payload'],
+                events.data.map(e => [
+                  e.event_type, e.entity_type, e.entity_id,
+                  e.timestamp, JSON.stringify(e.payload)
+                ])
+              );
+            }}
+          />
+        }
       />
 
       {/* Filters */}

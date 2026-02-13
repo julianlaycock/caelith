@@ -21,6 +21,15 @@ import { formatDate, formatDateTime } from '../../lib/utils';
 import { ALL_JURISDICTIONS } from '../../lib/constants';
 import type { RuleSet, CompositeRule, ApiError, Investor, NLRuleResponse } from '../../lib/types';
 
+const RULE_TEMPLATES = [
+  { label: 'Block retail investors', prompt: 'Block all transfers to retail investors' },
+  { label: '€125K minimum investment', prompt: 'Require minimum investment of €125,000 for semi-professional investors' },
+  { label: 'Restrict US persons', prompt: 'Block transfers to investors in US jurisdiction' },
+  { label: 'Professional investors only', prompt: 'Only allow transfers to professional or institutional investors' },
+  { label: 'KYC verified required', prompt: 'Block transfers to investors without verified KYC status' },
+  { label: 'EU/EEA residents only', prompt: 'Only allow transfers to investors in EU or EEA jurisdictions' },
+];
+
 const CONDITION_FIELDS = [
   { value: 'to.jurisdiction', label: 'Recipient jurisdiction' },
   { value: 'to.accredited', label: 'Recipient accredited' },
@@ -65,8 +74,7 @@ export default function RulesPage() {
     { field: 'to.jurisdiction', operator: 'eq', value: '' },
   ]);
 
-  // NL Rule Compiler state
-  const [showNlModal, setShowNlModal] = useState(false);
+  // NL Rule Compiler state (inline)
   const [nlPrompt, setNlPrompt] = useState('');
   const [nlLoading, setNlLoading] = useState(false);
   const [nlError, setNlError] = useState<string | null>(null);
@@ -255,7 +263,6 @@ export default function RulesPage() {
         })),
         enabled: true,
       });
-      setShowNlModal(false);
       setNlPrompt('');
       setNlResult(null);
       setSuccessMsg('AI-generated rule applied successfully.');

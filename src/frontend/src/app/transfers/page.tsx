@@ -13,7 +13,9 @@ import {
   ErrorMessage,
   EmptyState,
   Alert,
+  ExportMenu,
 } from '../../components/ui';
+import { exportCSV } from '../../lib/export-csv';
 import { formatNumber, formatDateTime, classNames } from '../../lib/utils';
 import type { DetailedValidationResult, ApiError } from '../../lib/types';
 
@@ -163,7 +165,23 @@ export default function TransfersPage() {
       <PageHeader
         title="Transfers"
         description="Simulate, execute, and review unit transfers"
-        action={<Button onClick={() => setShowForm(true)}>+ New Transfer</Button>}
+        action={
+          <div className="flex items-center gap-2">
+            <ExportMenu
+              onExportCSV={() => {
+                if (!history.data || history.data.length === 0) return;
+                exportCSV('caelith-transfers.csv',
+                  ['Date', 'From', 'To', 'Units'],
+                  history.data.map(t => [
+                    t.executed_at, t.from_name, t.to_name,
+                    String(t.units)
+                  ])
+                );
+              }}
+            />
+            <Button onClick={() => setShowForm(true)}>+ New Transfer</Button>
+          </div>
+        }
       />
 
       {successMsg && (

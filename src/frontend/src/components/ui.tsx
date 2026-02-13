@@ -577,3 +577,54 @@ export function SortableHeader<T>({
     </th>
   );
 }
+
+// ── Export Menu ────────────────────────────────────────
+
+export function ExportMenu({ onExportCSV, onExportPDF }: { onExportCSV?: () => void; onExportPDF?: () => void }) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-edge bg-bg-secondary px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:bg-bg-tertiary hover:text-ink"
+      >
+        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
+        Export
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-20 w-36 rounded-lg border border-edge bg-bg-secondary shadow-lg overflow-hidden">
+          {onExportCSV && (
+            <button
+              onClick={() => { onExportCSV(); setOpen(false); }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-ink-secondary hover:bg-bg-tertiary hover:text-ink transition-colors"
+            >
+              <span className="font-mono text-[10px] text-ink-muted">.csv</span>
+              Export as CSV
+            </button>
+          )}
+          {onExportPDF && (
+            <button
+              onClick={() => { onExportPDF(); setOpen(false); }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-ink-secondary hover:bg-bg-tertiary hover:text-ink transition-colors"
+            >
+              <span className="font-mono text-[10px] text-ink-muted">.pdf</span>
+              Export as PDF
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -16,7 +16,9 @@ import {
   EmptyState,
   Badge,
   Alert,
+  ExportMenu,
 } from '../../components/ui';
+import { exportCSV } from '../../lib/export-csv';
 import { formatDate } from '../../lib/utils';
 import { LEGAL_FORMS, DOMICILES, FRAMEWORKS, STATUSES } from '../../lib/constants';
 import type { ApiError, FundStructure, CreateFundStructureRequest, LegalForm, RegulatoryFramework, FundStatus } from '../../lib/types';
@@ -135,7 +137,22 @@ export default function FundsPage() {
         title="Fund Structures"
         description="Manage fund structures and view compliance reports"
         action={
-          <Button onClick={() => setShowForm(true)}>+ New Fund</Button>
+          <div className="flex items-center gap-2">
+            <ExportMenu
+              onExportCSV={() => {
+                if (!funds.data) return;
+                exportCSV('caelith-funds.csv',
+                  ['Name', 'Legal Form', 'Domicile', 'Framework', 'Status', 'Created'],
+                  funds.data.map(f => [
+                    f.name, f.legal_form, f.domicile,
+                    f.regulatory_framework || '', f.status,
+                    f.created_at
+                  ])
+                );
+              }}
+            />
+            <Button onClick={() => setShowForm(true)}>+ New Fund</Button>
+          </div>
         }
       />
 

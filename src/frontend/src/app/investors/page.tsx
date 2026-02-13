@@ -20,7 +20,9 @@ import {
   Badge,
   Alert,
   SortableHeader,
+  ExportMenu,
 } from '../../components/ui';
+import { exportCSV } from '../../lib/export-csv';
 import { useSort } from '../../lib/use-sort';
 import { formatDate, classNames } from '../../lib/utils';
 import { JURISDICTIONS } from '../../lib/constants';
@@ -131,7 +133,24 @@ function InvestorsContent() {
       <PageHeader
         title="Investors"
         description="Manage investor registry"
-        action={<Button onClick={() => setShowForm(true)}>+ Add Investor</Button>}
+        action={
+          <div className="flex items-center gap-2">
+            <ExportMenu
+              onExportCSV={() => {
+                if (!investors.data) return;
+                exportCSV('caelith-investors.csv',
+                  ['Name', 'Jurisdiction', 'Type', 'KYC Status', 'Accredited', 'Created'],
+                  investors.data.map(inv => [
+                    inv.name, inv.jurisdiction, inv.investor_type,
+                    inv.kyc_status, inv.accredited ? 'Yes' : 'No',
+                    inv.created_at
+                  ])
+                );
+              }}
+            />
+            <Button onClick={() => setShowForm(true)}>+ Add Investor</Button>
+          </div>
+        }
       />
 
       {activeFilter && (
