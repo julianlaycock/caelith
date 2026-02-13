@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "caelith": {
+      "command": "npx",
+      "args": ["tsx", "src/mcp/server.ts"],
+      "cwd": "C:\\Users\\julia\\projects\\private-asset-registry_Caelith_v2",
+      "env": {
+        "CAELITH_API_URL": "http://localhost:3001",
+        "CAELITH_API_TOKEN": "paste-your-jwt-here"
+      }
+    }
+  }
+}
