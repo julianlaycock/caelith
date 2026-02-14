@@ -77,6 +77,14 @@ npx tsx scripts/ingest-regulations.ts               # Ingest 6 regulatory PDFs i
 
 **Default admin credentials:** `admin@caelith.com` / `admin1234`
 
+**Demo accounts (seeded via `scripts/seed-demo.ts`):**
+- Compliance Lead — `test1@caelith.com` / `test1pass!`
+- Operations Admin — `test2@caelith.com` / `test2pass!`
+- Portfolio Viewer — `demo1@caelith.com` / `demo1pass!`
+- Portfolio Viewer — `demo2@caelith.com` / `demo2pass!`
+  
+> Run `npx tsx scripts/seed-demo.ts` (locally or via Railway shell) any time you need to recreate these users. Legacy demo accounts (`compliance@`, `ops@`, `viewer@`) are automatically deactivated during seeding.
+
 ---
 
 ## 3. PROJECT STRUCTURE

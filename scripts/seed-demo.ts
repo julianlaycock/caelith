@@ -87,6 +87,53 @@ async function exists(table: string, id: string): Promise<boolean> {
   return rows.length > 0;
 }
 
+async function ensureUser(
+  email: string,
+  password: string,
+  name: string,
+  role: 'admin' | 'compliance_officer' | 'viewer'
+): Promise<void> {
+  const existing = await query<{ id: string; password_hash: string; role: string; active: boolean }>(
+    'SELECT id, password_hash, role, active FROM users WHERE email = $1',
+    [email]
+  );
+
+  if (existing.length > 0) {
+    const user = existing[0];
+    const passwordMatches = await bcrypt.compare(password, user.password_hash);
+    const roleChanged = user.role !== role;
+    const wasInactive = !user.active;
+
+    if (!passwordMatches || roleChanged || wasInactive) {
+      const nextHash = passwordMatches ? user.password_hash : await bcrypt.hash(password, 10);
+      await execute(
+        `UPDATE users
+           SET password_hash = $2,
+               role = $3,
+               name = $4,
+               active = true,
+               updated_at = now()
+         WHERE id = $1`,
+        [user.id, nextHash, role, name]
+      );
+      console.log(
+        `  ↺ Refreshed ${email} (role=${role}${passwordMatches ? '' : ', password reset'})`
+      );
+    } else {
+      console.log(`  → ${email} already up to date`);
+    }
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await execute(
+    `INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
+     VALUES (gen_random_uuid(), $1, $2, $3, $4, true, now(), now())`,
+    [email, passwordHash, name, role]
+  );
+  console.log(`  ✓ Created ${email} (password: ${password})`);
+}
+
 async function seed() {
   console.log('Seeding demo data for Luxembourg SIF/RAIF + German Spezial-AIF workflows...\n');
 
@@ -98,20 +145,39 @@ async function seed() {
   );
 
   // =========================================================================
-  // 0. Admin User
+  // 0. Users
   // =========================================================================
   console.log('[Users]');
-  const existingUser = await query('SELECT 1 FROM users WHERE email = $1', ['admin@caelith.com']);
-  if (existingUser.length > 0) {
-    console.log('  → admin@caelith.com already exists');
-  } else {
-    const passwordHash = await bcrypt.hash('admin1234', 10);
-    await execute(
-      `INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, true, now(), now())`,
-      ['admin@caelith.com', passwordHash, 'System Admin', 'admin']
+
+  const retiredDemoUsers = ['compliance@caelith.com', 'ops@caelith.com', 'viewer@caelith.com'];
+  for (const email of retiredDemoUsers) {
+    const deactivated = await query<{ email: string }>(
+      `UPDATE users
+         SET active = false, updated_at = now()
+       WHERE email = $1 AND active = true
+       RETURNING email`,
+      [email]
     );
-    console.log('  ✓ Created admin@caelith.com (password: admin1234)');
+    if (deactivated.length > 0) {
+      console.log(`  ↺ Deactivated legacy demo account ${email}`);
+    }
+  }
+
+  const demoUsers: Array<{
+    email: string;
+    password: string;
+    name: string;
+    role: 'admin' | 'compliance_officer' | 'viewer';
+  }> = [
+    { email: 'admin@caelith.com', password: 'admin1234', name: 'System Admin', role: 'admin' },
+    { email: 'test1@caelith.com', password: 'test1pass!', name: 'Compliance Test User', role: 'compliance_officer' },
+    { email: 'test2@caelith.com', password: 'test2pass!', name: 'Operations Test User', role: 'admin' },
+    { email: 'demo1@caelith.com', password: 'demo1pass!', name: 'Demo Portfolio Viewer 1', role: 'viewer' },
+    { email: 'demo2@caelith.com', password: 'demo2pass!', name: 'Demo Portfolio Viewer 2', role: 'viewer' },
+  ];
+
+  for (const user of demoUsers) {
+    await ensureUser(user.email, user.password, user.name, user.role);
   }
 
   // =========================================================================
