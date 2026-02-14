@@ -23,10 +23,14 @@ import { runCoreEligibilityChecks } from './eligibility-check-helper.js';
 import { validateTransfer } from '../../rules-engine/validator.js';
 import { ValidationContext, TransferRequest } from '../../rules-engine/types.js';
 import { Transfer, Asset, EligibilityCriteria, RuleSet } from '../models/index.js';
-import { NotFoundError } from '../errors.js';
+import { NotFoundError, BusinessLogicError } from '../errors.js';
 import { getActiveCompositeRules } from './composite-rules-service.js';
 import { withTransaction } from './transaction-helper.js';
 import { recordDecisionWithResult } from './decision-record-helper.js';
+import { query } from '../db.js';
+
+/** Configurable threshold — transfers above this require approval */
+const APPROVAL_THRESHOLD_UNITS = Number(process.env.TRANSFER_APPROVAL_THRESHOLD || 10000);
 
 /**
  * Single check result (shared shape with rules engine)
@@ -341,6 +345,157 @@ export async function executeTransfer(
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
+}
+
+// ── Approval Workflow ───────────────────────────────────────
+
+/**
+ * Determine if a transfer requires manual approval.
+ * Returns a reason string if approval is needed, null otherwise.
+ */
+function needsApproval(
+  units: number,
+  toInvestor: { kyc_expiry?: string | null }
+): string | null {
+  if (units > APPROVAL_THRESHOLD_UNITS) {
+    return `Transfer exceeds ${APPROVAL_THRESHOLD_UNITS} unit threshold (${units} units)`;
+  }
+
+  if (toInvestor.kyc_expiry) {
+    const expiry = new Date(toInvestor.kyc_expiry);
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    if (expiry <= thirtyDaysFromNow) {
+      return `Receiving investor KYC expires within 30 days (${toInvestor.kyc_expiry})`;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get all transfers pending approval for a tenant.
+ */
+export async function getPendingTransfers(tenantId: string): Promise<Transfer[]> {
+  const rows = await query<Transfer & { from_name?: string; to_name?: string; asset_name?: string }>(
+    `SELECT t.*,
+       fi.name as from_investor_name,
+       ti.name as to_investor_name,
+       a.name as asset_name
+     FROM transfers t
+     LEFT JOIN investors fi ON fi.id = t.from_investor_id
+     LEFT JOIN investors ti ON ti.id = t.to_investor_id
+     LEFT JOIN assets a ON a.id = t.asset_id
+     WHERE t.status = 'pending_approval'
+     ORDER BY t.created_at DESC`,
+    []
+  );
+  return rows;
+}
+
+/**
+ * Approve a pending transfer — executes it atomically.
+ */
+export async function approveTransfer(
+  transferId: string,
+  userId: string,
+  _tenantId: string
+): Promise<Transfer> {
+  // Fetch the pending transfer
+  const rows = await query<Transfer>(
+    `SELECT * FROM transfers WHERE id = $1 AND status = 'pending_approval'`,
+    [transferId]
+  );
+  if (rows.length === 0) {
+    throw new NotFoundError('Pending transfer', transferId);
+  }
+  const pending = rows[0];
+
+  // Execute the transfer atomically
+  const result = await withTransaction<Transfer>(async (client) => {
+    // Lock sender's holding
+    const lockResult = await client.query(
+      `SELECT units FROM holdings WHERE investor_id = $1 AND asset_id = $2 FOR UPDATE`,
+      [pending.from_investor_id, pending.asset_id]
+    );
+
+    if (lockResult.rows.length === 0 || lockResult.rows[0].units < pending.units) {
+      throw new BusinessLogicError('Insufficient units (balance changed since submission)');
+    }
+
+    const now = new Date().toISOString();
+
+    // Deduct from sender
+    await client.query(
+      `UPDATE holdings SET units = units - $1, updated_at = $2 WHERE investor_id = $3 AND asset_id = $4`,
+      [pending.units, now, pending.from_investor_id, pending.asset_id]
+    );
+
+    // Add to receiver
+    const receiverResult = await client.query(
+      `SELECT id, units FROM holdings WHERE investor_id = $1 AND asset_id = $2 FOR UPDATE`,
+      [pending.to_investor_id, pending.asset_id]
+    );
+
+    if (receiverResult.rows.length > 0) {
+      await client.query(
+        `UPDATE holdings SET units = units + $1, updated_at = $2 WHERE investor_id = $3 AND asset_id = $4`,
+        [pending.units, now, pending.to_investor_id, pending.asset_id]
+      );
+    } else {
+      const holdingId = randomUUID();
+      await client.query(
+        `INSERT INTO holdings (id, investor_id, asset_id, units, acquired_at, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [holdingId, pending.to_investor_id, pending.asset_id, pending.units, now, now, now]
+      );
+    }
+
+    // Mark transfer as executed
+    const updated = await client.query(
+      `UPDATE transfers SET status = 'executed', approved_by = $1, approved_at = $2, executed_at = $2
+       WHERE id = $3 RETURNING *`,
+      [userId, now, transferId]
+    );
+
+    return updated.rows[0] as Transfer;
+  });
+
+  await createEvent({
+    event_type: 'transfer.executed',
+    entity_type: 'transfer',
+    entity_id: transferId,
+    payload: { transfer_id: transferId, approved_by: userId },
+  });
+
+  return result;
+}
+
+/**
+ * Reject a pending transfer.
+ */
+export async function rejectTransfer(
+  transferId: string,
+  reason: string,
+  userId: string,
+  _tenantId: string
+): Promise<Transfer> {
+  const rows = await query<Transfer>(
+    `UPDATE transfers SET status = 'rejected', rejection_reason = $1, approved_by = $2, approved_at = NOW()
+     WHERE id = $3 AND status = 'pending_approval' RETURNING *`,
+    [reason, userId, transferId]
+  );
+  if (rows.length === 0) {
+    throw new NotFoundError('Pending transfer', transferId);
+  }
+
+  await createEvent({
+    event_type: 'transfer.rejected',
+    entity_type: 'transfer',
+    entity_id: transferId,
+    payload: { transfer_id: transferId, rejected_by: userId, reason },
+  });
+
+  return rows[0];
 }
 
 // ── Private Helpers ─────────────────────────────────────────

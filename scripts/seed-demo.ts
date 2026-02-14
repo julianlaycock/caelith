@@ -169,7 +169,7 @@ async function seed() {
     name: string;
     role: 'admin' | 'compliance_officer' | 'viewer';
   }> = [
-    { email: 'admin@caelith.com', password: 'admin1234', name: 'System Admin', role: 'admin' },
+    { email: 'admin@caelith.com', password: 'Admin1234', name: 'System Admin', role: 'admin' },
     { email: 'test1@caelith.com', password: 'test1pass!', name: 'Compliance Test User', role: 'compliance_officer' },
     { email: 'test2@caelith.com', password: 'test2pass!', name: 'Operations Test User', role: 'admin' },
     { email: 'demo1@caelith.com', password: 'demo1pass!', name: 'Demo Portfolio Viewer 1', role: 'viewer' },

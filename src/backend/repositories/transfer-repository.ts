@@ -41,6 +41,10 @@ export async function createTransfer(
     decision_record_id,
     executed_at: input.executed_at,
     created_at: now,
+    status: 'executed',
+    approved_by: null,
+    approved_at: null,
+    rejection_reason: null,
   };
 
   return transfer;

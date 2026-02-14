@@ -33,7 +33,21 @@ import type {
   CopilotResponse,
 } from './types';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const resolveBaseUrl = (): string => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  if (typeof window !== 'undefined') {
+    // Browser-side: hit the same origin (Next.js rewrite proxies to the backend)
+    return '/api';
+  }
+
+  // Server-side (SSR / pre-render) still needs a concrete host
+  return process.env.NEXT_PUBLIC_SSR_API_URL ?? 'http://localhost:3001/api';
+};
+
+const BASE_URL = resolveBaseUrl();
 
 class ApiClient {
   private token: string | null = null;

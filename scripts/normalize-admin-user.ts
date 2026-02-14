@@ -16,7 +16,7 @@ dotenv.config();
 
 const CANONICAL_EMAIL = 'admin@caelith.com';
 const LEGACY_EMAIL = 'admin@caelith.dev';
-const DEFAULT_PASSWORD = 'admin1234';
+const DEFAULT_PASSWORD = 'Admin1234';
 
 interface UserRow {
   id: string;

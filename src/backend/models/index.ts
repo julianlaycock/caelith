@@ -118,6 +118,11 @@ export interface Transfer {
   decision_record_id: string | null;
   executed_at: string;
   created_at: string;
+  status: 'executed' | 'pending_approval' | 'rejected';
+  approved_by: string | null;
+  approved_at: string | null;
+  rejection_reason: string | null;
+  pending_reason?: string;
 }
 
 /**
