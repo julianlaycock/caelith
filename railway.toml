@@ -1,9 +1,9 @@
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+builder = "NIXPACKS"
+buildCommand = "npm ci && npm run build:backend"
 
 [deploy]
-startCommand = "npm run start"
+startCommand = "npx tsx scripts/migrate.ts && npx tsx scripts/normalize-admin-user.ts && npm run start:backend"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
