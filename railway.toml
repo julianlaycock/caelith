@@ -3,7 +3,7 @@ builder = "NIXPACKS"
 buildCommand = "npm run build:backend"
 
 [deploy]
-startCommand = "npx tsx scripts/migrate.ts && npx tsx scripts/normalize-admin-user.ts && npm run start:backend"
+startCommand = "npx tsx scripts/migrate.ts && npx tsx scripts/normalize-admin-user.ts && npx tsx src/backend/server.ts"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
