@@ -1,6 +1,6 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm ci && npm run build:backend"
+buildCommand = "npm run build:backend"
 
 [deploy]
 startCommand = "npx tsx scripts/migrate.ts && npx tsx scripts/normalize-admin-user.ts && npm run start:backend"
