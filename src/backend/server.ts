@@ -39,6 +39,7 @@ import complianceReportRoutes from './routes/compliance-report-routes.js';
 import tenantRoutes from './routes/tenant-routes.js';
 import { createRegulatoryRoutes } from './routes/regulatory-routes.js';
 import { createCopilotRoutes } from './routes/copilot-routes.js';
+import { shouldBootstrapAdmin } from './config/security-config.js';
 
 // Validate required environment variables at startup
 const REQUIRED_ENV_VARS = ['JWT_SECRET', 'DATABASE_URL'] as const;
@@ -72,11 +73,20 @@ async function ensureAdminUser(): Promise<void> {
   const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@caelith.com';
   const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin';
 
-  if (!process.env.ADMIN_PASSWORD && process.env.NODE_ENV === 'production') {
-    console.error('FATAL: ADMIN_PASSWORD must be set in production. Refusing to start with default credentials.');
-    process.exit(1);
+  const bootstrap = shouldBootstrapAdmin(process.env.ADMIN_PASSWORD, process.env.NODE_ENV);
+  if (!bootstrap.allowed) {
+    if (bootstrap.fatal) {
+      console.error('FATAL: ADMIN_PASSWORD must be set in production.');
+      process.exit(1);
+    }
+    console.warn('WARNING: ADMIN_PASSWORD not set; skipping automatic admin bootstrap.');
+    return;
   }
-  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234'; // dev-only fallback
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+  if (!ADMIN_PASSWORD || !ADMIN_PASSWORD.trim()) {
+    console.warn('WARNING: ADMIN_PASSWORD not set; skipping automatic admin bootstrap.');
+    return;
+  }
 
   try {
     const existing = await dbQuery<{ id: string }>(
