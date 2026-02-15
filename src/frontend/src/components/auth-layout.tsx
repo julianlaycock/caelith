@@ -10,7 +10,7 @@ import { ErrorBoundary } from './error-boundary';
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLoginPage = pathname === '/login';
+  const isPublicPage = pathname === '/login' || pathname.startsWith('/design-lab');
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -34,7 +34,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthProvider>
-      {isLoginPage ? (
+      {isPublicPage ? (
         children
       ) : (
         <div className="flex h-screen bg-bg-primary">
