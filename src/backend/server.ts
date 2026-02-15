@@ -39,7 +39,7 @@ import complianceReportRoutes from './routes/compliance-report-routes.js';
 import tenantRoutes from './routes/tenant-routes.js';
 import { createRegulatoryRoutes } from './routes/regulatory-routes.js';
 import { createCopilotRoutes } from './routes/copilot-routes.js';
-import { shouldBootstrapAdmin } from './config/security-config.js';
+import { isResetEndpointEnabled, shouldBootstrapAdmin } from './config/security-config.js';
 
 // Validate required environment variables at startup
 const REQUIRED_ENV_VARS = ['JWT_SECRET', 'DATABASE_URL'] as const;
@@ -219,8 +219,8 @@ app.use('/api/copilot', authenticate, createCopilotRoutes());
 
 // Test-only: reset database
 app.post('/api/reset', authenticate, authorize('admin'), async (_req, res): Promise<void> => {
-  if (process.env.NODE_ENV === 'production') {
-    res.status(403).json({ error: 'FORBIDDEN', message: 'Reset not available in production' });
+  if (!isResetEndpointEnabled(process.env.NODE_ENV, process.env.ENABLE_TEST_RESET)) {
+    res.status(403).json({ error: 'FORBIDDEN', message: 'Reset endpoint is disabled outside test mode' });
     return;
   }
   try {

@@ -21,6 +21,8 @@ Write-Host ""
 Write-Host "[Step 2] Starting backend server..." -ForegroundColor Yellow
 $serverJob = Start-Job -ScriptBlock {
     Set-Location $using:PWD
+    $env:NODE_ENV = 'test'
+    $env:ENABLE_TEST_RESET = '1'
     npm run dev:backend 2>&1 | Out-Null
 }
 Write-Host "  Server starting (Job ID: $($serverJob.Id))..." -ForegroundColor Gray
