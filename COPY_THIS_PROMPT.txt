@@ -1,0 +1,31 @@
+Deploy my Caelith backend to Railway. The frontend is already live at www.caelith.tech but the backend API is missing, causing "Failed to fetch" errors.
+
+PROJECT: C:\Users\julia\projects\private-asset-registry_Caelith_v2
+GITHUB REPO: julianlaycock/caelith (main branch)
+
+RAILWAY ACCOUNT:
+- Email: julianlaycock94@gmail.com
+- Password: Gapesalu46020@
+- Existing project has frontend deployed at f1xc8s3n.up.railway.app
+
+TASK:
+1. Add PostgreSQL database to Railway project
+2. Deploy backend service from GitHub with:
+   - Build: npm run build:backend
+   - Start: npm run start:backend
+3. Set backend environment variables:
+   - NODE_ENV=production
+   - PORT=3001
+   - JWT_SECRET=change-this-in-production-min-32-chars-long
+   - CORS_ORIGINS=https://www.caelith.tech,https://f1xc8s3n.up.railway.app
+   - DATABASE_URL=(from PostgreSQL service)
+   - ANTHROPIC_API_KEY=(read from .env file in project directory)
+   - OPENAI_API_KEY=(read from .env file in project directory)
+4. Update frontend service variables with backend URL:
+   - BACKEND_API_REWRITE_TARGET=https://<backend-url>/api
+   - NEXT_PUBLIC_API_URL=/api
+5. Redeploy frontend
+
+TEST: Login should work at www.caelith.tech/login with admin@caelith.com / Admin1234
+
+The backend code is already fixed, built, and pushed to GitHub. Just needs deployment.

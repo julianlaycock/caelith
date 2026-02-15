@@ -1,0 +1,68 @@
+STEP-BY-STEP RAILWAY DEPLOYMENT - DO EXACTLY THIS:
+
+1. Go to: https://railway.app/new
+   (This opens the "create new project" page)
+
+2. You should see options:
+   - "Deploy from GitHub repo"
+   - "Deploy a Template"
+   - "Empty Project"
+   
+   Click: "Empty Project"
+
+3. You now have a blank project. Click the purple "+ New" button
+
+4. Select "Database" → "Add PostgreSQL"
+   (Wait 30 seconds for it to appear)
+
+5. Click the purple "+ New" button again
+
+6. Select "GitHub Repo"
+
+7. You'll see your repositories. Click on "caelith"
+
+8. Railway starts building. Click on the service box that appears.
+
+9. Click "Settings" tab, scroll down:
+   - Build Command: npm run build:backend
+   - Start Command: npm run start:backend
+
+10. Click "Variables" tab, click "+ New Variable", add these ONE BY ONE:
+
+    NODE_ENV = production
+    PORT = 3001
+    JWT_SECRET = change-this-in-production-min-32-chars-long
+    CORS_ORIGINS = https://www.caelith.tech,https://f1xc8s3n.up.railway.app
+
+11. For DATABASE_URL:
+    - Click the "Postgres" service box
+    - Click "Connect" tab
+    - Copy the "Postgres Connection URL"
+    - Go back to backend service
+    - Variables tab → + New Variable
+    - Name: DATABASE_URL
+    - Value: (paste what you copied)
+
+12. For API keys, open this file in Notepad:
+    C:\Users\julia\projects\private-asset-registry_Caelith_v2\.env
+    
+    Copy ANTHROPIC_API_KEY value → Add as variable in Railway
+    Copy OPENAI_API_KEY value → Add as variable in Railway
+
+13. Wait for backend to say "Active" (2-3 minutes)
+
+14. In backend Settings → Domains, copy the URL
+
+15. Go to your existing FRONTEND service (f1xc8s3n.up.railway.app)
+
+16. Variables tab, add/update:
+    BACKEND_API_REWRITE_TARGET = https://(backend-url)/api
+    NEXT_PUBLIC_API_URL = /api
+
+17. Deployments tab → three dots → Redeploy
+
+18. Test: https://www.caelith.tech/login
+    Email: admin@caelith.com
+    Password: Admin1234
+
+DONE!

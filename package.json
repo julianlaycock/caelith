@@ -31,7 +31,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "type-check": "tsc --noEmit",
-    "mcp": "tsx src/mcp/server.ts"
+    "mcp": "tsx src/mcp/server.ts",
+    "agent:prompt": "node scripts/agent-team-prompt.mjs"
   },
   "keywords": [
     "private-assets",
