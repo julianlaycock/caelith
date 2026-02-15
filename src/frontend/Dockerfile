@@ -10,9 +10,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Accept NEXT_PUBLIC_* env vars at build time
+# Accept env vars needed at build time
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+ARG BACKEND_API_REWRITE_TARGET
+ENV BACKEND_API_REWRITE_TARGET=$BACKEND_API_REWRITE_TARGET
 
 RUN npm run build
 
