@@ -39,6 +39,7 @@ export default function FundDetailPage() {
     try {
       const proposed_changes: Record<string, unknown> = {};
       if (scenarioMinInvestment) proposed_changes.minimum_investment = Math.round(parseFloat(scenarioMinInvestment) * 100);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await api.analyzeScenarioImpact({ fund_structure_id: id, proposed_changes: proposed_changes as any });
       setScenarioResult(result);
     } catch (err) {
@@ -497,7 +498,7 @@ export default function FundDetailPage() {
                                   <td className="px-4 py-2 text-xs text-ink-secondary">{inv.investor_type}</td>
                                   <td className="px-4 py-2 text-xs tabular-nums text-ink-secondary">{formatNumber(inv.current_units)}</td>
                                   <td className="px-4 py-2">
-                                    <Badge variant={inv.proposed_eligible ? 'success' : 'danger'}>
+                                    <Badge variant={inv.proposed_eligible ? 'green' : 'red'}>
                                       {inv.current_eligible ? 'Eligible' : 'Ineligible'} → {inv.proposed_eligible ? 'Eligible' : 'Ineligible'}
                                     </Badge>
                                   </td>
