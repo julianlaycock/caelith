@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git -C /c/Users/julia/projects/private-asset-registry_Caelith_v2 status --porcelain)"
-    ]
-  }
-}
