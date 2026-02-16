@@ -24,10 +24,17 @@ function sanitizeText(input: string): string {
   return sanitizeEmbeddingText(input);
 }
 
-function getProvider(): EmbeddingProvider {
+function getProvider(): EmbeddingProvider | 'none' {
   const explicit = process.env.EMBEDDING_PROVIDER?.trim().toLowerCase();
+  if (explicit === 'none' || explicit === 'disabled') {
+    return 'none';
+  }
   if (explicit === 'openai' || explicit === 'anthropic') {
     return explicit;
+  }
+  if (!explicit && !process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    console.warn('WARNING: No embedding API keys set. Embeddings disabled.');
+    return 'none';
   }
   if (!explicit && !process.env.OPENAI_API_KEY && process.env.ANTHROPIC_API_KEY) {
     return 'anthropic';
@@ -179,6 +186,16 @@ class HttpEmbeddingService implements EmbeddingService {
   }
 }
 
+class NoOpEmbeddingService implements EmbeddingService {
+  async embed(_text: string): Promise<number[]> { return new Array(1536).fill(0); }
+  async embedBatch(texts: string[]): Promise<number[][]> { return texts.map(() => new Array(1536).fill(0)); }
+  getDimensions(): number { return 1536; }
+}
+
 export function createEmbeddingService(): EmbeddingService {
+  const provider = getProvider();
+  if (provider === 'none') {
+    return new NoOpEmbeddingService();
+  }
   return new HttpEmbeddingService();
 }
