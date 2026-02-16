@@ -42,6 +42,31 @@ interface Check {
 }
 
 /**
+ * Merge check arrays into a deterministic, de-duplicated list by rule name.
+ * If the same rule appears multiple times, keep a failing check over a passing one.
+ */
+function mergeChecks(...groups: Check[][]): Check[] {
+  const merged = new Map<string, Check>();
+
+  for (const group of groups) {
+    for (const check of group) {
+      const existing = merged.get(check.rule);
+      if (!existing) {
+        merged.set(check.rule, check);
+        continue;
+      }
+
+      // Preserve failures when duplicate rule names are emitted from different engines.
+      if (existing.passed && !check.passed) {
+        merged.set(check.rule, check);
+      }
+    }
+  }
+
+  return Array.from(merged.values());
+}
+
+/**
  * Simulation result (validation only, no execution)
  */
 export interface SimulationResult {
@@ -130,10 +155,9 @@ export async function simulateTransfer(
       criteria = eligResult.criteria;
     }
 
-    // Merge all checks
-    const allChecks = [...rulesResult.checks, ...eligibilityChecks];
-    const eligibilityViolations = eligibilityChecks.filter(c => !c.passed).map(c => c.message);
-    const allViolations = [...rulesResult.violations, ...eligibilityViolations];
+    // Merge checks from both engines with deterministic duplicate handling.
+    const allChecks = mergeChecks(eligibilityChecks, rulesResult.checks);
+    const allViolations = allChecks.filter(c => !c.passed).map(c => c.message);
     const valid = allViolations.length === 0;
 
     // Write decision record
@@ -200,13 +224,12 @@ export async function executeTransfer(
       criteria = eligResult.criteria;
     }
 
-    // Combine all violations
-    const eligibilityViolations = eligibilityChecks.filter(c => !c.passed).map(c => c.message);
-    const allViolations = [...rulesResult.violations, ...eligibilityViolations];
+    // Combine checks from both engines with deterministic duplicate handling.
+    const allChecks = mergeChecks(eligibilityChecks, rulesResult.checks);
+    const allViolations = allChecks.filter(c => !c.passed).map(c => c.message);
     const valid = allViolations.length === 0;
 
     // Write decision record
-    const allChecks = [...rulesResult.checks, ...eligibilityChecks];
     const decisionRecord = await recordDecisionWithResult({
       decisionType: 'transfer_validation',
       assetId: request.asset_id,
