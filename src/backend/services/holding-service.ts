@@ -9,13 +9,10 @@ import {
   findHoldingsByAsset,
   findHoldingsByInvestor,
   getCapTable as getCapTableRepo,
-  getTotalAllocatedUnits,
-  findAssetById,
   investorExists,
   createEvent,
 } from '../repositories/index.js';
 import { Holding, CreateHoldingInput } from '../models/index.js';
-import { randomUUID } from 'crypto';
 import { ValidationError, NotFoundError, BusinessLogicError } from '../errors.js';
 import { withTransaction } from './transaction-helper.js';
 

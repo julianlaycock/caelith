@@ -1,4 +1,5 @@
 import { setTimeout as delay } from 'timers/promises';
+import { sanitizeEmbeddingText } from './text-sanitizer.js';
 
 const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
@@ -20,7 +21,7 @@ interface VoyageEmbeddingResponse {
 }
 
 function sanitizeText(input: string): string {
-  return input.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+  return sanitizeEmbeddingText(input);
 }
 
 function getProvider(): EmbeddingProvider {

@@ -57,11 +57,16 @@ export interface AuthResult {
 
 // ─── Password Complexity ─────────────────────────────────────
 
-const PASSWORD_RULES = [
-  { test: (p: string) => p.length >= 8, message: 'Password must be at least 8 characters' },
-  { test: (p: string) => /[A-Z]/.test(p), message: 'Password must contain at least one uppercase letter' },
-  { test: (p: string) => /[a-z]/.test(p), message: 'Password must contain at least one lowercase letter' },
-  { test: (p: string) => /[0-9]/.test(p), message: 'Password must contain at least one digit' },
+interface PasswordRule {
+  test: (password: string) => boolean;
+  message: string;
+}
+
+const PASSWORD_RULES: PasswordRule[] = [
+  { test: (password: string): boolean => password.length >= 8, message: 'Password must be at least 8 characters' },
+  { test: (password: string): boolean => /[A-Z]/.test(password), message: 'Password must contain at least one uppercase letter' },
+  { test: (password: string): boolean => /[a-z]/.test(password), message: 'Password must contain at least one lowercase letter' },
+  { test: (password: string): boolean => /[0-9]/.test(password), message: 'Password must contain at least one digit' },
 ];
 
 export function validatePasswordComplexity(password: string): string[] {

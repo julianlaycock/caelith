@@ -15,6 +15,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { CompositeRule, RuleCondition } from '../../rules-engine/types.js';
 import { createEvent } from '../repositories/index.js';
+import { sanitizePromptInput } from './text-sanitizer.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -136,7 +137,7 @@ function validateInput(description: string): void {
 }
 
 function sanitizeInput(input: string): string {
-  return input.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+  return sanitizePromptInput(input);
 }
 
 // ── Claude API Call ─────────────────────────────────────────

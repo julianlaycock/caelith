@@ -9,7 +9,6 @@ import {
   Button,
   Select,
   Badge,
-  Modal,
   SkeletonTable,
   ErrorMessage,
   EmptyState,

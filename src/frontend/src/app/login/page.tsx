@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -173,6 +174,16 @@ const PRICING_TIERS = [
 ];
 
 /* ── Main ─────────────────────────── */
+function getErrorMessage(error: unknown): string {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const { message } = error as { message?: unknown };
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message;
+    }
+  }
+  return 'Invalid credentials.';
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { setUser } = useAuth();
@@ -204,7 +215,9 @@ export default function LoginPage() {
     try {
       const saved = localStorage.getItem(REMEMBER_KEY);
       if (saved) { const p = JSON.parse(saved); if (p.email) { setEmail(p.email); setRememberMe(true); } }
-    } catch {}
+    } catch {
+      localStorage.removeItem(REMEMBER_KEY);
+    }
   }, []);
 
   useEffect(() => {
@@ -249,8 +262,8 @@ export default function LoginPage() {
       else localStorage.removeItem(REMEMBER_KEY);
       setUser(res.user);
       router.push('/');
-    } catch (err: any) {
-      setError(err?.message || 'Invalid credentials.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -530,7 +543,7 @@ export default function LoginPage() {
                 <div className="flex-1 w-full">
                   {i === 0 && (
                     <div className="code-shimmer bg-accent-950 rounded-2xl p-7 font-mono text-xs text-white/70 space-y-2 shadow-2xl shadow-accent-950/50 border border-white/[0.04]">
-                      <div className="text-[#D8BA8E]/50 mb-3">// Investment limit rule — KAGB §225</div>
+                      <div className="text-[#D8BA8E]/50 mb-3">{'// Investment limit rule - KAGB Sec. 225'}</div>
                       <div><span className="text-emerald-400">rule</span> <span className="text-white">single_asset_limit</span> {'{'}</div>
                       <div className="pl-4"><span className="text-sky-400">jurisdiction</span>: <span className="text-amber-300">&quot;DE&quot;</span></div>
                       <div className="pl-4"><span className="text-sky-400">regulation</span>: <span className="text-amber-300">&quot;KAGB §225&quot;</span></div>

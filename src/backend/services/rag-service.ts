@@ -4,7 +4,7 @@ import { createEmbeddingService, EmbeddingService } from './embedding-service.js
 import type { RuleCondition } from '../../rules-engine/types.js';
 import { NotFoundError } from '../errors.js';
 
-const ARTICLE_PATTERNS = [/Art(?:icle)?\s*\d+[A-Za-z0-9.\-]*/i, /Section\s*\d+[A-Za-z0-9.\-]*/i, /Chapter\s*\d+[A-Za-z0-9.\-]*/i];
+const ARTICLE_PATTERNS = [/Art(?:icle)?\s*\d+[A-Za-z0-9.-]*/i, /Section\s*\d+[A-Za-z0-9.-]*/i, /Chapter\s*\d+[A-Za-z0-9.-]*/i];
 const DEFAULT_TOP_K = 5;
 const MAX_TOP_K = 20;
 const STORAGE_VECTOR_DIMENSIONS = 1536;

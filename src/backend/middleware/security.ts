@@ -62,6 +62,10 @@ interface RateLimitOptions {
   message?: string;
 }
 
+function defaultRateLimitKeyGenerator(req: Request): string {
+  return req.ip || req.socket.remoteAddress || 'unknown';
+}
+
 export function shouldUseSharedRateLimitStore(): boolean {
   const configured = (process.env.RATE_LIMIT_STORE || '').toLowerCase();
   if (configured === 'memory') return false;
@@ -132,11 +136,11 @@ async function consumeFromDbStore(key: string, windowMs: number): Promise<{ coun
   return { count, resetAtMs };
 }
 
-export function rateLimit(options: RateLimitOptions) {
+export function rateLimit(options: RateLimitOptions): (req: Request, res: Response, next: NextFunction) => Promise<void> {
   const {
     windowMs,
     maxRequests,
-    keyGenerator = (req) => req.ip || req.socket.remoteAddress || 'unknown',
+    keyGenerator = defaultRateLimitKeyGenerator,
     message = 'Too many requests, please try again later.',
   } = options;
 

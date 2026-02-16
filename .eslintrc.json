@@ -23,5 +23,14 @@
       "allow": ["warn", "error"] 
     }]
   },
+  "overrides": [
+    {
+      "files": ["scripts/**/*.ts", "tests/**/*.ts"],
+      "rules": {
+        "@typescript-eslint/explicit-function-return-type": "off",
+        "no-console": "off"
+      }
+    }
+  ],
   "ignorePatterns": ["dist", "node_modules", ".next"]
 }
