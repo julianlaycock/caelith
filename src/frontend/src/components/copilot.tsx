@@ -26,10 +26,10 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
   '/funds': {
     title: 'Funds',
     prompts: [
-      'What legal forms are available for Luxembourg funds?',
+      'What if minimum investment changed to €200K?',
       'Explain the difference between SIF and RAIF',
       'What CSSF requirements apply to my fund?',
-      'What are the regulatory reporting deadlines?',
+      'Which investors would be affected by new criteria?',
     ],
   },
   '/investors': {
@@ -66,6 +66,15 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
       'Explain the AML due diligence process',
       'What are the KYC requirements for professional investors?',
       'How long does CSSF approval typically take?',
+    ],
+  },
+  '/decisions': {
+    title: 'Decisions',
+    prompts: [
+      'Explain the last eligibility decision',
+      'Why was the most recent transfer rejected?',
+      'Show me decisions with violations',
+      'What regulatory basis applies to investor type checks?',
     ],
   },
   '/audit': {

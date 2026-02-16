@@ -524,3 +524,59 @@ export interface CopilotResponse {
   citations?: CopilotCitation[];
   suggestedActions?: CopilotSuggestedAction[];
 }
+
+// Decision Explanation
+export interface DecisionExplanation {
+  decision_id: string;
+  decision_type: string;
+  result: string;
+  decided_at: string;
+  summary: string;
+  context: {
+    investor_name?: string;
+    investor_type?: string;
+    fund_name?: string;
+    fund_legal_form?: string;
+    investment_amount?: number;
+  };
+  checks: Array<{
+    rule: string;
+    passed: boolean;
+    message: string;
+    explanation: string;
+    regulatory_basis: string | null;
+    severity: 'pass' | 'fail' | 'warning';
+  }>;
+  violations: Array<{
+    rule: string;
+    explanation: string;
+    regulatory_basis: string | null;
+  }>;
+  recommendation: string;
+  disclaimer: string;
+}
+
+// Scenario Modeling
+export interface ScenarioResult {
+  fund_structure_id: string;
+  fund_name: string;
+  total_investors_analyzed: number;
+  currently_eligible: number;
+  proposed_eligible: number;
+  newly_ineligible: number;
+  newly_eligible: number;
+  affected_investors: Array<{
+    investor_id: string;
+    investor_name: string;
+    investor_type: string;
+    jurisdiction: string;
+    current_units: number;
+    current_eligible: boolean;
+    proposed_eligible: boolean;
+    failing_checks: string[];
+  }>;
+  impact_summary: string;
+  units_at_risk: number;
+  percentage_at_risk: number;
+  decision_record_id: string;
+}

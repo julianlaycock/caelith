@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
+import type { DecisionExplanation } from '../../lib/types';
 import {
   PageHeader,
   Card,
@@ -45,6 +46,20 @@ export default function DecisionsPage() {
   const [filterType, setFilterType] = useState('');
   const [filterResult, setFilterResult] = useState('');
   const [selectedDecision, setSelectedDecision] = useState<DecisionRecord | null>(null);
+  const [explanation, setExplanation] = useState<DecisionExplanation | null>(null);
+  const [explainLoading, setExplainLoading] = useState(false);
+
+  const handleExplain = useCallback(async (decisionId: string) => {
+    setExplainLoading(true);
+    try {
+      const result = await api.explainDecision(decisionId);
+      setExplanation(result);
+    } catch (err) {
+      console.error('Failed to explain decision:', err);
+    } finally {
+      setExplainLoading(false);
+    }
+  }, []);
   const [chainResult, setChainResult] = useState<{ valid: boolean; message: string } | null>(null);
   const [verifying, setVerifying] = useState(false);
 
@@ -179,7 +194,7 @@ export default function DecisionsPage() {
                   <tr
                     key={d.id}
                     className="transition-colors hover:bg-bg-tertiary cursor-pointer"
-                    onClick={() => setSelectedDecision(d)}
+                    onClick={() => { setSelectedDecision(d); setExplanation(null); }}
                   >
                     <td className="px-5 py-3 text-xs tabular-nums text-ink-secondary">
                       {formatDateTime(d.decided_at)}
@@ -321,6 +336,75 @@ export default function DecisionsPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-ink-secondary">No detailed check data available.</p>
+                )}
+              </div>
+
+              {/* AI Explanation */}
+              <div>
+                {!explanation ? (
+                  <button
+                    onClick={() => handleExplain(selectedDecision.id)}
+                    disabled={explainLoading}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg border border-[#24364A]/20 bg-[#24364A]/5 px-4 py-3 text-sm font-medium text-[#24364A] transition-all hover:bg-[#24364A]/10 disabled:opacity-50"
+                  >
+                    {explainLoading ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#24364A]/30 border-t-[#24364A]" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                        </svg>
+                        Explain This Decision
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div className="space-y-4">
+                    <SectionHeader title="AI Explanation" description="Regulatory context and recommendation" />
+
+                    {/* Summary */}
+                    <div className="rounded-lg border border-[#24364A]/15 bg-[#24364A]/5 p-4">
+                      <p className="text-sm font-medium text-ink">{explanation.summary}</p>
+                    </div>
+
+                    {/* Enriched checks with regulatory basis */}
+                    <div className="space-y-2">
+                      {explanation.checks.map((check, i) => (
+                        <div key={i} className="rounded-lg border border-edge-subtle p-3">
+                          <div className="flex items-start gap-2">
+                            <span className="mt-0.5">
+                              {check.passed ? (
+                                <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                              )}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-ink">{check.rule.replace(/_/g, ' ')}</p>
+                              <p className="mt-0.5 text-xs text-ink-secondary">{check.explanation}</p>
+                              {check.regulatory_basis && (
+                                <p className="mt-1 text-[10px] font-mono text-[#24364A]/60 bg-[#24364A]/5 rounded px-1.5 py-0.5 inline-block">
+                                  📖 {check.regulatory_basis}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Recommendation */}
+                    <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+                      <p className="text-xs font-semibold text-emerald-700 mb-1">Recommendation</p>
+                      <p className="text-xs text-emerald-600">{explanation.recommendation}</p>
+                    </div>
+
+                    {/* Disclaimer */}
+                    <p className="text-[10px] text-ink-tertiary italic">{explanation.disclaimer}</p>
+                  </div>
                 )}
               </div>
 

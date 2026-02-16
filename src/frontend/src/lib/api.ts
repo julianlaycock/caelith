@@ -31,6 +31,8 @@ import type {
   DecisionChainVerificationResult,
   NLRuleResponse,
   CopilotResponse,
+  DecisionExplanation,
+  ScenarioResult,
 } from './types';
 
 const resolveBaseUrl = (): string => {
@@ -472,6 +474,26 @@ class ApiClient {
     a.download = `decision-evidence-${decisionId.substring(0, 8)}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  // 🧠 Decision Explanation
+  async explainDecision(decisionId: string): Promise<DecisionExplanation> {
+    return this.request<DecisionExplanation>(`/decisions/${decisionId}/explain`);
+  }
+
+  // 🔮 Scenario Modeling
+  async analyzeScenarioImpact(data: {
+    fund_structure_id: string;
+    proposed_changes: {
+      minimum_investment?: number;
+      investor_types_allowed?: string[];
+      jurisdiction_whitelist?: string[];
+    };
+  }): Promise<ScenarioResult> {
+    return this.request<ScenarioResult>('/scenarios/impact', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async updateFundStructure(id: string, data: Partial<CreateFundStructureRequest>): Promise<FundStructure> {

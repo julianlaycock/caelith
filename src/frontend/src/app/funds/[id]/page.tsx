@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useAsync } from '../../../lib/hooks';
+import type { ScenarioResult } from '../../../lib/types';
 import { BackLink } from '../../../components/back-link';
 import {
   Card,
@@ -25,6 +26,27 @@ export default function FundDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const isValidFundId = UUID_RE.test(id);
+
+  // Scenario modeling state
+  const [scenarioOpen, setScenarioOpen] = useState(false);
+  const [scenarioMinInvestment, setScenarioMinInvestment] = useState('');
+  const [scenarioResult, setScenarioResult] = useState<ScenarioResult | null>(null);
+  const [scenarioLoading, setScenarioLoading] = useState(false);
+
+  const runScenario = useCallback(async () => {
+    if (!id) return;
+    setScenarioLoading(true);
+    try {
+      const proposed_changes: Record<string, unknown> = {};
+      if (scenarioMinInvestment) proposed_changes.minimum_investment = Math.round(parseFloat(scenarioMinInvestment) * 100);
+      const result = await api.analyzeScenarioImpact({ fund_structure_id: id, proposed_changes: proposed_changes as any });
+      setScenarioResult(result);
+    } catch (err) {
+      console.error('Scenario analysis failed:', err);
+    } finally {
+      setScenarioLoading(false);
+    }
+  }, [id, scenarioMinInvestment]);
 
   const fund = useAsync(
     () => (isValidFundId ? api.getFundStructure(id) : Promise.reject(new Error('INVALID_FUND_ID'))),
@@ -399,6 +421,100 @@ export default function FundDetailPage() {
               </Card>
             </div>
           )}
+
+          {/* Scenario Modeling */}
+          <Card>
+            <div className="flex items-center justify-between">
+              <SectionHeader title="Scenario Modeling" description="What-if analysis for eligibility criteria changes" />
+              <Button variant={scenarioOpen ? 'secondary' : 'primary'} size="sm" onClick={() => setScenarioOpen(!scenarioOpen)}>
+                {scenarioOpen ? 'Close' : '🔮 Run Scenario'}
+              </Button>
+            </div>
+
+            {scenarioOpen && (
+              <div className="mt-6 space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-ink-secondary mb-1">New Minimum Investment (€)</label>
+                    <input
+                      type="number"
+                      value={scenarioMinInvestment}
+                      onChange={(e) => setScenarioMinInvestment(e.target.value)}
+                      placeholder="e.g. 150000"
+                      className="w-full rounded-lg border border-edge bg-bg-primary px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-accent-500 focus:outline-none focus:ring-1 focus:ring-accent-500/30"
+                    />
+                  </div>
+                  <Button variant="primary" size="sm" onClick={runScenario} disabled={scenarioLoading || !scenarioMinInvestment}>
+                    {scenarioLoading ? 'Analyzing...' : 'Analyze Impact'}
+                  </Button>
+                </div>
+
+                {scenarioResult && (
+                  <div className="space-y-4 mt-4">
+                    {/* Impact summary */}
+                    <div className={`rounded-lg border p-4 ${scenarioResult.newly_ineligible > 0 ? 'border-red-500/20 bg-red-500/5' : 'border-emerald-500/20 bg-emerald-500/5'}`}>
+                      <p className="text-sm font-medium text-ink">{scenarioResult.impact_summary}</p>
+                    </div>
+
+                    {/* Metrics */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="rounded-lg border border-edge-subtle p-3 text-center">
+                        <div className="text-2xl font-bold text-ink tabular-nums">{scenarioResult.total_investors_analyzed}</div>
+                        <div className="text-[10px] text-ink-tertiary uppercase tracking-wide">Analyzed</div>
+                      </div>
+                      <div className="rounded-lg border border-edge-subtle p-3 text-center">
+                        <div className="text-2xl font-bold text-emerald-600 tabular-nums">{scenarioResult.proposed_eligible}</div>
+                        <div className="text-[10px] text-ink-tertiary uppercase tracking-wide">Would Pass</div>
+                      </div>
+                      <div className="rounded-lg border border-edge-subtle p-3 text-center">
+                        <div className="text-2xl font-bold text-red-500 tabular-nums">{scenarioResult.newly_ineligible}</div>
+                        <div className="text-[10px] text-ink-tertiary uppercase tracking-wide">Newly At Risk</div>
+                      </div>
+                      <div className="rounded-lg border border-edge-subtle p-3 text-center">
+                        <div className="text-2xl font-bold text-amber-600 tabular-nums">{scenarioResult.percentage_at_risk}%</div>
+                        <div className="text-[10px] text-ink-tertiary uppercase tracking-wide">Units At Risk</div>
+                      </div>
+                    </div>
+
+                    {/* Affected investors */}
+                    {scenarioResult.affected_investors.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-ink mb-2">Affected Investors</p>
+                        <div className="rounded-lg border border-edge-subtle overflow-hidden">
+                          <table className="w-full text-left">
+                            <thead className="bg-bg-tertiary">
+                              <tr>
+                                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">Name</th>
+                                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">Type</th>
+                                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">Units</th>
+                                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">Status Change</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-edge-subtle">
+                              {scenarioResult.affected_investors.map((inv) => (
+                                <tr key={inv.investor_id} className="hover:bg-bg-tertiary/50">
+                                  <td className="px-4 py-2 text-sm text-ink">{inv.investor_name}</td>
+                                  <td className="px-4 py-2 text-xs text-ink-secondary">{inv.investor_type}</td>
+                                  <td className="px-4 py-2 text-xs tabular-nums text-ink-secondary">{formatNumber(inv.current_units)}</td>
+                                  <td className="px-4 py-2">
+                                    <Badge variant={inv.proposed_eligible ? 'success' : 'danger'}>
+                                      {inv.current_eligible ? 'Eligible' : 'Ineligible'} → {inv.proposed_eligible ? 'Eligible' : 'Ineligible'}
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-[10px] text-ink-tertiary">Decision recorded as ID: {scenarioResult.decision_record_id.substring(0, 8)}...</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
         </>
       )}
     </div>
