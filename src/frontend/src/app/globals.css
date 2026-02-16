@@ -16,50 +16,169 @@ html {
 }
 
 body {
-  background-color: #0A0E1A;
-  color: #F1F5F9;
+  background-color: #f2efe0;
+  color: #2d2722;
 }
 
-/* Selection */
 ::selection {
-  background-color: rgba(34, 211, 238, 0.2);
-  color: #F1F5F9;
+  background-color: rgba(36, 54, 74, 0.18);
+  color: #2d2722;
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #b5aa9a;
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #a59685;
 }
 
-/* Tabular numbers for data tables */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Skeleton loader */
 .skeleton {
-  background: linear-gradient(90deg, #1A2035 25%, #243049 50%, #1A2035 75%);
+  background: linear-gradient(90deg, #e8e3d5 25%, #ddd6c9 50%, #e8e3d5 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
-/* Focus ring utility */
 .focus-ring {
-  @apply focus:outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400;
+  @apply focus:border-accent-500 focus:outline-none focus:ring-1 focus:ring-accent-500/30;
+}
+
+/* ── Landing Page Animations ─────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+
+@keyframes grid-scroll {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(80px, 80px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes scroll-hint {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(8px); opacity: 1; }
+}
+
+@keyframes particle-drift {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  20% { opacity: 0.6; }
+  80% { opacity: 0.6; }
+  100% { transform: translateY(-120px) translateX(30px); opacity: 0; }
+}
+
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
+.animate-grid-scroll { animation: grid-scroll 20s linear infinite; }
+.animate-scroll-hint { animation: scroll-hint 2s ease-in-out infinite; }
+
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.landing-nav {
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.landing-nav.scrolled {
+  background-color: rgba(242, 239, 224, 0.88);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border-bottom: 1px solid rgba(198, 190, 177, 0.4);
+  box-shadow: 0 1px 3px rgba(45, 39, 34, 0.04), 0 8px 24px rgba(45, 39, 34, 0.03);
+}
+
+/* Marquee */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Landing page global overrides */
+.landing-page {
+  overflow-x: hidden;
+}
+
+/* Text legibility on photo backgrounds */
+.text-on-photo {
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.text-on-photo-subtle {
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* Floating CTA */
+@keyframes float-cta-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.floating-cta {
+  animation: float-cta-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Product screenshot shine */
+@keyframes screenshot-shine {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+.screenshot-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  animation: screenshot-shine 4s ease-in-out infinite;
+  animation-delay: 2s;
 }
