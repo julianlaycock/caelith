@@ -166,7 +166,7 @@ server.tool(
 );
 
 // ── Start ───────────────────────────────────────────────────────────────────
-async function main() {
+async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

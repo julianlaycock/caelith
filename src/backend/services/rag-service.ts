@@ -105,7 +105,7 @@ function chunkByHeaders(text: string): Chunk[] {
   let currentLines: string[] = [];
   let currentHeader: string | null = null;
 
-  const flush = () => {
+  const flush = (): void => {
     if (currentLines.length === 0) {
       return;
     }

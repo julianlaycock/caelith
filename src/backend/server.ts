@@ -95,7 +95,7 @@ async function ensureAdminUser(): Promise<void> {
     );
 
     if (existing.length > 0) {
-      console.log(`✅ Admin user (${ADMIN_EMAIL}) already exists.`);
+      console.info(`✅ Admin user (${ADMIN_EMAIL}) already exists.`);
       return;
     }
 
@@ -109,7 +109,7 @@ async function ensureAdminUser(): Promise<void> {
       [id, ADMIN_EMAIL, passwordHash, ADMIN_NAME, 'admin', true, now, now]
     );
 
-    console.log(`🔑 Admin user created: ${ADMIN_EMAIL}`);
+    console.info(`🔑 Admin user created: ${ADMIN_EMAIL}`);
   } catch (error) {
     console.error('⚠️  Failed to ensure admin user:', error);
   }
@@ -125,7 +125,7 @@ const ALLOWED_ORIGINS = process.env.CORS_ORIGINS
   : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003'];
 
 const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void): void => {
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
@@ -151,7 +151,7 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 });
 
 // Health check endpoints
-const healthHandler = (req: express.Request, res: express.Response) => {
+const healthHandler = (_req: express.Request, res: express.Response): void => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 };
 app.get('/health', healthHandler);
@@ -255,8 +255,8 @@ import { errorHandler } from './middleware/error-handler.js';
 app.use(errorHandler);
 
 // Graceful shutdown
-async function gracefulShutdown(signal: string) {
-  console.log(`\n${signal} received — shutting down gracefully...`);
+async function gracefulShutdown(signal: string): Promise<void> {
+  console.info(`\n${signal} received — shutting down gracefully...`);
   await closeDb();
   process.exit(0);
 }
@@ -264,24 +264,24 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 // Start server
-async function startServer() {
+async function startServer(): Promise<void> {
   await ensureAdminUser();
 
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📊 API: http://localhost:${PORT}/api`);
-    console.log(`💚 Health: http://localhost:${PORT}/health`);
-    console.log(`📖 Docs: http://localhost:${PORT}/api/docs`);
-    console.log('\n📋 Available endpoints:');
-    console.log('  POST /api/assets');
-    console.log('  GET  /api/assets');
-    console.log('  POST /api/investors');
-    console.log('  GET  /api/investors');
-    console.log('  POST /api/holdings');
-    console.log('  POST /api/rules');
-    console.log('  POST /api/transfers');
-    console.log('  POST /api/transfers/simulate');
-    console.log('  GET  /api/events');
+    console.info(`🚀 Server running on http://localhost:${PORT}`);
+    console.info(`📊 API: http://localhost:${PORT}/api`);
+    console.info(`💚 Health: http://localhost:${PORT}/health`);
+    console.info(`📖 Docs: http://localhost:${PORT}/api/docs`);
+    console.info('\n📋 Available endpoints:');
+    console.info('  POST /api/assets');
+    console.info('  GET  /api/assets');
+    console.info('  POST /api/investors');
+    console.info('  GET  /api/investors');
+    console.info('  POST /api/holdings');
+    console.info('  POST /api/rules');
+    console.info('  POST /api/transfers');
+    console.info('  POST /api/transfers/simulate');
+    console.info('  GET  /api/events');
   });
 }
 
