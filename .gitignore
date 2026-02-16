@@ -22,6 +22,8 @@ test-pdf.mjs
 # Local logs and runtime artifacts
 *.log
 frontend-dev.log
+start-backend.cmd
+start-dev.cmd
 
 # Local Codex/agent settings
 .claude/

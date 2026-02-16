@@ -37,10 +37,11 @@ export default function FundDetailPage() {
     if (!id) return;
     setScenarioLoading(true);
     try {
-      const proposed_changes: Record<string, unknown> = {};
-      if (scenarioMinInvestment) proposed_changes.minimum_investment = Math.round(parseFloat(scenarioMinInvestment) * 100);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await api.analyzeScenarioImpact({ fund_structure_id: id, proposed_changes: proposed_changes as any });
+      const proposedChanges: Parameters<typeof api.analyzeScenarioImpact>[0]['proposed_changes'] = {};
+      if (scenarioMinInvestment) {
+        proposedChanges.minimum_investment = Math.round(parseFloat(scenarioMinInvestment) * 100);
+      }
+      const result = await api.analyzeScenarioImpact({ fund_structure_id: id, proposed_changes: proposedChanges });
       setScenarioResult(result);
     } catch (err) {
       console.error('Scenario analysis failed:', err);

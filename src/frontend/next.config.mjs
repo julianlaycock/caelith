@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: false },
   async rewrites() {
     const target = process.env.BACKEND_API_REWRITE_TARGET;
     if (!target) return [];
