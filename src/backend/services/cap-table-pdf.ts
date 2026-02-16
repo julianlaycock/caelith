@@ -1,7 +1,7 @@
 /**
  * Cap Table PDF Export Service
  *
- * Generates institutional-grade PDF cap table reports with Midnight Signal dark theme.
+ * Generates institutional-grade PDF cap table reports with Signal Sand branding.
  */
 
 import PDFDocument from 'pdfkit';
@@ -32,31 +32,26 @@ interface FundInfo {
   regulatory_framework: string;
 }
 
-// ── Midnight Signal Design Tokens ─────────────────────────
 const C = {
-  bg:        '#0A0E1A',   // dark navy background
-  bgSec:     '#111827',   // secondary background
-  accent:    '#22D3EE',   // cyan brand accent
-  accentDim: '#0E7490',   // dimmed accent for subtle use
-  ink:       '#F1F5F9',   // primary text
-  inkSec:    '#94A3B8',   // secondary text
-  inkTert:   '#64748B',   // tertiary text
-  edge:      '#1E293B',   // borders/edges
-  surface:   '#111827',   // card surfaces
-  surfMuted: '#0F172A',   // muted surface (alt rows)
-  white:     '#FFFFFF',
-  red:       '#EF4444',
+  bg: '#24364A',
+  bgSec: '#E4E0D4',
+  accent: '#D8BA8E',
+  accentDim: '#BDB0A4',
+  ink: '#2D2722',
+  inkSec: '#5A524B',
+  inkTert: '#6E655D',
+  edge: '#C6BEB1',
+  surface: '#E4E0D4',
+  surfMuted: '#EFEBDD',
+  white: '#FFFFFF',
+  red: '#8A4A45',
 };
 
 export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
-  const assets = await query<AssetInfo>(
-    'SELECT * FROM assets WHERE id = $1',
-    [assetId]
-  );
+  const assets = await query<AssetInfo>('SELECT * FROM assets WHERE id = $1', [assetId]);
   if (assets.length === 0) throw new Error('Asset not found');
   const asset = assets[0];
 
-  // Fetch fund structure if linked
   let fund: FundInfo | null = null;
   if (asset.fund_structure_id) {
     const funds = await query<FundInfo>(
@@ -88,11 +83,11 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
     FROM holdings WHERE asset_id = $1`,
     [assetId]
   );
+
   const allocated = Number(utilRows[0]?.allocated || 0);
   const holders = Number(utilRows[0]?.holders || 0);
-  const utilPct = asset.total_units > 0 ? ((allocated / asset.total_units) * 100) : 0;
+  const utilPct = asset.total_units > 0 ? (allocated / asset.total_units) * 100 : 0;
 
-  // Pre-fetch KYC stats for enhanced sections (must be outside Promise callback)
   const kycStats = await query<{ status: string; count: string }>(
     `SELECT COALESCE(i.kyc_status, 'unknown') as status, COUNT(DISTINCT i.id) as count
      FROM holdings h JOIN investors i ON h.investor_id = i.id
@@ -107,7 +102,7 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
       size: 'A4',
       margins: { top: 50, bottom: 60, left: 50, right: 50 },
       info: {
-        Title: `Cap Table — ${asset.name}`,
+        Title: `Cap Table - ${asset.name}`,
         Author: 'Caelith Compliance Engine',
         Subject: 'Capitalization Table Report',
         Creator: 'Caelith',
@@ -123,106 +118,81 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
     const now = new Date().toISOString().split('T')[0];
     const reportId = assetId.substring(0, 8).toUpperCase();
 
-    // ─── Top Banner ──────────────────────────────────────
     doc.save();
     doc.rect(0, 0, doc.page.width, 80).fill(C.bg);
-
-    // Accent line
     doc.rect(L, 68, 32, 2).fill(C.accent);
-
-    // Brand name
-    doc.fontSize(8).fillColor(C.accent)
-      .text('CAELITH', L, 20, { characterSpacing: 3 });
-
-    doc.fontSize(7).fillColor(C.accent)
-      .text('COMPLIANCE ENGINE', L, 32);
-
-    // Right side: date + report ID
-    doc.fontSize(7).fillColor(C.inkSec)
+    drawNorthStarMark(doc, L, 18, 16);
+    doc.fontSize(8).fillColor(C.white).text('CAELITH', L + 24, 20, { characterSpacing: 3 });
+    doc.fontSize(7).fillColor(C.accent).text('CAP TABLE REPORT', L + 24, 32);
+    doc
+      .fontSize(7)
+      .fillColor(C.accentDim)
       .text(`Report ${reportId}`, L, 20, { width: W, align: 'right' })
       .text(`Generated ${now}`, L, 32, { width: W, align: 'right' });
     doc.restore();
 
-    // ─── Title Section ───────────────────────────────────
     let y = 100;
 
-    doc.fontSize(20).fillColor(C.ink)
-      .text('Capitalization Table', L, y);
-
+    doc.fontSize(20).fillColor(C.ink).text('Capitalization Table', L, y);
     y += 28;
-    doc.fontSize(13).fillColor(C.inkSec)
-      .text(asset.name, L, y);
+    doc.fontSize(13).fillColor(C.inkSec).text(asset.name, L, y);
 
     y += 20;
     const meta = [asset.asset_type];
     if (fund) meta.push(fund.legal_form, fund.domicile);
     meta.push(`Created ${new Date(asset.created_at).toISOString().split('T')[0]}`);
-    doc.fontSize(8).fillColor(C.inkTert)
-      .text(meta.join('  ·  '), L, y);
+    doc.fontSize(8).fillColor(C.inkTert).text(meta.join('  |  '), L, y);
 
     if (fund) {
       y += 14;
-      doc.fontSize(8).fillColor(C.inkTert)
-        .text(`Fund: ${fund.name}  ·  Framework: ${fund.regulatory_framework}`, L, y);
+      doc.fontSize(8).fillColor(C.inkTert).text(`Fund: ${fund.name}  |  Framework: ${fund.regulatory_framework}`, L, y);
     }
 
-    // ─── Summary Cards ───────────────────────────────────
     y += 28;
     const cardW = (W - 18) / 4;
     const cardH = 54;
-
     const cards = [
       { label: 'TOTAL UNITS', value: fmtNum(asset.total_units), color: C.accent },
-      { label: 'ALLOCATED', value: fmtNum(allocated), color: C.accent },
+      { label: 'ALLOCATED', value: fmtNum(allocated), color: '#3D6658' },
       { label: 'UTILIZATION', value: `${utilPct.toFixed(1)}%`, color: utilPct > 90 ? C.red : C.accent },
       { label: 'HOLDERS', value: String(holders), color: C.accentDim },
     ];
 
     cards.forEach((card, i) => {
       const cx = L + i * (cardW + 6);
-      // Card background
       doc.save();
       doc.rect(cx, y, cardW, cardH).fill(C.surface);
-      // Left accent bar
       doc.rect(cx, y, 3, cardH).fill(card.color);
       doc.restore();
-
-      doc.fontSize(6.5).fillColor(C.inkTert)
-        .text(card.label, cx + 12, y + 10, { characterSpacing: 0.8 });
-      doc.fontSize(16).fillColor(C.ink)
-        .text(card.value, cx + 12, y + 24);
+      doc.fontSize(6.5).fillColor(C.inkTert).text(card.label, cx + 12, y + 10, { characterSpacing: 0.8 });
+      doc.fontSize(16).fillColor(C.ink).text(card.value, cx + 12, y + 24);
     });
 
-    // ─── Utilization Bar ─────────────────────────────────
     y += cardH + 16;
-
     doc.save();
     doc.roundedRect(L, y, W, 8, 4).fill(C.edge);
     const barW = Math.max((utilPct / 100) * W, 4);
     doc.roundedRect(L, y, barW, 8, 4).fill(C.accent);
     doc.restore();
 
-    doc.fontSize(7).fillColor(C.inkTert)
+    doc
+      .fontSize(7)
+      .fillColor(C.inkTert)
       .text(`${fmtNum(allocated)} allocated of ${fmtNum(asset.total_units)} total`, L, y + 12, { width: W, align: 'center' });
 
-    // ─── Ownership Table ─────────────────────────────────
     y += 36;
-
-    doc.fontSize(11).fillColor(C.ink)
-      .text('Ownership Distribution', L, y);
+    doc.fontSize(11).fillColor(C.ink).text('Ownership Distribution', L, y);
     y += 22;
 
-    // Column layout
     const cols = {
-      name:    { x: L + 8,                               w: W * 0.28 },
-      jur:     { x: L + 8 + W * 0.28,                    w: W * 0.10 },
-      accr:    { x: L + 8 + W * 0.38,                    w: W * 0.10 },
-      units:   { x: L + 8 + W * 0.48,                    w: W * 0.18 },
-      pct:     { x: L + 8 + W * 0.66,                    w: W * 0.14 },
-      bar:     { x: L + 8 + W * 0.80,                    w: W * 0.18 },
+      name: { x: L + 8, w: W * 0.28 },
+      jur: { x: L + 8 + W * 0.28, w: W * 0.1 },
+      accr: { x: L + 8 + W * 0.38, w: W * 0.1 },
+      units: { x: L + 8 + W * 0.48, w: W * 0.18 },
+      pct: { x: L + 8 + W * 0.66, w: W * 0.14 },
+      bar: { x: L + 8 + W * 0.8, w: W * 0.18 },
     };
 
-    // Table header
     doc.save();
     doc.rect(L, y - 4, W, 20).fill(C.bg);
     doc.restore();
@@ -236,7 +206,6 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
 
     y += 22;
 
-    // Table rows
     capTable.forEach((entry, i) => {
       if (y > doc.page.height - 100) {
         addFooter(doc, L, W, now, reportId);
@@ -244,31 +213,24 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
         y = 60;
       }
 
-      // Alternate row background
       if (i % 2 === 0) {
         doc.save();
         doc.rect(L, y - 4, W, 20).fill(C.surfMuted);
         doc.restore();
       }
 
-      doc.fontSize(8.5).fillColor(C.ink)
-        .text(entry.investor_name, cols.name.x, y, { width: cols.name.w - 8 });
+      doc.fontSize(8.5).fillColor(C.ink).text(entry.investor_name, cols.name.x, y, { width: cols.name.w - 8 });
+      doc.fontSize(7.5).fillColor(C.inkSec).text(entry.jurisdiction, cols.jur.x, y);
 
-      doc.fontSize(7.5).fillColor(C.inkSec)
-        .text(entry.jurisdiction, cols.jur.x, y);
-
-      // Accredited badge
       const accColor = entry.accredited ? C.accent : C.inkTert;
-      doc.fontSize(7.5).fillColor(accColor)
-        .text(entry.accredited ? 'Yes' : 'No', cols.accr.x, y);
+      doc.fontSize(7.5).fillColor(accColor).text(entry.accredited ? 'Yes' : 'No', cols.accr.x, y);
 
-      doc.fontSize(8.5).fillColor(C.ink)
-        .text(fmtNum(entry.units), cols.units.x, y, { width: cols.units.w - 8, align: 'right' });
-
-      doc.fontSize(8.5).fillColor(C.ink)
+      doc.fontSize(8.5).fillColor(C.ink).text(fmtNum(entry.units), cols.units.x, y, { width: cols.units.w - 8, align: 'right' });
+      doc
+        .fontSize(8.5)
+        .fillColor(C.ink)
         .text(`${Number(entry.percentage).toFixed(2)}%`, cols.pct.x, y, { width: cols.pct.w - 8, align: 'right' });
 
-      // Ownership bar
       const barMaxW = cols.bar.w - 8;
       const ownerBarW = (Number(entry.percentage) / 100) * barMaxW;
       doc.save();
@@ -279,33 +241,30 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
       y += 22;
     });
 
-    // ─── Divider ─────────────────────────────────────────
     y += 6;
     doc.moveTo(L, y).lineTo(L + W, y).strokeColor(C.edge).lineWidth(0.5).stroke();
 
-    // ─── Unallocated Row ─────────────────────────────────
     const unallocated = asset.total_units - allocated;
     if (unallocated > 0) {
       y += 10;
-      doc.fontSize(8.5).fillColor(C.inkTert)
-        .text('Unallocated', cols.name.x, y);
+      doc.fontSize(8.5).fillColor(C.inkTert).text('Unallocated', cols.name.x, y);
       doc.text(fmtNum(unallocated), cols.units.x, y, { width: cols.units.w - 8, align: 'right' });
-      doc.text(`${((unallocated / asset.total_units) * 100).toFixed(2)}%`, cols.pct.x, y, { width: cols.pct.w - 8, align: 'right' });
+      doc.text(`${((unallocated / asset.total_units) * 100).toFixed(2)}%`, cols.pct.x, y, {
+        width: cols.pct.w - 8,
+        align: 'right',
+      });
     }
 
-    // ─── Total Row ───────────────────────────────────────
     y += 22;
     doc.save();
     doc.rect(L, y - 4, W, 22).fill(C.bg);
     doc.restore();
 
-    doc.fontSize(8.5).fillColor(C.white).font('Helvetica-Bold')
-      .text('TOTAL', cols.name.x, y);
+    doc.fontSize(8.5).fillColor(C.white).font('Helvetica-Bold').text('TOTAL', cols.name.x, y);
     doc.text(fmtNum(asset.total_units), cols.units.x, y, { width: cols.units.w - 8, align: 'right' });
     doc.text('100.00%', cols.pct.x, y, { width: cols.pct.w - 8, align: 'right' });
     doc.font('Helvetica');
 
-    // ─── Investor Type Breakdown ──────────────────────────
     y += 32;
     if (y > doc.page.height - 200) {
       addFooter(doc, L, W, now, reportId);
@@ -315,19 +274,16 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
 
     const typeMap = new Map<string, { count: number; units: number }>();
     for (const entry of capTable) {
-      // We don't have investor_type in cap table query, aggregate by jurisdiction instead
       const key = entry.jurisdiction || 'Unknown';
       const prev = typeMap.get(key) || { count: 0, units: 0 };
       typeMap.set(key, { count: prev.count + 1, units: prev.units + entry.units });
     }
 
-    doc.fontSize(11).fillColor(C.ink)
-      .text('Jurisdiction Exposure', L, y);
+    doc.fontSize(11).fillColor(C.ink).text('Jurisdiction Exposure', L, y);
     y += 20;
 
-    // Mini table header
     doc.save();
-    doc.rect(L, y - 3, W, 16).fill(C.bg);
+    doc.rect(L, y - 3, W, 16).fill(C.bgSec);
     doc.restore();
 
     doc.fontSize(6.5).fillColor(C.inkTert);
@@ -343,6 +299,7 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
         doc.addPage();
         y = 60;
       }
+
       const pct = asset.total_units > 0 ? ((data.units / asset.total_units) * 100).toFixed(1) : '0';
       doc.fontSize(8).fillColor(C.ink).text(jurisdiction, L + 8, y);
       doc.fillColor(C.inkSec).text(String(data.count), L + W * 0.4, y);
@@ -351,7 +308,6 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
       y += 16;
     }
 
-    // ─── KYC Overview ─────────────────────────────────────
     y += 16;
     if (y > doc.page.height - 160) {
       addFooter(doc, L, W, now, reportId);
@@ -359,19 +315,19 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
       y = 60;
     }
 
-    doc.fontSize(11).fillColor(C.ink)
-      .text('KYC Status Overview', L, y);
+    doc.fontSize(11).fillColor(C.ink).text('KYC Status Overview', L, y);
     y += 20;
 
-    const kycTotal = kycStats.reduce((s, r) => s + Number(r.count), 0);
+    const kycTotal = kycStats.reduce((sum, row) => sum + Number(row.count), 0);
     for (const row of kycStats) {
       if (y > doc.page.height - 100) {
         addFooter(doc, L, W, now, reportId);
         doc.addPage();
         y = 60;
       }
-      const cnt = Number(row.count);
-      const pct = kycTotal > 0 ? ((cnt / kycTotal) * 100).toFixed(1) : '0';
+
+      const count = Number(row.count);
+      const pct = kycTotal > 0 ? ((count / kycTotal) * 100).toFixed(1) : '0';
       const statusColor = row.status === 'verified' ? C.accent : row.status === 'expired' ? C.red : C.inkTert;
 
       doc.save();
@@ -379,14 +335,11 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
       doc.rect(L, y - 2, 3, 18).fill(statusColor);
       doc.restore();
 
-      doc.fontSize(8.5).fillColor(C.ink)
-        .text(row.status.charAt(0).toUpperCase() + row.status.slice(1), L + 12, y);
-      doc.fillColor(C.inkSec)
-        .text(`${cnt} investor${cnt !== 1 ? 's' : ''} (${pct}%)`, L + W * 0.4, y);
+      doc.fontSize(8.5).fillColor(C.ink).text(row.status.charAt(0).toUpperCase() + row.status.slice(1), L + 12, y);
+      doc.fillColor(C.inkSec).text(`${count} investor${count !== 1 ? 's' : ''} (${pct}%)`, L + W * 0.4, y);
       y += 22;
     }
 
-    // ─── Disclaimer Box ──────────────────────────────────
     y += 40;
     if (y < doc.page.height - 140) {
       doc.save();
@@ -394,18 +347,22 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
       doc.rect(L, y, 3, 48).fill(C.accent);
       doc.restore();
 
-      doc.fontSize(7).fillColor(C.accent)
-        .text('CONFIDENTIAL — INSTITUTIONAL USE ONLY', L + 14, y + 10, { characterSpacing: 0.5 });
-      doc.fontSize(6.5).fillColor(C.inkSec)
+      doc
+        .fontSize(7)
+        .fillColor(C.accent)
+        .text('CONFIDENTIAL - INSTITUTIONAL USE ONLY', L + 14, y + 10, { characterSpacing: 0.5 });
+      doc
+        .fontSize(6.5)
+        .fillColor(C.inkSec)
         .text(
-          'This capitalization table was generated by the Caelith Compliance Engine and represents a point-in-time snapshot of the ownership distribution. It does not constitute legal or financial advice. Recipients should independently verify all data before making investment decisions. Distribution is restricted to authorized parties.',
-          L + 14, y + 22, { width: W - 28, lineGap: 2 }
+          'This capitalization table was generated by the Caelith Compliance Engine and represents a point-in-time snapshot of ownership distribution. It does not constitute legal or financial advice. Recipients should verify all data before making investment decisions.',
+          L + 14,
+          y + 22,
+          { width: W - 28, lineGap: 2 }
         );
     }
 
-    // ─── Footer ──────────────────────────────────────────
     addFooter(doc, L, W, now, reportId);
-
     doc.end();
   });
 }
@@ -413,17 +370,45 @@ export async function generateCapTablePdf(assetId: string): Promise<Buffer> {
 function addFooter(doc: PDFKit.PDFDocument, L: number, W: number, date: string, reportId: string): void {
   const footerY = doc.page.height - 44;
 
-  // Separator line
   doc.moveTo(L, footerY - 8).lineTo(L + W, footerY - 8).strokeColor(C.edge).lineWidth(0.5).stroke();
 
-  // Footer accent
   doc.save();
   doc.rect(L, footerY, 20, 2).fill(C.accent);
   doc.restore();
 
-  doc.fontSize(6.5).fillColor(C.inkTert)
-    .text('CAELITH COMPLIANCE ENGINE', L, footerY + 6, { characterSpacing: 0.5 })
-    .text(`Report ${reportId}  ·  ${date}  ·  Page ${doc.bufferedPageRange().count}`, L, footerY + 6, { width: W, align: 'right' });
+  doc.fontSize(6.5).fillColor(C.inkTert).text('CAELITH COMPLIANCE ENGINE', L, footerY + 6, { characterSpacing: 0.5 }).text(
+    `Report ${reportId} | ${date} | Page ${doc.bufferedPageRange().count}`,
+    L,
+    footerY + 6,
+    { width: W, align: 'right' }
+  );
+}
+
+function drawNorthStarMark(doc: PDFKit.PDFDocument, x: number, y: number, scale: number): void {
+  const s = scale;
+  doc.save();
+  doc.roundedRect(x, y, s, s, 3).fill('#DDE2E5');
+  doc.roundedRect(x, y, s, s, 3).lineWidth(1).stroke('#3F3933');
+
+  doc.moveTo(x + s * 0.25, y + s * 0.15).lineTo(x + s * 0.25, y + s * 0.85).lineWidth(0.5).stroke('#BDB0A4');
+  doc.moveTo(x + s * 0.5, y + s * 0.15).lineTo(x + s * 0.5, y + s * 0.85).lineWidth(0.5).stroke('#BDB0A4');
+  doc.moveTo(x + s * 0.75, y + s * 0.15).lineTo(x + s * 0.75, y + s * 0.85).lineWidth(0.5).stroke('#BDB0A4');
+  doc.moveTo(x + s * 0.15, y + s * 0.25).lineTo(x + s * 0.85, y + s * 0.25).lineWidth(0.5).stroke('#BDB0A4');
+  doc.moveTo(x + s * 0.15, y + s * 0.5).lineTo(x + s * 0.85, y + s * 0.5).lineWidth(0.5).stroke('#BDB0A4');
+  doc.moveTo(x + s * 0.15, y + s * 0.75).lineTo(x + s * 0.85, y + s * 0.75).lineWidth(0.5).stroke('#BDB0A4');
+
+  doc.polygon(
+    [x + s * 0.5, y + s * 0.15],
+    [x + s * 0.58, y + s * 0.42],
+    [x + s * 0.85, y + s * 0.5],
+    [x + s * 0.58, y + s * 0.58],
+    [x + s * 0.5, y + s * 0.85],
+    [x + s * 0.42, y + s * 0.58],
+    [x + s * 0.15, y + s * 0.5],
+    [x + s * 0.42, y + s * 0.42]
+  ).fill('#D8BA8E').lineWidth(1).stroke('#3F3933');
+
+  doc.restore();
 }
 
 function fmtNum(n: number): string {

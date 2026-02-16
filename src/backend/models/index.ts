@@ -21,6 +21,40 @@ export type LegalForm =
 
 export type RegulatoryFramework = 'AIFMD' | 'UCITS' | 'ELTIF' | 'national';
 
+// ============================================================================
+// AIFMD II COMPLIANCE TYPES
+// ============================================================================
+
+export interface ClassificationEvidence {
+  type: string;
+  document_ref: string;
+  verified_at: string;
+  verified_by: string;
+}
+
+export interface LiquidityManagementTool {
+  type: 'redemption_gate' | 'notice_period' | 'redemption_fee' | 'swing_pricing' | 'anti_dilution_levy' | 'side_pocket' | 'redemption_in_kind' | 'suspension';
+  description: string;
+  threshold_pct?: number;
+  active: boolean;
+}
+
+export interface LiquidityBucket {
+  bucket: '1d' | '2-7d' | '8-30d' | '31-90d' | '91-180d' | '181-365d' | '>365d';
+  pct: number;
+}
+
+export interface GeographicExposure {
+  region: string;
+  pct: number;
+}
+
+export interface CounterpartyExposure {
+  name: string;
+  lei?: string;
+  exposure_pct: number;
+}
+
 export type FundStatus = 'active' | 'closing' | 'closed' | 'liquidating';
 
 export type DecisionType =
@@ -68,6 +102,9 @@ export interface Investor {
   tax_id: string | null;
   lei: string | null;
   email: string | null;
+  classification_date: string | null;
+  classification_evidence: ClassificationEvidence[];
+  classification_method: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -122,7 +159,7 @@ export interface Transfer {
   approved_by: string | null;
   approved_at: string | null;
   rejection_reason: string | null;
-  pending_reason?: string;
+  pending_reason?: string | null;
 }
 
 /**
@@ -156,6 +193,14 @@ export interface FundStructure {
   target_size: number | null;
   currency: string;
   status: FundStatus;
+  lmt_types: LiquidityManagementTool[];
+  leverage_limit_commitment: number | null;
+  leverage_limit_gross: number | null;
+  leverage_current_commitment: number | null;
+  leverage_current_gross: number | null;
+  liquidity_profile: LiquidityBucket[];
+  geographic_exposure: GeographicExposure[];
+  counterparty_exposure: CounterpartyExposure[];
   created_at: string;
   updated_at: string;
 }
@@ -222,6 +267,8 @@ export interface OnboardingRecord {
   asset_id: string;
   status: OnboardingStatus;
   requested_units: number;
+  owner_tag: string | null;
+  handoff_notes: string | null;
   eligibility_decision_id: string | null;
   approval_decision_id: string | null;
   reviewed_by: string | null;
@@ -265,6 +312,7 @@ export type EventType =
   | 'rules.updated'
   | 'transfer.executed'
   | 'transfer.rejected'
+  | 'transfer.pending_approval'
   | 'composite_rule.created'
   | 'composite_rule.updated'
   | 'composite_rule.deleted'
@@ -321,6 +369,9 @@ export interface CreateInvestorInput {
   tax_id?: string;
   lei?: string;
   email?: string;
+  classification_date?: string;
+  classification_evidence?: ClassificationEvidence[];
+  classification_method?: string;
 }
 
 export interface CreateHoldingInput {
@@ -349,6 +400,11 @@ export interface CreateTransferInput {
   to_investor_id: string;
   units: number;
   executed_at: string;
+  status?: 'executed' | 'pending_approval' | 'rejected';
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejection_reason?: string | null;
+  pending_reason?: string | null;
 }
 
 export interface CreateEventInput {
@@ -370,6 +426,14 @@ export interface CreateFundStructureInput {
   target_size?: number;
   currency?: string;
   status?: FundStatus;
+  lmt_types?: LiquidityManagementTool[];
+  leverage_limit_commitment?: number;
+  leverage_limit_gross?: number;
+  leverage_current_commitment?: number;
+  leverage_current_gross?: number;
+  liquidity_profile?: LiquidityBucket[];
+  geographic_exposure?: GeographicExposure[];
+  counterparty_exposure?: CounterpartyExposure[];
 }
 
 export interface CreateEligibilityCriteriaInput {
@@ -399,6 +463,8 @@ export interface CreateOnboardingRecordInput {
   investor_id: string;
   asset_id: string;
   requested_units: number;
+  owner_tag?: string;
+  handoff_notes?: string;
 }
 
 // ============================================================================
@@ -421,6 +487,9 @@ export interface UpdateInvestorInput {
   tax_id?: string;
   lei?: string;
   email?: string;
+  classification_date?: string;
+  classification_evidence?: ClassificationEvidence[];
+  classification_method?: string;
 }
 
 export interface UpdateHoldingInput {
@@ -434,6 +503,14 @@ export interface UpdateFundStructureInput {
   inception_date?: string;
   target_size?: number;
   status?: FundStatus;
+  lmt_types?: LiquidityManagementTool[];
+  leverage_limit_commitment?: number;
+  leverage_limit_gross?: number;
+  leverage_current_commitment?: number;
+  leverage_current_gross?: number;
+  liquidity_profile?: LiquidityBucket[];
+  geographic_exposure?: GeographicExposure[];
+  counterparty_exposure?: CounterpartyExposure[];
 }
 
 export interface UpdateOnboardingInput {
@@ -442,6 +519,8 @@ export interface UpdateOnboardingInput {
   rejection_reasons?: string[];
   eligibility_decision_id?: string;
   approval_decision_id?: string;
+  owner_tag?: string | null;
+  handoff_notes?: string | null;
 }
 
 // ============================================================================

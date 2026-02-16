@@ -276,12 +276,12 @@ export default function RulesPage() {
   return (
     <div>
       <PageHeader
-        title="Transfer Rules"
+        title="Rules"
         description="Configure built-in and custom compliance rules per asset"
         action={
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => router.push('/rules/builder')}>Visual Builder</Button>
-            <Button onClick={() => openForm()}>+ Create Rules</Button>
+            <Button onClick={() => openForm()}>+ New Rule</Button>
           </div>
         }
       />
@@ -561,7 +561,7 @@ export default function RulesPage() {
           ) : (
             <Card>
               <EmptyState title="No built-in rules" description="Configure transfer restrictions for this asset."
-                action={<Button onClick={() => openForm()}>+ Create Rules</Button>} />
+                action={<Button onClick={() => openForm()}>+ New Rule</Button>} />
             </Card>
           )}
 

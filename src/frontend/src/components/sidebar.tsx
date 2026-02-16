@@ -5,15 +5,16 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { classNames } from '../lib/utils';
 import { useAuth } from './auth-provider';
+import { CaelithBrandLockup } from './brand';
 
 interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
-  matchPaths?: string[]; // additional paths that highlight this item
+  matchPaths?: string[];
 }
 
-const iconClass = "h-[18px] w-[18px]";
+const iconClass = 'h-[18px] w-[18px]';
 
 const navItems: NavItem[] = [
   {
@@ -65,25 +66,33 @@ const navItems: NavItem[] = [
     matchPaths: ['/rules'],
   },
   {
-    href: '/audit',
-    label: 'Activity',
+    href: '/decisions',
+    label: 'Decisions',
     icon: (
       <svg className={iconClass} fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
       </svg>
     ),
-    matchPaths: ['/audit', '/decisions'],
+    matchPaths: ['/decisions', '/audit'],
   },
 ];
 
-export function Sidebar({ onCopilotToggle, onSearchToggle, mobileOpen, onMobileClose }: { onCopilotToggle?: () => void; onSearchToggle?: () => void; mobileOpen?: boolean; onMobileClose?: () => void } = {}) {
+export function Sidebar({
+  onSearchToggle,
+  mobileOpen,
+  onMobileClose,
+}: {
+  onSearchToggle?: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+} = {}) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
   const isActive = (item: NavItem) => {
     if (item.href === '/') return pathname === '/';
     if (pathname.startsWith(item.href)) return true;
-    if (item.matchPaths) return item.matchPaths.some(p => pathname.startsWith(p));
+    if (item.matchPaths) return item.matchPaths.some((p) => pathname.startsWith(p));
     return false;
   };
 
@@ -94,30 +103,21 @@ export function Sidebar({ onCopilotToggle, onSearchToggle, mobileOpen, onMobileC
         .join('')
         .toUpperCase()
         .slice(0, 2)
-    : '??';
+    : '--';
 
   return (
-    <aside className={classNames(
-      'flex h-screen w-[220px] flex-col bg-bg-sidebar border-r border-edge-subtle transition-transform duration-200',
-      'fixed z-50 md:static md:translate-x-0',
-      mobileOpen ? 'translate-x-0' : '-translate-x-full'
-    )}>
-      {/* Brand */}
-      <div className="px-5 pt-6 pb-6 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          {/* Accent Mark Logo */}
-          <svg viewBox="0 0 32 32" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-            <g transform="translate(3, 3)">
-              <path d="M13 0C5.82 0 0 5.82 0 13C0 20.18 5.82 26 13 26C16.6 26 19.85 24.58 22.16 22.22"
-                    stroke="#22D3EE" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-              <line x1="6" y1="13" x2="19" y2="13" stroke="#22D3EE" strokeWidth="2.5" strokeLinecap="round"/>
-              <circle cx="21.5" cy="13" r="1.5" fill="#22D3EE"/>
-            </g>
-          </svg>
-          <span className="text-[13px] font-bold uppercase tracking-[0.12em] text-ink">
-            Caelith
-          </span>
-        </div>
+    <aside
+      className={classNames(
+        'fixed z-50 flex h-screen w-[220px] flex-col border-r border-edge-subtle bg-bg-sidebar transition-transform duration-200 md:static md:translate-x-0',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full'
+      )}
+    >
+      <div className="flex items-center justify-between px-5 pb-6 pt-6">
+        <CaelithBrandLockup
+          className=""
+          markClassName="h-[22px] w-[22px]"
+          wordmarkClassName="text-[13px] tracking-[0.12em]"
+        />
         {onMobileClose && (
           <button
             onClick={onMobileClose}
@@ -131,7 +131,6 @@ export function Sidebar({ onCopilotToggle, onSearchToggle, mobileOpen, onMobileC
         )}
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3">
         <div className="space-y-1">
           {navItems.map((item) => {
@@ -143,11 +142,11 @@ export function Sidebar({ onCopilotToggle, onSearchToggle, mobileOpen, onMobileC
                 className={classNames(
                   'group flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150',
                   active
-                    ? 'bg-white/[0.07] text-ink'
-                    : 'text-ink-secondary hover:bg-white/[0.04] hover:text-ink'
+                    ? 'bg-bg-tertiary text-ink ring-1 ring-edge-subtle'
+                    : 'text-ink-secondary hover:bg-bg-tertiary hover:text-ink'
                 )}
               >
-                <span className={active ? 'text-accent-400' : 'text-ink-tertiary group-hover:text-ink-secondary'}>
+                <span className={active ? 'text-accent-600' : 'text-ink-tertiary group-hover:text-ink-secondary'}>
                   {item.icon}
                 </span>
                 {item.label}
@@ -156,53 +155,25 @@ export function Sidebar({ onCopilotToggle, onSearchToggle, mobileOpen, onMobileC
           })}
         </div>
 
-        {/* Alert indicator — shown when there might be risk flags */}
-        <div className="mt-4 pt-4 border-t border-edge-subtle">
-          <Link
-            href="/#risk-flags"
-            className="group flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-ink-secondary hover:bg-white/[0.04] hover:text-ink transition-all"
-          >
-            <span className="relative text-ink-tertiary group-hover:text-ink-secondary">
-              <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-              </svg>
-              {/* Dot indicator */}
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-400 ring-2 ring-bg-sidebar" />
-            </span>
-            Alerts
-          </Link>
-        </div>
       </nav>
 
-      {/* Bottom section */}
       <div className="border-t border-edge-subtle px-3 py-4">
         {onSearchToggle && (
           <button
             onClick={onSearchToggle}
-            className="mb-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-ink-secondary transition-all hover:text-ink hover:bg-white/[0.04]"
+            className="mb-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-ink-secondary transition-all hover:bg-bg-tertiary hover:text-ink"
           >
             <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
             <span className="flex-1 text-left">Search</span>
-            <kbd className="text-[10px] font-mono text-ink-muted">⌘K</kbd>
-          </button>
-        )}
-        {onCopilotToggle && (
-          <button
-            onClick={onCopilotToggle}
-            className="mb-3 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-accent-300 transition-all hover:text-accent-200 hover:bg-white/[0.04]"
-          >
-            <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
-            </svg>
-            Copilot
+            <kbd className="text-[10px] font-mono text-ink-muted">Ctrl+K</kbd>
           </button>
         )}
 
         {user && (
           <div className="flex items-center gap-2.5 px-3 py-2">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-accent-500/15 ring-1 ring-accent-400/20 text-[10px] font-bold text-accent-300 font-mono">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-accent-500/15 font-mono text-[10px] font-bold text-accent-700 ring-1 ring-accent-400/20">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
@@ -210,7 +181,7 @@ export function Sidebar({ onCopilotToggle, onSearchToggle, mobileOpen, onMobileC
             </div>
             <button
               onClick={logout}
-              className="rounded-md p-1 text-ink-muted hover:text-ink-secondary transition-colors"
+              className="rounded-md p-1 text-ink-muted transition-colors hover:text-ink-secondary"
               title="Sign out"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useState, useMemo, Suspense, useEffect } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
@@ -12,7 +12,6 @@ import {
   Button,
   Input,
   Select,
-  Checkbox,
   Modal,
   SkeletonTable,
   ErrorMessage,
@@ -23,10 +22,10 @@ import {
   ExportMenu,
 } from '../../components/ui';
 import { exportCSV } from '../../lib/export-csv';
-import { useSort } from '../../lib/use-sort';
 import { formatDate, classNames } from '../../lib/utils';
 import { JURISDICTIONS } from '../../lib/constants';
-import type { Investor } from '../../lib/types';
+import type { Investor, InvestorType, KycStatus } from '../../lib/types';
+import { BackLink } from '../../components/back-link';
 
 function daysUntilExpiry(expiryDate: string | null | undefined) {
   if (!expiryDate) return null;
@@ -37,8 +36,46 @@ function daysUntilExpiry(expiryDate: string | null | undefined) {
   return { days, label: `${days}d`, urgency: 'ok' as const };
 }
 
+const INVESTOR_TYPE_OPTIONS: Array<{ value: InvestorType; label: string }> = [
+  { value: 'institutional', label: 'Institutional' },
+  { value: 'professional', label: 'Professional' },
+  { value: 'semi_professional', label: 'Semi-Professional' },
+  { value: 'well_informed', label: 'Well-Informed' },
+  { value: 'retail', label: 'Retail' },
+];
+
+const KYC_STATUS_OPTIONS: Array<{ value: KycStatus; label: string }> = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'verified', label: 'Verified' },
+  { value: 'expired', label: 'Expired' },
+  { value: 'rejected', label: 'Rejected' },
+];
+
+const INVESTOR_SORT_KEYS = new Set<keyof Investor>([
+  'name',
+  'jurisdiction',
+  'investor_type',
+  'kyc_status',
+  'created_at',
+]);
+
+type InvestorSortDirection = 'asc' | 'desc' | null;
+type InvestorSortState = { key: keyof Investor | null; direction: InvestorSortDirection };
+
+function parseSort(searchParams: URLSearchParams): InvestorSortState {
+  const key = searchParams.get('sort');
+  const direction = searchParams.get('dir');
+  const parsedKey = key && INVESTOR_SORT_KEYS.has(key as keyof Investor) ? (key as keyof Investor) : null;
+  const parsedDirection = direction === 'asc' || direction === 'desc' ? direction : null;
+  return {
+    key: parsedKey && parsedDirection ? parsedKey : null,
+    direction: parsedKey && parsedDirection ? parsedDirection : null,
+  };
+}
+
 function InvestorsContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const typeFilter = searchParams.get('type');
   const kycFilter = searchParams.get('kyc');
@@ -47,6 +84,15 @@ function InvestorsContent() {
   const [editInvestor, setEditInvestor] = useState<Investor | null>(null);
   const formAction = useFormAction();
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [sort, setSort] = useState<InvestorSortState>(() => parseSort(searchParams));
+
+  // Local filters (stack on top of URL-based filters)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterJurisdiction, setFilterJurisdiction] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [filterKyc, setFilterKyc] = useState('');
+  const hasLocalFilters = searchQuery || filterJurisdiction || filterType || filterKyc;
+  const clearLocalFilters = () => { setSearchQuery(''); setFilterJurisdiction(''); setFilterType(''); setFilterKyc(''); };
 
   const investors = useAsync(() => api.getInvestors());
 
@@ -80,10 +126,74 @@ function InvestorsContent() {
     return filtered;
   }, [investors.data, typeFilter, kycFilter]);
 
-  const { sorted: sortedInvestors, sort, toggle } = useSort(filteredInvestors);
+  useEffect(() => {
+    setSort(parseSort(searchParams));
+  }, [searchParams]);
+
+  const toggle = (key: keyof Investor) => {
+    setSort((prev) => {
+      const next: InvestorSortState =
+        prev.key !== key
+          ? { key, direction: 'asc' }
+          : prev.direction === 'asc'
+          ? { key, direction: 'desc' }
+          : { key: null, direction: null };
+
+      const params = new URLSearchParams(searchParams.toString());
+      if (next.key && next.direction) {
+        params.set('sort', String(next.key));
+        params.set('dir', next.direction);
+      } else {
+        params.delete('sort');
+        params.delete('dir');
+      }
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname);
+      return next;
+    });
+  };
+
+  // Apply local filters on top of URL-based filteredInvestors
+  const locallyFiltered = useMemo(() => {
+    let result = filteredInvestors;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(inv => inv.name.toLowerCase().includes(q));
+    }
+    if (filterJurisdiction) {
+      result = result.filter(inv => inv.jurisdiction === filterJurisdiction);
+    }
+    if (filterType) {
+      result = result.filter(inv => inv.investor_type === filterType);
+    }
+    if (filterKyc) {
+      result = result.filter(inv => inv.kyc_status === filterKyc);
+    }
+    return result;
+  }, [filteredInvestors, searchQuery, filterJurisdiction, filterType, filterKyc]);
+
+  const sortedInvestors = useMemo(() => {
+    const key = sort.key;
+    if (!key || !sort.direction) return locallyFiltered;
+    return [...locallyFiltered].sort((a, b) => {
+      const aVal = a[key];
+      const bVal = b[key];
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      const cmp = typeof aVal === 'string'
+        ? aVal.localeCompare(String(bVal))
+        : Number(aVal) - Number(bVal);
+      return sort.direction === 'desc' ? -cmp : cmp;
+    });
+  }, [locallyFiltered, sort]);
 
   const clearFilters = () => {
-    router.push('/investors');
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('type');
+    params.delete('kyc');
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
   };
 
   const activeFilter = typeFilter
@@ -96,11 +206,17 @@ function InvestorsContent() {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const name = form.get('name') as string;
+    const email = (form.get('email') as string) || undefined;
     const jurisdiction = form.get('jurisdiction') as string;
-    const accredited = form.get('accredited') === 'on';
+    const investor_type = form.get('investor_type') as InvestorType;
+    const kyc_status = form.get('kyc_status') as KycStatus;
+    const kyc_expiry_value = (form.get('kyc_expiry') as string) || '';
+    const status = form.get('status') as string;
+    const accredited = status === 'accredited';
+    const kyc_expiry = kyc_expiry_value ? new Date(kyc_expiry_value).toISOString() : undefined;
     if (!name || !jurisdiction) { formAction.setError('Name and jurisdiction are required.'); return; }
     const ok = await formAction.execute(
-      () => api.createInvestor({ name, jurisdiction, accredited }),
+      () => api.createInvestor({ name, email, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry }),
       'Failed to create investor',
     );
     if (ok) {
@@ -115,10 +231,16 @@ function InvestorsContent() {
     if (!editInvestor) return;
     const form = new FormData(e.currentTarget);
     const name = form.get('name') as string;
+    const email = (form.get('email') as string) || undefined;
     const jurisdiction = form.get('jurisdiction') as string;
-    const accredited = form.get('accredited') === 'on';
+    const investor_type = form.get('investor_type') as InvestorType;
+    const kyc_status = form.get('kyc_status') as KycStatus;
+    const kyc_expiry_value = (form.get('kyc_expiry') as string) || '';
+    const status = form.get('status') as string;
+    const accredited = status === 'accredited';
+    const kyc_expiry = kyc_expiry_value ? new Date(kyc_expiry_value).toISOString() : undefined;
     const ok = await formAction.execute(
-      () => api.updateInvestor(editInvestor.id, { name, jurisdiction, accredited }),
+      () => api.updateInvestor(editInvestor.id, { name, email, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry }),
       'Failed to update investor',
     );
     if (ok) {
@@ -148,21 +270,15 @@ function InvestorsContent() {
                 );
               }}
             />
-            <Button onClick={() => setShowForm(true)}>+ Add Investor</Button>
+            <Button onClick={() => setShowForm(true)}>+ New Investor</Button>
           </div>
         }
       />
 
       {activeFilter && (
-        <button
-          onClick={() => router.push('/')}
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-ink-secondary hover:text-ink transition-colors"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-          </svg>
-          Back to Dashboard
-        </button>
+        <div className="mb-4">
+          <BackLink href="/" label="Back to Dashboard" />
+        </div>
       )}
 
       {successMsg && (
@@ -174,9 +290,9 @@ function InvestorsContent() {
       {activeFilter && (
         <div className="mb-4 flex items-center gap-2">
           <span className="text-xs text-ink-tertiary">Filtered by:</span>
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-accent-500/10 px-2.5 py-1 text-xs font-medium text-accent-300 ring-1 ring-accent-500/20">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-accent-500/10 px-2.5 py-1 text-xs font-medium text-accent-700 ring-1 ring-accent-500/20">
             {activeFilter}
-            <button onClick={clearFilters} className="ml-0.5 text-accent-400 hover:text-accent-300">
+            <button onClick={clearFilters} className="ml-0.5 text-accent-600 hover:text-accent-700">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -188,12 +304,71 @@ function InvestorsContent() {
         </div>
       )}
 
+      {/* Filter bar */}
+      <Card>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[200px]">
+            <Input
+              label="Search"
+              placeholder="Search by name..."
+              value={searchQuery}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="w-[160px]">
+            <Select
+              label="Jurisdiction"
+              value={filterJurisdiction}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterJurisdiction(e.target.value)}
+              options={[{ value: '', label: 'All' }, ...JURISDICTIONS]}
+            />
+          </div>
+          <div className="w-[180px]">
+            <Select
+              label="Investor Type"
+              value={filterType}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterType(e.target.value)}
+              options={[{ value: '', label: 'All' }, ...INVESTOR_TYPE_OPTIONS]}
+            />
+          </div>
+          <div className="w-[140px]">
+            <Select
+              label="KYC Status"
+              value={filterKyc}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterKyc(e.target.value)}
+              options={[{ value: '', label: 'All' }, ...KYC_STATUS_OPTIONS]}
+            />
+          </div>
+          {hasLocalFilters && (
+            <Button variant="secondary" size="sm" onClick={clearLocalFilters}>Clear</Button>
+          )}
+        </div>
+        <p className="mt-2 text-xs text-ink-tertiary">
+          Showing {sortedInvestors.length} of {investors.data?.length ?? 0} investors
+        </p>
+      </Card>
+
+      <div className="h-4" />
+
       <Modal open={showForm} onClose={() => { setShowForm(false); formAction.setError(null); }} title="Add Investor">
         <form onSubmit={handleCreate} className="space-y-4">
           {formAction.error && <Alert variant="error">{formAction.error}</Alert>}
           <Input label="Name" name="name" required placeholder="e.g., Jane Smith" />
+          <Input label="Email" name="email" type="email" placeholder="e.g., jane@firm.com" />
           <Select label="Jurisdiction" name="jurisdiction" options={JURISDICTIONS} required />
-          <Checkbox label="Accredited Investor" name="accredited" />
+          <Select label="Investor Type" name="investor_type" options={INVESTOR_TYPE_OPTIONS} defaultValue="professional" required />
+          <Select label="KYC Status" name="kyc_status" options={KYC_STATUS_OPTIONS} defaultValue="pending" required />
+          <Input label="KYC Expiry" name="kyc_expiry" type="date" />
+          <Select
+            label="Status"
+            name="status"
+            options={[
+              { value: 'accredited', label: 'Accredited' },
+              { value: 'non_accredited', label: 'Non-Accredited' },
+            ]}
+            defaultValue="accredited"
+            required
+          />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
             <Button type="submit">Create</Button>
@@ -206,8 +381,21 @@ function InvestorsContent() {
           <form onSubmit={handleUpdate} className="space-y-4">
             {formAction.error && <Alert variant="error">{formAction.error}</Alert>}
             <Input label="Name" name="name" required defaultValue={editInvestor.name} />
+            <Input label="Email" name="email" type="email" defaultValue={editInvestor.email || ''} />
             <Select label="Jurisdiction" name="jurisdiction" options={JURISDICTIONS} defaultValue={editInvestor.jurisdiction} required />
-            <Checkbox label="Accredited Investor" name="accredited" defaultChecked={editInvestor.accredited} />
+            <Select label="Investor Type" name="investor_type" options={INVESTOR_TYPE_OPTIONS} defaultValue={editInvestor.investor_type} required />
+            <Select label="KYC Status" name="kyc_status" options={KYC_STATUS_OPTIONS} defaultValue={editInvestor.kyc_status} required />
+            <Input label="KYC Expiry" name="kyc_expiry" type="date" defaultValue={editInvestor.kyc_expiry ? editInvestor.kyc_expiry.substring(0, 10) : ''} />
+            <Select
+              label="Status"
+              name="status"
+              options={[
+                { value: 'accredited', label: 'Accredited' },
+                { value: 'non_accredited', label: 'Non-Accredited' },
+              ]}
+              defaultValue={editInvestor.accredited ? 'accredited' : 'non_accredited'}
+              required
+            />
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="secondary" type="button" onClick={() => setEditInvestor(null)}>Cancel</Button>
               <Button type="submit">Update</Button>
@@ -237,10 +425,10 @@ function InvestorsContent() {
               </tr>
             </thead>
             <tbody className="divide-y divide-edge-subtle">
-              {(sortedInvestors ?? filteredInvestors).map((inv) => (
+              {sortedInvestors.map((inv) => (
                 <tr key={inv.id} className="transition-colors hover:bg-bg-tertiary">
                   <td className="px-5 py-3 font-medium text-ink">
-                    <Link href={`/investors/${inv.id}`} className="text-accent-400 hover:text-accent-300 transition-colors">
+                    <Link href={`/investors/${inv.id}`} className="text-accent-600 hover:text-accent-700 transition-colors">
                       {inv.name}
                     </Link>
                   </td>
@@ -254,17 +442,17 @@ function InvestorsContent() {
                     </Badge>
                   </td>
                   <td className="px-5 py-3 text-sm text-ink-secondary">
-                    {inv.kyc_expiry ? formatDate(inv.kyc_expiry) : '—'}
+                    {inv.kyc_expiry ? formatDate(inv.kyc_expiry) : '-'}
                   </td>
                   <td className="px-5 py-3">
                     {(() => {
                       const expiry = daysUntilExpiry(inv.kyc_expiry);
-                      if (!expiry) return <span className="text-xs text-ink-tertiary">—</span>;
+                      if (!expiry) return <span className="text-xs text-ink-tertiary">-</span>;
                       const colors = {
-                        expired: 'text-red-400 bg-red-500/10',
-                        critical: 'text-red-400 bg-red-500/10',
-                        warning: 'text-amber-400 bg-amber-500/10',
-                        ok: 'text-accent-300 bg-accent-500/10',
+                        expired: 'text-red-700 bg-red-500/10',
+                        critical: 'text-red-700 bg-red-500/10',
+                        warning: 'text-amber-700 bg-amber-500/10',
+                        ok: 'text-accent-700 bg-accent-500/10',
                       };
                       return (
                         <span className={classNames('inline-flex rounded-md px-2 py-0.5 text-xs font-medium', colors[expiry.urgency])}>
@@ -301,7 +489,7 @@ function InvestorsContent() {
         <EmptyState
           title="No investors yet"
           description="Add your first investor to get started."
-          action={<Button onClick={() => setShowForm(true)}>+ Add Investor</Button>}
+          action={<Button onClick={() => setShowForm(true)}>+ New Investor</Button>}
         />
       )}
     </div>
@@ -315,3 +503,4 @@ export default function InvestorsPage() {
     </Suspense>
   );
 }
+

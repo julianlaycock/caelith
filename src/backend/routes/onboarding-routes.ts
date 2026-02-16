@@ -7,6 +7,7 @@ import {
   checkEligibility,
   reviewApplication,
   allocateUnits,
+  updateHandoffDetails,
   findOnboardingById,
   findOnboardingByAsset,
   findOnboardingByInvestor,
@@ -16,11 +17,18 @@ const router = Router();
 
 router.post('/', asyncHandler(async (req: Request, res: Response): Promise<void> => {
   requireFields(req.body, ['investor_id', 'asset_id', 'requested_units']);
-  const { investor_id, asset_id, requested_units } = req.body;
+  const { investor_id, asset_id, requested_units, owner_tag, handoff_notes } = req.body;
 
-  const onboarding = await applyToFund(investor_id, asset_id, requested_units);
+  const onboarding = await applyToFund(investor_id, asset_id, requested_units, owner_tag, handoff_notes);
 
   res.status(201).json(onboarding);
+}));
+
+router.patch('/:id/handoff', asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const ownerTag = typeof req.body.owner_tag === 'string' ? req.body.owner_tag : null;
+  const handoffNotes = typeof req.body.handoff_notes === 'string' ? req.body.handoff_notes : null;
+  const updated = await updateHandoffDetails(req.params.id, ownerTag, handoffNotes);
+  res.status(200).json(updated);
 }));
 
 router.post('/:id/check-eligibility', asyncHandler(async (req: Request, res: Response): Promise<void> => {

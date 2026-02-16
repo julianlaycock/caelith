@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, queryWithTenant, executeWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Transfer, CreateTransferInput } from '../models/index.js';
 
 /**
@@ -15,10 +15,15 @@ export async function createTransfer(
   const id = randomUUID();
   const now = new Date().toISOString();
   const decision_record_id = input.decision_record_id ?? null;
+  const status = input.status ?? 'executed';
+  const approved_by = input.approved_by ?? null;
+  const approved_at = input.approved_at ?? null;
+  const rejection_reason = input.rejection_reason ?? null;
+  const pending_reason = input.pending_reason ?? null;
 
   await execute(
-    `INSERT INTO transfers (id, tenant_id, asset_id, from_investor_id, to_investor_id, units, decision_record_id, executed_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO transfers (id, tenant_id, asset_id, from_investor_id, to_investor_id, units, decision_record_id, executed_at, created_at, status, approved_by, approved_at, rejection_reason, pending_reason)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       DEFAULT_TENANT_ID,
@@ -29,6 +34,11 @@ export async function createTransfer(
       decision_record_id,
       input.executed_at,
       now,
+      status,
+      approved_by,
+      approved_at,
+      rejection_reason,
+      pending_reason,
     ]
   );
 
@@ -41,10 +51,11 @@ export async function createTransfer(
     decision_record_id,
     executed_at: input.executed_at,
     created_at: now,
-    status: 'executed',
-    approved_by: null,
-    approved_at: null,
-    rejection_reason: null,
+    status,
+    approved_by,
+    approved_at,
+    rejection_reason,
+    pending_reason,
   };
 
   return transfer;
@@ -85,19 +96,29 @@ export async function findAllTransfers(): Promise<Transfer[]> {
 }
 
 /**
- * Get detailed transfer history for an asset, including investor names
+ * Get detailed transfer history, including investor and asset names.
+ * If assetId is provided, scope to that asset; otherwise return all tenant transfers.
  */
-export async function getTransferHistory(assetId: string): Promise<
-  (Transfer & { from_name: string; to_name: string })[]
+export async function getTransferHistory(assetId?: string): Promise<
+  (Transfer & { from_name: string; to_name: string; asset_name: string })[]
 > {
-  return await query<Transfer & { from_name: string; to_name: string }>(
-    `SELECT t.*, f.name AS from_name, r.name AS to_name
+  const params: string[] = [DEFAULT_TENANT_ID];
+  const filters = ['t.tenant_id = ?'];
+
+  if (assetId) {
+    filters.push('t.asset_id = ?');
+    params.push(assetId);
+  }
+
+  return await query<Transfer & { from_name: string; to_name: string; asset_name: string }>(
+    `SELECT t.*, f.name AS from_name, r.name AS to_name, a.name AS asset_name
      FROM transfers t
      JOIN investors f ON t.from_investor_id = f.id
      JOIN investors r ON t.to_investor_id = r.id
-     WHERE t.asset_id = ? AND t.tenant_id = ?
+     JOIN assets a ON t.asset_id = a.id
+     WHERE ${filters.join(' AND ')}
      ORDER BY t.executed_at DESC`,
-    [assetId, DEFAULT_TENANT_ID]
+    params
   );
 }
 

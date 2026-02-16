@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caelith — AIFMD Compliance Engine for Alternative Investment Funds</title>
+  <meta name="description" content="Automate investor eligibility, enforce transfer restrictions, and generate regulator-ready decision records. Built for EU AIFMs. AIFMD II ready.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a56db;
+      --primary-dark: #1240a8;
+      --primary-light: #e8effc;
+      --accent: #0ea5e9;
+      --bg: #ffffff;
+      --bg-alt: #f8fafc;
+      --bg-dark: #0f172a;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--primary); text-decoration: none; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .container {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .logo {
+      font-size: 1.25rem; font-weight: 800; color: var(--text);
+      letter-spacing: -0.03em;
+    }
+    .logo span { color: var(--primary); }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-size: 0.875rem; font-weight: 500; color: var(--text-muted); transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: 8px; font-weight: 600;
+      font-size: 0.875rem; transition: all 0.2s; border: none; cursor: pointer;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,86,219,0.3); }
+    .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline:hover { background: var(--primary-light); }
+    .btn-large { padding: 14px 28px; font-size: 1rem; border-radius: 10px; }
+    .btn-white { background: white; color: var(--primary); }
+    .btn-white:hover { background: #f0f4ff; }
+
+    /* ─── HERO ─── */
+    .hero {
+      padding: 140px 0 80px;
+      background: linear-gradient(180deg, #f0f4ff 0%, #ffffff 100%);
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px; border-radius: 100px;
+      background: rgba(26,86,219,0.08); color: var(--primary);
+      font-size: 0.8125rem; font-weight: 600; margin-bottom: 24px;
+    }
+    .hero-badge .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--success); animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 3.75rem);
+      font-weight: 800; letter-spacing: -0.03em;
+      line-height: 1.1; margin-bottom: 20px;
+      max-width: 800px; margin-left: auto; margin-right: auto;
+    }
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.25rem; color: var(--text-muted);
+      max-width: 600px; margin: 0 auto 36px;
+    }
+    .hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .hero-stats {
+      display: flex; justify-content: center; gap: 48px;
+      margin-top: 56px; padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+    .hero-stat .number { font-size: 2rem; font-weight: 800; color: var(--text); }
+    .hero-stat .label { font-size: 0.8125rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* ─── DEADLINE BANNER ─── */
+    .deadline-banner {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      color: white; padding: 14px 0; text-align: center;
+      font-size: 0.9375rem; font-weight: 600;
+    }
+    .deadline-banner span { opacity: 0.8; font-weight: 400; }
+
+    /* ─── PROBLEM ─── */
+    .problem { padding: 80px 0; background: var(--bg-alt); }
+    .section-label {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--primary); margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;
+      margin-bottom: 16px; max-width: 600px;
+    }
+    .section-desc {
+      font-size: 1.0625rem; color: var(--text-muted);
+      max-width: 600px; margin-bottom: 48px;
+    }
+    .problems-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .problem-card {
+      background: white; border-radius: var(--radius);
+      padding: 28px; border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .problem-card:hover { border-color: var(--primary); box-shadow: var(--shadow-lg); }
+    .problem-card .icon {
+      width: 48px; height: 48px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 16px;
+    }
+    .problem-card .icon.red { background: #fef2f2; }
+    .problem-card .icon.yellow { background: #fefce8; }
+    .problem-card .icon.blue { background: #eff6ff; }
+    .problem-card h3 { font-size: 1.0625rem; font-weight: 700; margin-bottom: 8px; }
+    .problem-card p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ─── FEATURES ─── */
+    .features { padding: 80px 0; }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 32px; margin-top: 48px;
+    }
+    .feature-card {
+      padding: 32px; border-radius: var(--radius);
+      border: 1px solid var(--border); transition: all 0.2s;
+    }
+    .feature-card:hover { border-color: var(--primary); box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+    .feature-tag {
+      display: inline-block; padding: 4px 10px; border-radius: 6px;
+      font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; margin-bottom: 16px;
+    }
+    .feature-tag.core { background: #dcfce7; color: #166534; }
+    .feature-tag.ai { background: #e0e7ff; color: #3730a3; }
+    .feature-tag.reporting { background: #fef3c7; color: #92400e; }
+    .feature-card h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.7; }
+    .feature-card .checks {
+      margin-top: 16px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .feature-card .check {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.8125rem; color: var(--text);
+    }
+    .feature-card .check::before {
+      content: '✓'; color: var(--success); font-weight: 700;
+    }
+
+    /* ─── HOW IT WORKS ─── */
+    .how-it-works { padding: 80px 0; background: var(--bg-alt); }
+    .steps {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 32px; margin-top: 48px;
+    }
+    .step { text-align: center; }
+    .step-number {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; font-weight: 800;
+      margin: 0 auto 16px;
+    }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 0.8125rem; color: var(--text-muted); }
+
+    /* ─── JURISDICTIONS ─── */
+    .jurisdictions { padding: 80px 0; text-align: center; }
+    .jurisdiction-grid {
+      display: flex; justify-content: center; gap: 32px; flex-wrap: wrap;
+      margin-top: 40px;
+    }
+    .jurisdiction {
+      padding: 24px 32px; border-radius: var(--radius);
+      border: 1px solid var(--border); min-width: 180px;
+    }
+    .jurisdiction .flag { font-size: 2rem; margin-bottom: 8px; }
+    .jurisdiction .country { font-weight: 700; font-size: 0.9375rem; }
+    .jurisdiction .detail { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* ─── CTA ─── */
+    .cta-section {
+      padding: 80px 0; text-align: center;
+      background: var(--bg-dark); color: white;
+    }
+    .cta-section h2 {
+      font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .cta-section p { color: #94a3b8; font-size: 1.125rem; margin-bottom: 36px; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .cta-section .hero-ctas { justify-content: center; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      padding: 40px 0; background: var(--bg-dark); color: var(--text-light);
+      border-top: 1px solid #1e293b; font-size: 0.8125rem;
+    }
+    footer .container {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    footer a { color: var(--text-light); }
+    footer a:hover { color: white; }
+    .footer-links { display: flex; gap: 24px; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav-links a:not(.btn) { display: none; }
+      .hero-stats { flex-direction: column; gap: 24px; }
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 1rem; }
+      .features-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr 1fr; }
+      .jurisdiction-grid { gap: 16px; }
+      .jurisdiction { min-width: 140px; padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- NAV -->
+  <nav>
+    <div class="container">
+      <div class="logo"><span>C</span>aelith</div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#jurisdictions">Jurisdictions</a>
+        <a href="mailto:julian@caelith.tech" class="btn btn-primary">Book a Demo</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- DEADLINE BANNER -->
+  <div class="deadline-banner" style="margin-top: 64px;">
+    ⚠️ AIFMD II transposition deadline: <strong>16 April 2026</strong> <span>— Is your fund compliance engine ready?</span>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">
+        <div class="dot"></div>
+        AIFMD II Ready
+      </div>
+      <h1>Compliance enforcement<br>for <span class="gradient">alternative investment funds</span></h1>
+      <p>Automate investor eligibility, enforce transfer restrictions, and generate regulator-ready decision records — with full audit trail.</p>
+      <div class="hero-ctas">
+        <a href="mailto:julian@caelith.tech?subject=Caelith Demo Request" class="btn btn-primary btn-large">Book a Free Demo →</a>
+        <a href="#features" class="btn btn-outline btn-large">See How It Works</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="number">13</div>
+          <div class="label">Built-in compliance rules</div>
+        </div>
+        <div class="hero-stat">
+          <div class="number">3</div>
+          <div class="label">Launch jurisdictions</div>
+        </div>
+        <div class="hero-stat">
+          <div class="number">100%</div>
+          <div class="label">Deterministic enforcement</div>
+        </div>
+        <div class="hero-stat">
+          <div class="number">&lt;100ms</div>
+          <div class="label">Validation latency</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section class="problem">
+    <div class="container">
+      <div class="section-label">The Problem</div>
+      <div class="section-title">Spreadsheets don't survive regulatory examinations.</div>
+      <div class="section-desc">Most fund managers still check investor eligibility manually. When BaFin asks for the decision trail from 6 months ago, it takes days to reconstruct.</div>
+      <div class="problems-grid">
+        <div class="problem-card">
+          <div class="icon red">⚠️</div>
+          <h3>Manual eligibility checks</h3>
+          <p>Compliance officers cross-reference investor type, jurisdiction, KYC status, and minimum investment thresholds in spreadsheets. One missed field = regulatory risk.</p>
+        </div>
+        <div class="problem-card">
+          <div class="icon yellow">📋</div>
+          <h3>No decision audit trail</h3>
+          <p>When a regulator asks "why was this investor approved 6 months ago?", you're reconstructing from emails and memory. That's not compliance — that's hope.</p>
+        </div>
+        <div class="problem-card">
+          <div class="icon blue">🔄</div>
+          <h3>Rule changes break everything</h3>
+          <p>When eligibility criteria change, there's no way to know which existing investors are affected. You find out during the next audit — not before.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-label">Platform</div>
+      <div class="section-title">Built for AIFMD. Not adapted from something else.</div>
+      <div class="section-desc">Every feature is designed around EU alternative investment fund regulation. Not a generic compliance checkbox tool.</div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-tag core">Core Engine</div>
+          <h3>Deterministic Rules Engine</h3>
+          <p>13 built-in validation rules enforce investor eligibility, transfer restrictions, KYC requirements, leverage limits, and concentration caps. Same input = same output. Always.</p>
+          <div class="checks">
+            <div class="check">Investor type whitelist (5-tier AIFMD classification)</div>
+            <div class="check">Jurisdiction-specific minimum investment thresholds</div>
+            <div class="check">KYC status + expiry validation</div>
+            <div class="check">Leverage compliance (commitment + gross method)</div>
+            <div class="check">Concentration limits per investor</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-tag core">Core Engine</div>
+          <h3>Decision Provenance</h3>
+          <p>Every compliance decision creates an immutable record with SHA-256 integrity chain. The exact rules that applied, the exact input data, cryptographically linked.</p>
+          <div class="checks">
+            <div class="check">Full input + rule version snapshot per decision</div>
+            <div class="check">Cryptographic integrity chain (tamper-evident)</div>
+            <div class="check">Temporal reconstruction: "What rules applied on date X?"</div>
+            <div class="check">Export-ready for regulatory examinations</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-tag ai">AI-Powered</div>
+          <h3>Compliance Copilot</h3>
+          <p>Ask "Why was this transfer rejected?" and get a plain-English explanation with regulatory citations. No black boxes — every answer traces back to specific AIFMD articles.</p>
+          <div class="checks">
+            <div class="check">Decision explanation with per-rule breakdown</div>
+            <div class="check">Regulatory citations (KAGB, CSSF, CBI)</div>
+            <div class="check">Scenario modeling: "What if we change the minimum?"</div>
+            <div class="check">Natural language rule configuration (coming soon)</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-tag reporting">Reporting</div>
+          <h3>AIFMD Annex IV Data Export</h3>
+          <p>Generate Article 24 reporting data with leverage calculations, liquidity buckets, geographic exposure, and counterparty risk — ready for NCA submission.</p>
+          <div class="checks">
+            <div class="check">Leverage: commitment + gross method</div>
+            <div class="check">7-bucket liquidity profile</div>
+            <div class="check">Geographic + counterparty exposure</div>
+            <div class="check">Investor concentration by type and domicile</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-tag core">Core Engine</div>
+          <h3>Investor Onboarding Workflow</h3>
+          <p>Structured 6-step workflow: Apply → Eligibility Check → Classify → Approve → Allocate. Every step creates an audit record.</p>
+          <div class="checks">
+            <div class="check">Automated eligibility screening</div>
+            <div class="check">5-tier investor classification with evidence trail</div>
+            <div class="check">RBAC-gated approval (compliance officer sign-off)</div>
+            <div class="check">Rejection reasons logged for regulatory compliance</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-tag core">Core Engine</div>
+          <h3>Liquidity Management Tools</h3>
+          <p>Track and enforce AIFMD II liquidity management tools: redemption gates, notice periods, swing pricing, anti-dilution levies, side pockets, and suspension policies.</p>
+          <div class="checks">
+            <div class="check">8 LMT types per AIFMD II Art 16(2b)</div>
+            <div class="check">Activation thresholds (e.g., gate at 25% NAV)</div>
+            <div class="check">Per-fund configuration</div>
+            <div class="check">Included in Annex IV reporting</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-label">How It Works</div>
+      <div class="section-title">Live in one day. Not six months.</div>
+      <div class="section-desc">No complex integration. Your compliance officer logs in Monday morning and starts checking.</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Define Fund Structure</h3>
+          <p>Set legal form, domicile, regulatory framework. Apply jurisdiction-specific eligibility templates (KAGB, CSSF, CBI).</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Configure Rules</h3>
+          <p>Set investor type restrictions, minimum investments, KYC requirements, concentration limits. Every rule cites the specific regulation.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Onboard Investors</h3>
+          <p>Run automated eligibility checks. The engine validates type, jurisdiction, investment amount, KYC status — instantly.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <h3>Enforce & Report</h3>
+          <p>Every transfer is validated. Every decision is recorded. Export Annex IV data, decision provenance reports, and cap tables on demand.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JURISDICTIONS -->
+  <section class="jurisdictions" id="jurisdictions">
+    <div class="container">
+      <div class="section-label">Jurisdictions</div>
+      <div class="section-title">Pre-configured for EU launch markets.</div>
+      <div class="section-desc" style="margin: 0 auto 0;">Eligibility criteria, regulatory citations, and fund templates for your jurisdiction — out of the box.</div>
+      <div class="jurisdiction-grid">
+        <div class="jurisdiction">
+          <div class="flag">🇩🇪</div>
+          <div class="country">Germany</div>
+          <div class="detail">KAGB Spezial-AIF & Publikums-AIF</div>
+          <div class="detail" style="color: var(--primary); font-weight: 600;">€200K semi-pro minimum</div>
+        </div>
+        <div class="jurisdiction">
+          <div class="flag">🇱🇺</div>
+          <div class="country">Luxembourg</div>
+          <div class="detail">SIF, RAIF, ELTIF 2.0</div>
+          <div class="detail" style="color: var(--primary); font-weight: 600;">€125K semi-pro minimum</div>
+        </div>
+        <div class="jurisdiction">
+          <div class="flag">🇮🇪</div>
+          <div class="country">Ireland</div>
+          <div class="detail">QIAIF & RIAIF</div>
+          <div class="detail" style="color: var(--primary); font-weight: 600;">€100K qualifying investor</div>
+        </div>
+        <div class="jurisdiction">
+          <div class="flag">🇪🇺</div>
+          <div class="country">EU-wide</div>
+          <div class="detail">ELTIF 2.0 (retail-friendly)</div>
+          <div class="detail" style="color: var(--primary); font-weight: 600;">€10K retail w/ suitability</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready before April 16?</h2>
+      <p>The AIFMD II deadline is 59 days away. We offer a free compliance health check — run your fund structure through our engine and see what it catches.</p>
+      <div class="hero-ctas">
+        <a href="mailto:julian@caelith.tech?subject=Free Compliance Health Check&body=Hi Julian,%0A%0AI'd like to schedule a free compliance health check for our fund.%0A%0AFund name: %0AAUM: %0AJurisdiction: %0A%0ABest regards" class="btn btn-primary btn-large">Get a Free Health Check →</a>
+        <a href="mailto:julian@caelith.tech?subject=Caelith Demo Request" class="btn btn-white btn-large">Book a Demo</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div>
+        <div class="logo" style="margin-bottom: 8px;"><span>C</span>aelith</div>
+        <div>Compliance orchestration for EU alternative investment funds.</div>
+        <div style="margin-top: 8px;">© 2026 Caelith. All rights reserved.</div>
+      </div>
+      <div class="footer-links">
+        <a href="mailto:julian@caelith.tech">Contact</a>
+        <a href="#impressum">Impressum</a>
+        <a href="#datenschutz">Datenschutz</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- IMPRESSUM (German legal requirement) -->
+  <section id="impressum" style="padding: 40px 0; background: #0c1424; color: var(--text-light); font-size: 0.8125rem;">
+    <div class="container">
+      <h3 style="color: white; font-size: 1rem; margin-bottom: 12px;">Impressum</h3>
+      <p>Angaben gemäß § 5 TMG:<br>
+      Julian Laycock<br>
+      Berlin, Deutschland<br>
+      E-Mail: julian@caelith.tech</p>
+      <p style="margin-top: 12px;">Haftungsausschluss: Die auf dieser Website bereitgestellten Informationen stellen keine Rechts- oder Regulierungsberatung dar.</p>
+    </div>
+  </section>
+</body>
+</html>

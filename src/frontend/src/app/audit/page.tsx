@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import {
@@ -28,6 +29,7 @@ const EVENT_TYPE_OPTIONS = [
   { value: 'rules.created', label: 'Rules Created' },
   { value: 'rules.updated', label: 'Rules Updated' },
   { value: 'transfer.executed', label: 'Transfer Executed' },
+  { value: 'transfer.pending_approval', label: 'Transfer Pending Approval' },
   { value: 'transfer.rejected', label: 'Transfer Rejected' },
   { value: 'composite_rule.created', label: 'Custom Rule Created' },
   { value: 'composite_rule.updated', label: 'Custom Rule Updated' },
@@ -43,6 +45,7 @@ const EVENT_BADGE_COLORS: Record<string, 'green' | 'blue' | 'yellow' | 'red' | '
   'rules.created': 'blue',
   'rules.updated': 'yellow',
   'transfer.executed': 'green',
+  'transfer.pending_approval': 'yellow',
   'transfer.rejected': 'red',
   'composite_rule.created': 'yellow',
   'composite_rule.updated': 'yellow',
@@ -50,9 +53,44 @@ const EVENT_BADGE_COLORS: Record<string, 'green' | 'blue' | 'yellow' | 'red' | '
 };
 
 export default function AuditPage() {
-  const [eventType, setEventType] = useState('');
-  const [entityId, setEntityId] = useState('');
-  const [limit, setLimit] = useState(50);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const parseLimit = (value: string | null) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return 50;
+    return Math.min(500, Math.max(1, parsed));
+  };
+
+  const [eventType, setEventType] = useState(searchParams.get('eventType') || '');
+  const [entityId, setEntityId] = useState(searchParams.get('entityId') || '');
+  const [limit, setLimit] = useState(parseLimit(searchParams.get('limit')));
+
+  useEffect(() => {
+    setEventType(searchParams.get('eventType') || '');
+    setEntityId(searchParams.get('entityId') || '');
+    setLimit(parseLimit(searchParams.get('limit')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const updateUrl = (next: { eventType?: string; entityId?: string; limit?: number }) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next.eventType !== undefined) {
+      if (next.eventType) params.set('eventType', next.eventType);
+      else params.delete('eventType');
+    }
+    if (next.entityId !== undefined) {
+      if (next.entityId) params.set('entityId', next.entityId);
+      else params.delete('entityId');
+    }
+    if (next.limit !== undefined) {
+      if (next.limit === 50) params.delete('limit');
+      else params.set('limit', String(next.limit));
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  };
 
   const events = useAsync(
     () => api.getEvents({
@@ -66,8 +104,8 @@ export default function AuditPage() {
   return (
     <div>
       <PageHeader
-        title="Audit Trail"
-        description="Immutable event log of all operations"
+        title="Activity"
+        description="Review the immutable event log of all operations"
         action={
           <ExportMenu
             onExportCSV={() => {
@@ -92,14 +130,22 @@ export default function AuditPage() {
               label="Event Type"
               options={EVENT_TYPE_OPTIONS}
               value={eventType}
-              onChange={(e) => setEventType(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setEventType(value);
+                updateUrl({ eventType: value });
+              }}
             />
           </div>
           <div className="w-64">
             <Input
               label="Entity ID"
               value={entityId}
-              onChange={(e) => setEntityId(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setEntityId(value);
+                updateUrl({ entityId: value.trim() });
+              }}
               placeholder="Filter by entity UUID..."
             />
           </div>
@@ -110,13 +156,22 @@ export default function AuditPage() {
               min={1}
               max={500}
               value={limit}
-              onChange={(e) => setLimit(Number(e.target.value) || 50)}
+              onChange={(e) => {
+                const value = parseLimit(e.target.value);
+                setLimit(value);
+                updateUrl({ limit: value });
+              }}
             />
           </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => { setEventType(''); setEntityId(''); setLimit(50); }}
+            onClick={() => {
+              setEventType('');
+              setEntityId('');
+              setLimit(50);
+              updateUrl({ eventType: '', entityId: '', limit: 50 });
+            }}
           >
             Reset
           </Button>

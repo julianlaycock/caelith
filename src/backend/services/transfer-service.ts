@@ -21,8 +21,8 @@ import { findAssetById } from '../repositories/asset-repository.js';
 import { randomUUID } from 'crypto';
 import { runCoreEligibilityChecks } from './eligibility-check-helper.js';
 import { validateTransfer } from '../../rules-engine/validator.js';
-import { ValidationContext, TransferRequest } from '../../rules-engine/types.js';
-import { Transfer, Asset, EligibilityCriteria, RuleSet } from '../models/index.js';
+import { ValidationContext, TransferRequest, FundContext, AssetAggregates } from '../../rules-engine/types.js';
+import { Transfer, Asset, EligibilityCriteria } from '../models/index.js';
 import { NotFoundError, BusinessLogicError } from '../errors.js';
 import { getActiveCompositeRules } from './composite-rules-service.js';
 import { withTransaction } from './transaction-helper.js';
@@ -246,6 +246,41 @@ export async function executeTransfer(
       };
     }
 
+    const approvalReason = needsApproval(request.units, context.toInvestor);
+    if (approvalReason) {
+      const pendingTransfer = await createTransfer({
+        asset_id: request.asset_id,
+        from_investor_id: request.from_investor_id,
+        to_investor_id: request.to_investor_id,
+        units: request.units,
+        executed_at: request.execution_date,
+        decision_record_id: decisionRecordId,
+        status: 'pending_approval',
+        pending_reason: approvalReason,
+      });
+
+      await createEvent({
+        event_type: 'transfer.pending_approval',
+        entity_type: 'transfer',
+        entity_id: pendingTransfer.id,
+        payload: {
+          transfer_id: pendingTransfer.id,
+          asset_id: request.asset_id,
+          from_investor_id: request.from_investor_id,
+          to_investor_id: request.to_investor_id,
+          units: request.units,
+          reason: approvalReason,
+          decision_record_id: decisionRecordId,
+        },
+      });
+
+      return {
+        success: true,
+        transfer: pendingTransfer,
+        decision_record_id: decisionRecordId,
+      };
+    }
+
     // Execute the transfer atomically within a database transaction
     const transfer = await withTransaction<Transfer | null>(async (client) => {
       // Lock sender's holding row to prevent concurrent modifications
@@ -291,8 +326,8 @@ export async function executeTransfer(
       const transferId = randomUUID();
       const transferNow = new Date().toISOString();
       await client.query(
-        `INSERT INTO transfers (id, asset_id, from_investor_id, to_investor_id, units, executed_at, decision_record_id, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        `INSERT INTO transfers (id, asset_id, from_investor_id, to_investor_id, units, executed_at, decision_record_id, created_at, status, approved_by, approved_at, rejection_reason, pending_reason)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'executed', NULL, NULL, NULL, NULL)`,
         [transferId, request.asset_id, request.from_investor_id, request.to_investor_id, request.units, request.execution_date, decisionRecordId, transferNow]
       );
 
@@ -306,6 +341,11 @@ export async function executeTransfer(
         executed_at: request.execution_date,
         decision_record_id: decisionRecordId,
         created_at: transferNow,
+        status: 'executed',
+        approved_by: null,
+        approved_at: null,
+        rejection_reason: null,
+        pending_reason: null,
       } as Transfer;
     });
 
@@ -375,11 +415,11 @@ function needsApproval(
 /**
  * Get all transfers pending approval for a tenant.
  */
-export async function getPendingTransfers(tenantId: string): Promise<Transfer[]> {
+export async function getPendingTransfers(_tenantId: string): Promise<Transfer[]> {
   const rows = await query<Transfer & { from_name?: string; to_name?: string; asset_name?: string }>(
     `SELECT t.*,
-       fi.name as from_investor_name,
-       ti.name as to_investor_name,
+       fi.name as from_name,
+       ti.name as to_name,
        a.name as asset_name
      FROM transfers t
      LEFT JOIN investors fi ON fi.id = t.from_investor_id
@@ -501,18 +541,20 @@ export async function rejectTransfer(
 // ── Private Helpers ─────────────────────────────────────────
 
 /**
- * Helper: Build validation context from transfer request
+ * Helper: Build validation context from transfer request.
+ * Now includes fund structure context and asset aggregates for AIFMD checks.
  */
 async function buildValidationContext(
   request: TransferRequest
 ): Promise<ValidationContext> {
   // Fetch all required data
-  const [fromInvestor, toInvestor, fromHolding, rules, customRules] = await Promise.all([
+  const [fromInvestor, toInvestor, fromHolding, rules, customRules, asset] = await Promise.all([
     findInvestorById(request.from_investor_id),
     findInvestorById(request.to_investor_id),
     findHoldingByInvestorAndAsset(request.from_investor_id, request.asset_id),
     findRuleSetByAsset(request.asset_id),
     getActiveCompositeRules(request.asset_id),
+    findAssetById(request.asset_id),
   ]);
 
   // Validate data exists
@@ -528,6 +570,46 @@ async function buildValidationContext(
     throw new NotFoundError('Rules', request.asset_id);
   }
 
+  // Resolve fund structure context (if asset is fund-linked)
+  let fund: FundContext | null = null;
+  if (asset?.fund_structure_id) {
+    const fundRows = await query<{ legal_form: string; domicile: string; regulatory_framework: string; status: string; leverage_limit_commitment: number | null; leverage_limit_gross: number | null; leverage_current_commitment: number | null; leverage_current_gross: number | null; lmt_types: any }>(
+      `SELECT legal_form, domicile, regulatory_framework, status, leverage_limit_commitment, leverage_limit_gross, leverage_current_commitment, leverage_current_gross, lmt_types FROM fund_structures WHERE id = $1`,
+      [asset.fund_structure_id]
+    );
+    if (fundRows.length > 0) {
+      const r = fundRows[0];
+      fund = {
+        legal_form: r.legal_form,
+        domicile: r.domicile,
+        regulatory_framework: r.regulatory_framework,
+        status: r.status,
+        leverage_limit_commitment: r.leverage_limit_commitment ? Number(r.leverage_limit_commitment) : null,
+        leverage_limit_gross: r.leverage_limit_gross ? Number(r.leverage_limit_gross) : null,
+        leverage_current_commitment: r.leverage_current_commitment ? Number(r.leverage_current_commitment) : null,
+        leverage_current_gross: r.leverage_current_gross ? Number(r.leverage_current_gross) : null,
+        lmt_types: r.lmt_types ? (typeof r.lmt_types === 'string' ? JSON.parse(r.lmt_types) : r.lmt_types) : [],
+      };
+    }
+  }
+
+  // Resolve asset aggregates for concentration/max-investor checks
+  let assetAggregates: AssetAggregates | null = null;
+  if (asset) {
+    const [countRes, receiverHolding] = await Promise.all([
+      query<{ count: string }>(
+        `SELECT COUNT(DISTINCT investor_id) as count FROM holdings WHERE asset_id = $1 AND units > 0`,
+        [request.asset_id]
+      ),
+      findHoldingByInvestorAndAsset(request.to_investor_id, request.asset_id),
+    ]);
+    assetAggregates = {
+      total_units: asset.total_units,
+      distinct_investor_count: Number(countRes[0]?.count ?? 0),
+      receiver_existing_units: receiverHolding?.units ?? 0,
+    };
+  }
+
   return {
     transfer: request,
     fromInvestor,
@@ -535,5 +617,7 @@ async function buildValidationContext(
     fromHolding,
     rules,
     customRules,
+    fund,
+    assetAggregates,
   };
 }

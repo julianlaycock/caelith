@@ -23,6 +23,9 @@ function makeCtx(overrides?: Partial<ValidationContext>): ValidationContext {
       tax_id: null,
       lei: null,
       email: null,
+      classification_date: null,
+      classification_evidence: [],
+      classification_method: null,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
     },
@@ -37,6 +40,9 @@ function makeCtx(overrides?: Partial<ValidationContext>): ValidationContext {
       tax_id: null,
       lei: null,
       email: null,
+      classification_date: null,
+      classification_evidence: [],
+      classification_method: null,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
     },
@@ -189,8 +195,8 @@ describe('Composite Rules', () => {
   it('should include checks and summary in result', () => {
     const ctx = makeCtx();
     const result = validateTransfer(ctx);
-    expect(result.checks.length).toBe(7);
-    expect(result.summary).toContain('7/7 checks passed');
+    expect(result.checks.length).toBe(13);
+    expect(result.summary).toContain('13/13 checks passed');
   });
 
   it('numeric comparisons should work', () => {

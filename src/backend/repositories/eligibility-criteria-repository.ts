@@ -29,6 +29,17 @@ export async function createEligibilityCriteria(input: CreateEligibilityCriteria
 }
 
 /**
+ * Find a single criteria record by ID.
+ */
+export async function findCriteriaById(id: string): Promise<EligibilityCriteria | null> {
+  const result = await query<EligibilityCriteriaRow>(
+    'SELECT * FROM eligibility_criteria WHERE id = $1 AND tenant_id = $2',
+    [id, DEFAULT_TENANT_ID]
+  );
+  return result[0] ? rowToEligibilityCriteria(result[0]) : null;
+}
+
+/**
  * Core lookup: find the active eligibility criteria for a given fund structure,
  * investor jurisdiction, and investor type.
  *

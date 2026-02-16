@@ -561,7 +561,7 @@ export function SortableHeader<T>({
     <th
       className={classNames(
         'px-5 py-3 text-xs font-medium uppercase tracking-wider cursor-pointer select-none transition-colors hover:text-ink-secondary',
-        active ? 'text-accent-300' : 'text-ink-tertiary',
+        active ? 'text-accent-700' : 'text-ink-tertiary',
         align === 'right' && 'text-right',
         className
       )}
@@ -570,8 +570,8 @@ export function SortableHeader<T>({
       <span className="inline-flex items-center gap-1">
         {label}
         <span className="inline-flex flex-col text-[8px] leading-none">
-          <span className={active && sort.direction === 'asc' ? 'text-accent-400' : 'text-ink-muted'}>▲</span>
-          <span className={active && sort.direction === 'desc' ? 'text-accent-400' : 'text-ink-muted'}>▼</span>
+          <span className={active && sort.direction === 'asc' ? 'text-accent-600' : 'text-ink-muted'}>^</span>
+          <span className={active && sort.direction === 'desc' ? 'text-accent-600' : 'text-ink-muted'}>v</span>
         </span>
       </span>
     </th>
@@ -628,3 +628,4 @@ export function ExportMenu({ onExportCSV, onExportPDF }: { onExportCSV?: () => v
     </div>
   );
 }
+

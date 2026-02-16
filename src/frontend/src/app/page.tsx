@@ -13,7 +13,7 @@ import {
   ConcentrationRiskGrid,
 } from '../components/charts';
 import { formatNumber, formatDateTime, classNames, getErrorMessage } from '../lib/utils';
-import type { FundStructure, ComplianceReport, CapTableEntry, DecisionRecord, Investor } from '../lib/types';
+import type { FundStructure, ComplianceReport, CapTableEntry, DecisionRecord, Investor, Event } from '../lib/types';
 
 interface FundReportPair {
   fund: FundStructure;
@@ -203,11 +203,50 @@ interface RiskFlag {
   message: string;
 }
 
+interface ActionQueueItem {
+  id: string;
+  severity: 'high' | 'medium' | 'low';
+  title: string;
+  detail: string;
+  href: string;
+}
+
+interface TrendMetric {
+  current: number;
+  previous: number;
+}
+
+function calculateEventTrend(events: Event[], eventType: string): TrendMetric {
+  const now = Date.now();
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  const currentStart = now - sevenDaysMs;
+  const previousStart = now - (2 * sevenDaysMs);
+
+  let current = 0;
+  let previous = 0;
+
+  for (const event of events) {
+    if (event.event_type !== eventType) continue;
+    const timestamp = new Date(event.timestamp).getTime();
+    if (timestamp >= currentStart && timestamp <= now) current += 1;
+    else if (timestamp >= previousStart && timestamp < currentStart) previous += 1;
+  }
+
+  return { current, previous };
+}
+
+function formatTrend(metric: TrendMetric): string {
+  const delta = metric.current - metric.previous;
+  const deltaLabel = `${delta >= 0 ? '+' : ''}${delta}`;
+  return `7d ${deltaLabel} vs prior`;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [fundReports, setFundReports] = useState<FundReportPair[]>([]);
   const [allInvestors, setAllInvestors] = useState<Investor[]>([]);
   const [capTables, setCapTables] = useState<Map<string, CapTableEntry[]>>(new Map());
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRisk, setSelectedRisk] = useState<RiskFlag | null>(null);
@@ -219,11 +258,13 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [funds, investors] = await Promise.all([
+      const [funds, investors, recentEvents] = await Promise.all([
         api.getFundStructures(),
         api.getInvestors(),
+        api.getEvents({ limit: 500 }),
       ]);
       setAllInvestors(investors);
+      setEvents(recentEvents);
       const pairs: FundReportPair[] = [];
       for (const fund of funds) {
         try {
@@ -310,6 +351,85 @@ export default function DashboardPage() {
     [fundReports]
   );
 
+  const investorTrend = useMemo(() => calculateEventTrend(events, 'investor.created'), [events]);
+  const fundTrend = useMemo(() => calculateEventTrend(events, 'fund_structure.created'), [events]);
+  const transferTrend = useMemo(() => calculateEventTrend(events, 'transfer.executed'), [events]);
+  const rejectionTrend = useMemo(() => calculateEventTrend(events, 'transfer.rejected'), [events]);
+
+  const actionQueue = useMemo<ActionQueueItem[]>(() => {
+    const items: ActionQueueItem[] = [];
+    const now = new Date();
+    const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const expiringSoon = allInvestors.filter((inv) =>
+      inv.kyc_status === 'verified' &&
+      !!inv.kyc_expiry &&
+      new Date(inv.kyc_expiry) > now &&
+      new Date(inv.kyc_expiry) <= in30Days
+    ).length;
+    if (expiringSoon > 0) {
+      items.push({
+        id: 'kyc-expiring',
+        severity: 'high',
+        title: 'KYC renewals due soon',
+        detail: `${expiringSoon} investor${expiringSoon !== 1 ? 's' : ''} expiring within 30 days`,
+        href: '/investors?kyc=expiring_soon',
+      });
+    }
+
+    const highFlags = allRiskFlags.filter((f) => f.severity === 'high').length;
+    if (highFlags > 0) {
+      items.push({
+        id: 'high-risk-flags',
+        severity: 'high',
+        title: 'High-severity risk flags',
+        detail: `${highFlags} high flag${highFlags !== 1 ? 's' : ''} require immediate review`,
+        href: '/#risk-flags',
+      });
+    }
+
+    const rejectedRecent = allDecisions.filter((d) => d.result === 'rejected' || d.result === 'fail').length;
+    if (rejectedRecent > 0) {
+      items.push({
+        id: 'rejected-decisions',
+        severity: 'medium',
+        title: 'Rejected decisions in latest run',
+        detail: `${rejectedRecent} rejection${rejectedRecent !== 1 ? 's' : ''} in recent compliance outcomes`,
+        href: '/decisions?result=rejected',
+      });
+    }
+
+    const pendingOnboarding = reports.reduce((sum, report) => {
+      const pending = report.onboarding_pipeline.by_status
+        .filter((s) => s.status === 'applied' || s.status === 'eligible')
+        .reduce((acc, s) => acc + s.count, 0);
+      return sum + pending;
+    }, 0);
+    if (pendingOnboarding > 0) {
+      items.push({
+        id: 'pending-onboarding',
+        severity: 'medium',
+        title: 'Onboarding queue waiting review',
+        detail: `${pendingOnboarding} application${pendingOnboarding !== 1 ? 's' : ''} pending check or approval`,
+        href: '/onboarding',
+      });
+    }
+
+    const mediumFlags = allRiskFlags.filter((f) => f.severity === 'medium').length;
+    if (mediumFlags > 0) {
+      items.push({
+        id: 'medium-risk-flags',
+        severity: 'low',
+        title: 'Medium-severity risk flags',
+        detail: `${mediumFlags} medium flag${mediumFlags !== 1 ? 's' : ''} to triage this week`,
+        href: '/#risk-flags',
+      });
+    }
+
+    const weight = { high: 0, medium: 1, low: 2 } as const;
+    return items.sort((a, b) => weight[a.severity] - weight[b.severity]);
+  }, [allDecisions, allInvestors, allRiskFlags, reports]);
+
   // Memoized chart data aggregations
   const typeData = useMemo(() => aggregateByType(allInvestors, reports), [allInvestors, reports]);
   const jurisdictionData = useMemo(() => aggregateByJurisdiction(allInvestors, reports), [allInvestors, reports]);
@@ -327,7 +447,7 @@ export default function DashboardPage() {
     return (
       <div>
         <div className="mb-6">
-          <h1 className="text-xl font-semibold tracking-tight text-ink">Command Center</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-ink">Dashboard</h1>
           <p className="mt-0.5 text-sm text-ink-secondary">Compliance engine overview</p>
         </div>
         <ErrorMessage message={error} onRetry={fetchData} />
@@ -340,7 +460,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="mb-6 flex items-end justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-ink">Command Center</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-ink">Dashboard</h1>
           <p className="mt-0.5 text-sm text-ink-secondary">Compliance engine overview</p>
         </div>
         <span className="rounded-lg bg-accent-500 px-3 py-1.5 text-xs font-medium text-white">{today}</span>
@@ -360,28 +480,28 @@ export default function DashboardPage() {
             <MetricCard
               label="Active Funds"
               value={totalFunds}
-              sub={`${totalFunds} fund structure${totalFunds !== 1 ? 's' : ''}`}
+              sub={`${totalFunds} fund${totalFunds !== 1 ? 's' : ''} · ${formatTrend(fundTrend)}`}
               accent="default"
               compact
             />
             <MetricCard
               label="Verified Investors"
               value={totalInvestors}
-              sub="Across all funds"
+              sub={`Across all funds · ${formatTrend(investorTrend)}`}
               accent="default"
               compact
             />
             <MetricCard
               label="Units Allocated"
               value={formatNumber(totalAllocated)}
-              sub="Total allocated units"
+              sub={`Total allocated units · ${formatTrend(transferTrend)}`}
               accent="success"
               compact
             />
             <MetricCard
               label="Actions Required"
               value={actionRequired}
-              sub={actionRequired === 0 ? 'All clear' : `High + Medium severity flags`}
+              sub={actionRequired === 0 ? 'All clear' : `High + Medium severity flags · ${formatTrend(rejectionTrend)}`}
               accent={actionRequired > 0 ? 'danger' : 'success'}
               compact
               onClick={actionRequired > 0 ? () => {
@@ -391,6 +511,45 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+
+      {!loading && actionQueue.length > 0 && (
+        <div className="mb-6">
+          <SectionHeader title="Action Queue" description="Prioritized operator actions generated from portfolio state" />
+          <Card padding={false}>
+            <div className="divide-y divide-edge-subtle">
+              {actionQueue.map((item) => {
+                const severityClass = item.severity === 'high'
+                  ? 'text-red-500 bg-red-500/10 ring-red-500/20'
+                  : item.severity === 'medium'
+                  ? 'text-amber-600 bg-amber-500/10 ring-amber-500/20'
+                  : 'text-accent-700 bg-accent-500/10 ring-accent-500/20';
+                return (
+                  <div key={item.id} className="flex items-center justify-between px-5 py-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={classNames(
+                          'inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1',
+                          severityClass
+                        )}>
+                          {item.severity}
+                        </span>
+                        <p className="truncate text-sm font-medium text-ink">{item.title}</p>
+                      </div>
+                      <p className="mt-1 text-xs text-ink-secondary">{item.detail}</p>
+                    </div>
+                    <button
+                      onClick={() => router.push(item.href)}
+                      className="ml-3 rounded-md border border-edge px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-edge-strong hover:text-ink"
+                    >
+                      Open
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Data Visualization Charts */}
       {loading ? (
@@ -438,7 +597,7 @@ export default function DashboardPage() {
               <span className="h-2 w-2 rounded-full bg-accent-500" />
               <p className="text-sm font-medium text-accent-200">All Clear</p>
             </div>
-            <p className="mt-1 text-sm text-accent-300">No risk flags detected across any fund structures.</p>
+                <p className="mt-1 text-sm text-accent-300">No risk flags detected across any funds.</p>
           </div>
         </div>
       )}
@@ -446,41 +605,84 @@ export default function DashboardPage() {
       {/* Fund Structure Cards */}
       {!loading && fundReports.length > 0 && (
         <div className="mb-6">
-          <SectionHeader title="Fund Structures" />
+          <SectionHeader title="Funds" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {fundReports.map(({ fund, report }) => (
-              <Card key={fund.id}>
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-sm font-semibold text-ink">{fund.name}</h3>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Badge variant="gray">{fund.legal_form}</Badge>
-                      <Badge variant="gray">{fund.domicile}</Badge>
-                      {fund.regulatory_framework && (
-                        <Badge variant="green">{fund.regulatory_framework}</Badge>
-                      )}
+            {fundReports.map(({ fund, report }) => {
+              const expiredKyc = report.investor_breakdown.by_kyc_status.find(s => s.status === 'expired')?.count ?? 0;
+              const expiringKyc = report.investor_breakdown.kyc_expiring_within_90_days.length;
+              const highFlags = report.risk_flags.filter(f => f.severity === 'high').length;
+              const mediumFlags = report.risk_flags.filter(f => f.severity === 'medium').length;
+              const isSetup = report.fund.assets.length > 0 && report.eligibility_criteria.length > 0;
+
+              let scoreStatus: 'compliant' | 'warning' | 'critical' | 'setup';
+              let scoreLabel: string;
+
+              if (!isSetup) {
+                scoreStatus = 'setup';
+                scoreLabel = 'Setup Required';
+              } else if (highFlags > 0 || expiredKyc > 0) {
+                scoreStatus = 'critical';
+                scoreLabel = `${highFlags + expiredKyc} issue${(highFlags + expiredKyc) !== 1 ? 's' : ''}`;
+              } else if (expiringKyc > 0 || mediumFlags > 0) {
+                scoreStatus = 'warning';
+                scoreLabel = 'Review Needed';
+              } else {
+                scoreStatus = 'compliant';
+                scoreLabel = 'Compliant';
+              }
+
+              const scoreDot = {
+                compliant: 'bg-emerald-500',
+                warning: 'bg-amber-500',
+                critical: 'bg-red-500',
+                setup: 'bg-ink-muted',
+              }[scoreStatus];
+
+              const scoreText = {
+                compliant: 'text-emerald-600',
+                warning: 'text-amber-600',
+                critical: 'text-red-600',
+                setup: 'text-ink-tertiary',
+              }[scoreStatus];
+
+              return (
+                <Card key={fund.id}>
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-sm font-semibold text-ink">{fund.name}</h3>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Badge variant="gray">{fund.legal_form}</Badge>
+                        <Badge variant="gray">{fund.domicile}</Badge>
+                        {fund.regulatory_framework && (
+                          <Badge variant="green">{fund.regulatory_framework}</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-2 w-2 rounded-full ${scoreDot}`} />
+                      <span className={`text-xs font-medium ${scoreText}`}>{scoreLabel}</span>
                     </div>
                   </div>
-                </div>
-                <div className="mb-3">
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Utilization</p>
-                  <UtilizationBar allocated={report.fund.total_allocated_units} total={report.fund.total_aum_units} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-ink-secondary">
-                    {report.fund.total_investors} investor{report.fund.total_investors !== 1 ? 's' : ''}
-                    {' · '}
-                    {report.fund.assets.length} asset{report.fund.assets.length !== 1 ? 's' : ''}
-                  </p>
-                  <Link
-                    href={`/funds/${fund.id}`}
-                    className="text-xs font-medium text-accent-400 hover:text-accent-300 transition-colors"
-                  >
-                    View Compliance Report &rarr;
-                  </Link>
-                </div>
-              </Card>
-            ))}
+                  <div className="mb-3">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Utilization</p>
+                    <UtilizationBar allocated={report.fund.total_allocated_units} total={report.fund.total_aum_units} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-ink-secondary">
+                      {report.fund.total_investors} investor{report.fund.total_investors !== 1 ? 's' : ''}
+                      {' · '}
+                      {report.fund.assets.length} asset{report.fund.assets.length !== 1 ? 's' : ''}
+                    </p>
+                    <Link
+                      href={`/funds/${fund.id}`}
+                      className="text-xs font-medium text-accent-400 hover:text-accent-300 transition-colors"
+                    >
+                      View Compliance Report &rarr;
+                    </Link>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
@@ -576,7 +778,7 @@ export default function DashboardPage() {
       {!loading && fundReports.length === 0 && (
         <Card>
           <div className="py-8 text-center">
-            <p className="text-sm font-medium text-ink">No fund structures found</p>
+            <p className="text-sm font-medium text-ink">No funds found</p>
             <p className="mt-1 text-sm text-ink-secondary">Run <code className="rounded bg-bg-tertiary px-1 py-0.5 font-mono text-xs">npm run seed:showcase</code> in the project root, then refresh.</p>
           </div>
         </Card>

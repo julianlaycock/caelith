@@ -14,7 +14,9 @@ import {
   ErrorMessage,
   EmptyState,
   Alert,
+  ExportMenu,
 } from '../../components/ui';
+import { exportCSV } from '../../lib/export-csv';
 import { formatNumber, formatPercentage, toAssetOptions, toInvestorOptions } from '../../lib/utils';
 import type { ApiError } from '../../lib/types';
 
@@ -69,13 +71,20 @@ export default function HoldingsPage() {
         title="Holdings & Cap Table"
         description="View ownership and allocate units"
         action={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             {selectedAssetId && (
-              <Button variant="secondary" onClick={() => api.downloadCapTablePdf(selectedAssetId)}>
-                ↓ Export PDF
-              </Button>
+              <ExportMenu
+                onExportCSV={() => {
+                  if (!capTable.data || capTable.data.length === 0) return;
+                  exportCSV('caelith-cap-table.csv',
+                    ['Investor', 'Units', 'Ownership %'],
+                    capTable.data.map(e => [e.investor_name, String(e.units), String(e.percentage)])
+                  );
+                }}
+                onExportPDF={() => api.downloadCapTablePdf(selectedAssetId)}
+              />
             )}
-            <Button onClick={() => setShowForm(true)}>+ Allocate Units</Button>
+            <Button onClick={() => setShowForm(true)} disabled={!selectedAssetId}>+ Allocate Units</Button>
           </div>
         }
       />

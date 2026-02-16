@@ -52,7 +52,9 @@ export interface ReviewResult {
 export async function applyToFund(
   investorId: string,
   assetId: string,
-  requestedUnits: number
+  requestedUnits: number,
+  ownerTag?: string,
+  handoffNotes?: string
 ): Promise<OnboardingRecord> {
   // Validate investor exists
   const investor = await findInvestorById(investorId);
@@ -75,6 +77,8 @@ export async function applyToFund(
     investor_id: investorId,
     asset_id: assetId,
     requested_units: requestedUnits,
+    owner_tag: ownerTag,
+    handoff_notes: handoffNotes,
   });
 
   // Log event
@@ -87,10 +91,44 @@ export async function applyToFund(
       asset_id: assetId,
       requested_units: requestedUnits,
       investor_name: investor.name,
+      owner_tag: ownerTag ?? null,
     },
   });
 
   return onboarding;
+}
+
+/**
+ * Update onboarding handoff metadata without changing status.
+ */
+export async function updateHandoffDetails(
+  onboardingId: string,
+  ownerTag: string | null,
+  handoffNotes: string | null
+): Promise<OnboardingRecord> {
+  const onboarding = await findOnboardingById(onboardingId);
+  if (!onboarding) {
+    throw new NotFoundError('Onboarding record', onboardingId);
+  }
+
+  const updated = await updateOnboardingRecord(onboardingId, {
+    status: onboarding.status,
+    owner_tag: ownerTag,
+    handoff_notes: handoffNotes,
+  });
+
+  await createEvent({
+    event_type: 'onboarding.applied',
+    entity_type: 'onboarding_record',
+    entity_id: onboardingId,
+    payload: {
+      action: 'handoff.updated',
+      owner_tag: ownerTag,
+      handoff_notes: handoffNotes,
+    },
+  });
+
+  return updated!;
 }
 
 // ── Step 2: Eligibility Check ───────────────────────────────

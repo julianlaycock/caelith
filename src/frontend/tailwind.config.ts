@@ -1,79 +1,68 @@
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
       colors: {
-        // ── Surfaces ──────────────────────────────────
         bg: {
-          primary:   '#0A0E1A',  // main background
-          secondary: '#111827',  // cards, panels
-          tertiary:  '#1A2035',  // hover, elevated
-          sidebar:   '#0D1117',  // sidebar
+          primary: '#F2EFE0',
+          secondary: '#E3DDD9',
+          tertiary: '#DDE2E5',
+          sidebar: '#D2CFBE',
         },
         surface: {
-          DEFAULT: '#111827',
-          muted:   '#0A0E1A',
-          subtle:  '#1A2035',
+          DEFAULT: '#E3DDD9',
+          muted: '#F2EFE0',
+          subtle: '#DDE2E5',
         },
-
-        // ── Accent (Cyan) ─────────────────────────────
         accent: {
-          50:  '#ECFEFF',
-          100: '#CFFAFE',
-          200: '#A5F3FC',
-          300: '#67E8F9',
-          400: '#22D3EE',
-          500: '#06B6D4',
-          600: '#0891B2',
-          700: '#0E7490',
-          800: '#155E75',
-          900: '#164E63',
-          950: '#083344',
+          50: '#EAF0F6',
+          100: '#D7E2ED',
+          200: '#B4C8DD',
+          300: '#8AA9C7',
+          400: '#5F86AC',
+          500: '#24364A',
+          600: '#1F2F40',
+          700: '#172331',
+          800: '#111A25',
+          900: '#0D141D',
+          950: '#080D14',
         },
-
-        // ── Text ──────────────────────────────────────
         ink: {
-          DEFAULT:     '#F1F5F9',
-          secondary:   '#94A3B8',
-          tertiary:    '#64748B',
-          muted:       '#475569',
-          placeholder: '#334155',
+          DEFAULT: '#2D2722',
+          secondary: '#5A524B',
+          tertiary: '#6E655D',
+          muted: '#80766D',
+          placeholder: '#948A82',
         },
-
-        // ── Borders ───────────────────────────────────
         edge: {
-          DEFAULT: '#334155',
-          subtle:  '#1E293B',
-          strong:  '#475569',
+          DEFAULT: '#C6BEB1',
+          subtle: '#D2CABB',
+          strong: '#B5AA9A',
         },
-
-        // ── Semantic ──────────────────────────────────
         semantic: {
-          success: '#34D399',
-          warning: '#FBBF24',
-          danger:  '#F87171',
-          info:    '#22D3EE',
+          success: '#3D6658',
+          warning: '#9C6E2D',
+          danger: '#8A4A45',
+          info: '#24364A',
         },
-
-        // ── Legacy compat (will phase out) ────────────
         brand: {
-          50:  '#ECFEFF',
-          100: '#CFFAFE',
-          200: '#A5F3FC',
-          300: '#67E8F9',
-          400: '#22D3EE',
-          500: '#06B6D4',
-          600: '#0891B2',
-          700: '#0E7490',
-          800: '#155E75',
-          900: '#164E63',
-          950: '#0D1117',
+          50: '#EAF0F6',
+          100: '#D7E2ED',
+          200: '#B4C8DD',
+          300: '#8AA9C7',
+          400: '#5F86AC',
+          500: '#24364A',
+          600: '#1F2F40',
+          700: '#172331',
+          800: '#111A25',
+          900: '#0D141D',
+          950: '#080D14',
         },
       },
       fontFamily: {
@@ -81,13 +70,13 @@ const config: Config = {
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       fontSize: {
-        'xs':   ['0.75rem',   { lineHeight: '1rem' }],
-        'sm':   ['0.8125rem', { lineHeight: '1.25rem' }],
-        'base': ['0.875rem',  { lineHeight: '1.5rem' }],
-        'lg':   ['1rem',      { lineHeight: '1.5rem' }],
-        'xl':   ['1.25rem',   { lineHeight: '1.75rem' }],
-        '2xl':  ['1.5rem',    { lineHeight: '2rem' }],
-        '3xl':  ['1.875rem',  { lineHeight: '2.25rem' }],
+        xs: ['0.75rem', { lineHeight: '1rem' }],
+        sm: ['0.8125rem', { lineHeight: '1.25rem' }],
+        base: ['0.875rem', { lineHeight: '1.5rem' }],
+        lg: ['1rem', { lineHeight: '1.5rem' }],
+        xl: ['1.25rem', { lineHeight: '1.75rem' }],
+        '2xl': ['1.5rem', { lineHeight: '2rem' }],
+        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
       },
       animation: {
         'fade-in': 'fadeIn 150ms ease-out',
@@ -112,4 +101,5 @@ const config: Config = {
   },
   plugins: [],
 };
+
 export default config;

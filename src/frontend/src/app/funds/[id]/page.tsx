@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAsync } from '../../../lib/hooks';
+import { BackLink } from '../../../components/back-link';
 import {
   Card,
   MetricCard,
@@ -45,7 +45,7 @@ export default function FundDetailPage() {
     return (
       <div>
         <div className="mb-6">
-          <Link href="/funds" className="text-xs font-medium text-accent-400 hover:text-accent-300">&larr; Back to Fund Structures</Link>
+          <BackLink href="/funds" label="Back to Fund Structures" />
         </div>
         <Card>
           <div className="py-8 text-center">
@@ -63,7 +63,7 @@ export default function FundDetailPage() {
     return (
       <div>
         <div className="mb-6">
-          <Link href="/funds" className="text-xs font-medium text-accent-400 hover:text-accent-300">&larr; Back to Fund Structures</Link>
+          <BackLink href="/funds" label="Back to Fund Structures" />
         </div>
         <LoadingSpinner />
       </div>
@@ -74,7 +74,7 @@ export default function FundDetailPage() {
     return (
       <div>
         <div className="mb-6">
-          <Link href="/funds" className="text-xs font-medium text-accent-400 hover:text-accent-300">&larr; Back to Fund Structures</Link>
+          <BackLink href="/funds" label="Back to Fund Structures" />
         </div>
         <ErrorMessage message={fund.error} onRetry={fund.refetch} />
       </div>
@@ -98,7 +98,7 @@ export default function FundDetailPage() {
     <div>
       {/* Back link + Header */}
       <div className="mb-6">
-        <Link href="/funds" className="text-xs font-medium text-accent-400 hover:text-accent-300 transition-colors">&larr; Back to Fund Structures</Link>
+        <BackLink href="/funds" label="Back to Fund Structures" />
         <div className="mt-3 flex items-end justify-between">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-ink">{f.name}</h1>
@@ -140,15 +140,15 @@ export default function FundDetailPage() {
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">AIFM</p>
-            <p className="mt-0.5 text-sm text-ink">{f.aifm_name || '—'}</p>
+            <p className="mt-0.5 text-sm text-ink">{f.aifm_name || '-'}</p>
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">AIFM LEI</p>
-            <p className="mt-0.5 text-sm font-mono text-ink">{f.aifm_lei || '—'}</p>
+            <p className="mt-0.5 text-sm font-mono text-ink">{f.aifm_lei || '-'}</p>
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">Inception</p>
-            <p className="mt-0.5 text-sm text-ink">{f.inception_date ? formatDate(f.inception_date) : '—'}</p>
+            <p className="mt-0.5 text-sm text-ink">{f.inception_date ? formatDate(f.inception_date) : '-'}</p>
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">Currency</p>
@@ -285,13 +285,13 @@ export default function FundDetailPage() {
             </div>
           )}
 
-          {/* Investor Breakdown — Charts */}
+          {/* Investor Breakdown - Charts */}
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <InvestorTypeDonut data={r.investor_breakdown.by_type} />
             <JurisdictionExposureBar data={r.investor_breakdown.by_jurisdiction} />
           </div>
 
-          {/* KYC Status — Segmented Bar + Expiring Soon */}
+          {/* KYC Status - Segmented Bar + Expiring Soon */}
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
             {kycSegments && <KycExpiryHorizon data={kycSegments} />}
 
@@ -404,3 +404,4 @@ export default function FundDetailPage() {
     </div>
   );
 }
+

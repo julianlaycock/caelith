@@ -19,6 +19,32 @@ export interface TransferRequest {
 }
 
 /**
+ * Fund structure context for AIFMD-aware validation
+ */
+export interface FundContext {
+  legal_form: string;
+  domicile: string;
+  regulatory_framework: string;
+  status: string;
+  leverage_limit_commitment?: number | null;
+  leverage_limit_gross?: number | null;
+  leverage_current_commitment?: number | null;
+  leverage_current_gross?: number | null;
+  lmt_types?: any[];
+}
+
+/**
+ * Asset-level aggregate data needed for concentration/max-investor checks
+ */
+export interface AssetAggregates {
+  total_units: number;
+  /** Current number of distinct investors with units > 0 in this asset */
+  distinct_investor_count: number;
+  /** Receiver's existing holding in this asset (units), 0 if none */
+  receiver_existing_units: number;
+}
+
+/**
  * Validation context — all data needed to validate a transfer
  */
 export interface ValidationContext {
@@ -28,6 +54,10 @@ export interface ValidationContext {
   fromHolding: Holding | null;
   rules: RuleSet;
   customRules?: CompositeRule[];
+  /** Fund structure context (null if asset is not fund-linked) */
+  fund?: FundContext | null;
+  /** Asset-level aggregates for concentration/max-investor checks */
+  assetAggregates?: AssetAggregates | null;
 }
 
 /**

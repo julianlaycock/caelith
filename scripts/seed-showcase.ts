@@ -299,6 +299,169 @@ async function seed() {
   const liwei       = I['Li Wei Zhang'];
 
   // ====================================================================
+  // 5b. Fund Structure AIFMD II Data — LMT, leverage, liquidity, geography, counterparty
+  // ====================================================================
+  console.log('\n▸ [Fund Structure AIFMD II Data]');
+
+  await execute(
+    `UPDATE fund_structures SET
+       lmt_types = $1, leverage_limit_commitment = 2.0, leverage_limit_gross = 3.0,
+       leverage_current_commitment = 1.4, leverage_current_gross = 1.8,
+       liquidity_profile = $2, geographic_exposure = $3, counterparty_exposure = $4
+     WHERE id = $5`,
+    [
+      JSON.stringify([
+        { type: 'redemption_gate', description: 'Quarterly redemption gate at 25% of NAV', threshold_pct: 25, active: true },
+        { type: 'notice_period', description: '90-day notice period for redemptions', active: true },
+      ]),
+      JSON.stringify([
+        { bucket: '1d', pct: 5 }, { bucket: '2-7d', pct: 10 }, { bucket: '8-30d', pct: 20 },
+        { bucket: '31-90d', pct: 30 }, { bucket: '91-180d', pct: 20 }, { bucket: '181-365d', pct: 10 }, { bucket: '>365d', pct: 5 },
+      ]),
+      JSON.stringify([
+        { region: 'Western Europe', pct: 45 }, { region: 'North America', pct: 25 },
+        { region: 'Asia-Pacific', pct: 20 }, { region: 'Emerging Markets', pct: 10 },
+      ]),
+      JSON.stringify([
+        { name: 'Goldman Sachs International', lei: '549300XXXX', exposure_pct: 12.5 },
+        { name: 'JP Morgan Securities', lei: '549300YYYY', exposure_pct: 8.3 },
+        { name: 'BNP Paribas SA', lei: '549300ZZZZ', exposure_pct: 6.1 },
+      ]),
+      FUND_SIF,
+    ]
+  );
+  console.log('  ✓ Meridian SIF Alpha — LMT, leverage, liquidity, geography, counterparty');
+
+  await execute(
+    `UPDATE fund_structures SET
+       lmt_types = $1, leverage_limit_commitment = 1.5, leverage_limit_gross = 2.5,
+       leverage_current_commitment = 1.2, leverage_current_gross = 2.1,
+       liquidity_profile = $2, geographic_exposure = $3, counterparty_exposure = $4
+     WHERE id = $5`,
+    [
+      JSON.stringify([
+        { type: 'swing_pricing', description: 'Swing factor ±2% for large redemptions', active: true },
+        { type: 'suspension', description: 'Board may suspend in extraordinary circumstances', active: false },
+      ]),
+      JSON.stringify([
+        { bucket: '1d', pct: 2 }, { bucket: '2-7d', pct: 5 }, { bucket: '8-30d', pct: 15 },
+        { bucket: '31-90d', pct: 25 }, { bucket: '91-180d', pct: 25 }, { bucket: '181-365d', pct: 18 }, { bucket: '>365d', pct: 10 },
+      ]),
+      JSON.stringify([
+        { region: 'Western Europe', pct: 60 }, { region: 'North America', pct: 30 }, { region: 'Asia-Pacific', pct: 10 },
+      ]),
+      JSON.stringify([
+        { name: 'Credit Suisse (successor UBS)', exposure_pct: 15.2 },
+        { name: 'Deutsche Bank AG', exposure_pct: 9.8 },
+      ]),
+      FUND_RAIF,
+    ]
+  );
+  console.log('  ✓ Evergreen RAIF Beta — LMT, leverage, liquidity, geography, counterparty');
+
+  await execute(
+    `UPDATE fund_structures SET
+       lmt_types = $1, leverage_limit_commitment = 2.5, leverage_limit_gross = 4.0,
+       leverage_current_commitment = 2.1, leverage_current_gross = 3.2,
+       liquidity_profile = $2, geographic_exposure = $3, counterparty_exposure = $4
+     WHERE id = $5`,
+    [
+      JSON.stringify([
+        { type: 'redemption_gate', description: 'Monthly gate at 10% NAV', threshold_pct: 10, active: true },
+        { type: 'anti_dilution_levy', description: '0.5% levy on large redemptions >5% NAV', active: true },
+      ]),
+      JSON.stringify([
+        { bucket: '1d', pct: 3 }, { bucket: '2-7d', pct: 7 }, { bucket: '8-30d', pct: 10 },
+        { bucket: '31-90d', pct: 20 }, { bucket: '91-180d', pct: 25 }, { bucket: '181-365d', pct: 20 }, { bucket: '>365d', pct: 15 },
+      ]),
+      JSON.stringify([
+        { region: 'North America', pct: 40 }, { region: 'Western Europe', pct: 35 },
+        { region: 'Asia-Pacific', pct: 15 }, { region: 'Emerging Markets', pct: 10 },
+      ]),
+      JSON.stringify([
+        { name: 'Citibank NA', exposure_pct: 11.0 },
+        { name: 'Barclays Capital', exposure_pct: 7.5 },
+        { name: 'Morgan Stanley', exposure_pct: 6.2 },
+      ]),
+      FUND_QIAIF,
+    ]
+  );
+  console.log('  ✓ Atlantic QIAIF Gamma — LMT, leverage, liquidity, geography, counterparty');
+
+  await execute(
+    `UPDATE fund_structures SET
+       lmt_types = $1, leverage_limit_commitment = 1.3, leverage_limit_gross = 1.5,
+       leverage_current_commitment = 1.1, leverage_current_gross = 1.2,
+       liquidity_profile = $2, geographic_exposure = $3, counterparty_exposure = $4
+     WHERE id = $5`,
+    [
+      JSON.stringify([
+        { type: 'redemption_in_kind', description: 'ELTIF 2.0 redemption policy per Art. 18', active: true },
+        { type: 'notice_period', description: '12-month notice for early redemption', active: true },
+      ]),
+      JSON.stringify([
+        { bucket: '1d', pct: 0 }, { bucket: '2-7d', pct: 2 }, { bucket: '8-30d', pct: 5 },
+        { bucket: '31-90d', pct: 10 }, { bucket: '91-180d', pct: 15 }, { bucket: '181-365d', pct: 28 }, { bucket: '>365d', pct: 40 },
+      ]),
+      JSON.stringify([
+        { region: 'Western Europe', pct: 70 }, { region: 'Southern Europe', pct: 20 }, { region: 'Central/Eastern Europe', pct: 10 },
+      ]),
+      JSON.stringify([
+        { name: 'Société Générale SA', exposure_pct: 8.0 },
+      ]),
+      FUND_ELTIF,
+    ]
+  );
+  console.log('  ✓ Horizon ELTIF Delta — LMT, leverage, liquidity, geography, counterparty');
+
+  // ====================================================================
+  // 5c. Investor Classification Evidence
+  // ====================================================================
+  console.log('\n▸ [Investor Classification Evidence]');
+
+  const now = new Date().toISOString().split('T')[0];
+  const recentDate = new Date().toISOString();
+
+  if (calpers) {
+    await execute(
+      `UPDATE investors SET classification_method = $1, classification_date = $2, classification_evidence = $3 WHERE id = $4`,
+      [
+        'regulatory_status', now,
+        JSON.stringify([{ type: 'regulatory_license', document_ref: 'CalPERS Fund Registration Certificate', verified_at: recentDate, verified_by: 'admin@caelith.com' }]),
+        calpers,
+      ]
+    );
+    console.log('  ✓ CalPERS — regulatory_status classification');
+  }
+
+  if (rothschild) {
+    await execute(
+      `UPDATE investors SET classification_method = $1, classification_date = $2, classification_evidence = $3 WHERE id = $4`,
+      [
+        'documentation', now,
+        JSON.stringify([{ type: 'mifid_classification', document_ref: 'MiFID II Professional Client Agreement Ref RC-2024-001', verified_at: recentDate, verified_by: 'admin@caelith.com' }]),
+        rothschild,
+      ]
+    );
+    console.log('  ✓ Rothschild — documentation classification');
+  }
+
+  if (mueller) {
+    await execute(
+      `UPDATE investors SET classification_method = $1, classification_date = $2, classification_evidence = $3 WHERE id = $4`,
+      [
+        'self_declaration', now,
+        JSON.stringify([
+          { type: 'wealth_declaration', document_ref: 'Semi-Professional Investor Declaration Form', verified_at: recentDate, verified_by: 'admin@caelith.com' },
+          { type: 'experience_assessment', document_ref: 'Investment Experience Questionnaire Mueller-2024', verified_at: recentDate, verified_by: 'admin@caelith.com' },
+        ]),
+        mueller,
+      ]
+    );
+    console.log('  ✓ Mueller Family Office — self_declaration classification');
+  }
+
+  // ====================================================================
   // 6. Holdings — strategic allocations for charts
   // ====================================================================
   console.log('\n▸ [Holdings]');

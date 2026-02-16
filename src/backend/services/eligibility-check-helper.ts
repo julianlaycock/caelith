@@ -18,6 +18,9 @@ export interface EligibilityInput {
     jurisdiction: string;
     kyc_status: string;
     kyc_expiry: string | null;
+    classification_method?: string | null;
+    classification_evidence?: any[] | null;
+    classification_date?: string | null;
   };
   fundStructureId: string;
   /** Investment amount in cents (for comparison with criteria.minimum_investment) */
@@ -108,6 +111,26 @@ export async function runCoreEligibilityChecks(input: EligibilityInput): Promise
         rule: 'suitability_required',
         passed: true,
         message: `Suitability assessment required for ${investorType} investors in ${fund.legal_form}`,
+      });
+    }
+  }
+
+  // ── Check 4b: Classification evidence ────────────────────────────────
+  if (investorType !== 'retail') {
+    if (input.investor.classification_method) {
+      checks.push({
+        rule: 'classification_evidence',
+        passed: true,
+        message: `Investor classification method: ${input.investor.classification_method}`,
+      });
+    } else if (
+      (!input.investor.classification_evidence || input.investor.classification_evidence.length === 0) &&
+      !input.investor.classification_date
+    ) {
+      checks.push({
+        rule: 'classification_evidence',
+        passed: true,
+        message: `WARNING: No classification evidence on file for ${investorType} investor. Evidence should be collected.`,
       });
     }
   }

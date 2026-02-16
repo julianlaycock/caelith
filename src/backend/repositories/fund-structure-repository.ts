@@ -7,6 +7,10 @@ import {
   LegalForm,
   RegulatoryFramework,
   FundStatus,
+  LiquidityManagementTool,
+  LiquidityBucket,
+  GeographicExposure,
+  CounterpartyExposure,
 } from '../models/index.js';
 
 export async function createFundStructure(input: CreateFundStructureInput): Promise<FundStructure> {
@@ -15,12 +19,21 @@ export async function createFundStructure(input: CreateFundStructureInput): Prom
 
   const result = await query<FundStructureRow>(
     `INSERT INTO fund_structures (id, tenant_id, name, legal_form, domicile, regulatory_framework,
-       aifm_name, aifm_lei, inception_date, target_size, currency, status, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+       aifm_name, aifm_lei, inception_date, target_size, currency, status,
+       lmt_types, leverage_limit_commitment, leverage_limit_gross, leverage_current_commitment, leverage_current_gross,
+       liquidity_profile, geographic_exposure, counterparty_exposure,
+       created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING *`,
     [
       id, DEFAULT_TENANT_ID, input.name, input.legal_form, input.domicile, input.regulatory_framework,
       input.aifm_name ?? null, input.aifm_lei ?? null, input.inception_date ?? null,
       input.target_size ?? null, input.currency ?? 'EUR', input.status ?? 'active',
+      JSON.stringify(input.lmt_types ?? []),
+      input.leverage_limit_commitment ?? null, input.leverage_limit_gross ?? null,
+      input.leverage_current_commitment ?? null, input.leverage_current_gross ?? null,
+      JSON.stringify(input.liquidity_profile ?? []),
+      JSON.stringify(input.geographic_exposure ?? []),
+      JSON.stringify(input.counterparty_exposure ?? []),
       now, now,
     ]
   );
@@ -57,6 +70,14 @@ export async function updateFundStructure(id: string, input: UpdateFundStructure
   if (input.inception_date !== undefined) { sets.push(`inception_date = $${idx++}`); params.push(input.inception_date); }
   if (input.target_size !== undefined) { sets.push(`target_size = $${idx++}`); params.push(input.target_size); }
   if (input.status !== undefined) { sets.push(`status = $${idx++}`); params.push(input.status); }
+  if (input.lmt_types !== undefined) { sets.push(`lmt_types = $${idx++}`); params.push(JSON.stringify(input.lmt_types) as any); }
+  if (input.leverage_limit_commitment !== undefined) { sets.push(`leverage_limit_commitment = $${idx++}`); params.push(input.leverage_limit_commitment); }
+  if (input.leverage_limit_gross !== undefined) { sets.push(`leverage_limit_gross = $${idx++}`); params.push(input.leverage_limit_gross); }
+  if (input.leverage_current_commitment !== undefined) { sets.push(`leverage_current_commitment = $${idx++}`); params.push(input.leverage_current_commitment); }
+  if (input.leverage_current_gross !== undefined) { sets.push(`leverage_current_gross = $${idx++}`); params.push(input.leverage_current_gross); }
+  if (input.liquidity_profile !== undefined) { sets.push(`liquidity_profile = $${idx++}`); params.push(JSON.stringify(input.liquidity_profile) as any); }
+  if (input.geographic_exposure !== undefined) { sets.push(`geographic_exposure = $${idx++}`); params.push(JSON.stringify(input.geographic_exposure) as any); }
+  if (input.counterparty_exposure !== undefined) { sets.push(`counterparty_exposure = $${idx++}`); params.push(JSON.stringify(input.counterparty_exposure) as any); }
 
   if (sets.length === 0) return findFundStructureById(id);
 
@@ -87,8 +108,22 @@ interface FundStructureRow {
   target_size: number | string | null;
   currency: string;
   status: string;
+  lmt_types: any;
+  leverage_limit_commitment: number | string | null;
+  leverage_limit_gross: number | string | null;
+  leverage_current_commitment: number | string | null;
+  leverage_current_gross: number | string | null;
+  liquidity_profile: any;
+  geographic_exposure: any;
+  counterparty_exposure: any;
   created_at: string | Date;
   updated_at: string | Date;
+}
+
+function parseJsonb<T>(val: any): T[] {
+  if (!val) return [];
+  if (typeof val === 'string') return JSON.parse(val);
+  return val;
 }
 
 function rowToFundStructure(row: FundStructureRow): FundStructure {
@@ -104,6 +139,14 @@ function rowToFundStructure(row: FundStructureRow): FundStructure {
     target_size: row.target_size ? Number(row.target_size) : null,
     currency: row.currency,
     status: row.status as FundStatus,
+    lmt_types: parseJsonb<LiquidityManagementTool>(row.lmt_types),
+    leverage_limit_commitment: row.leverage_limit_commitment != null ? Number(row.leverage_limit_commitment) : null,
+    leverage_limit_gross: row.leverage_limit_gross != null ? Number(row.leverage_limit_gross) : null,
+    leverage_current_commitment: row.leverage_current_commitment != null ? Number(row.leverage_current_commitment) : null,
+    leverage_current_gross: row.leverage_current_gross != null ? Number(row.leverage_current_gross) : null,
+    liquidity_profile: parseJsonb<LiquidityBucket>(row.liquidity_profile),
+    geographic_exposure: parseJsonb<GeographicExposure>(row.geographic_exposure),
+    counterparty_exposure: parseJsonb<CounterpartyExposure>(row.counterparty_exposure),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };

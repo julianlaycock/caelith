@@ -39,6 +39,7 @@ import complianceReportRoutes from './routes/compliance-report-routes.js';
 import tenantRoutes from './routes/tenant-routes.js';
 import { createRegulatoryRoutes } from './routes/regulatory-routes.js';
 import { createCopilotRoutes } from './routes/copilot-routes.js';
+import scenarioRoutes from './routes/scenario-routes.js';
 import { isResetEndpointEnabled, shouldBootstrapAdmin } from './config/security-config.js';
 
 // Validate required environment variables at startup
@@ -216,6 +217,7 @@ app.use('/api/reports', authenticate, complianceReportRoutes);
 app.use('/api/tenants', authenticate, tenantRoutes);
 app.use('/api/regulatory', authenticate, createRegulatoryRoutes());
 app.use('/api/copilot', authenticate, createCopilotRoutes());
+app.use('/api/scenarios', authenticate, scenarioRoutes);
 
 // Test-only: reset database
 app.post('/api/reset', authenticate, authorize('admin'), async (_req, res): Promise<void> => {

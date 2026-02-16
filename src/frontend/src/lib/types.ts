@@ -60,6 +60,7 @@ export type EventType =
   | 'rules.updated'
   | 'transfer.executed'
   | 'transfer.rejected'
+  | 'transfer.pending_approval'
   | 'composite_rule.created'
   | 'composite_rule.updated'
   | 'composite_rule.deleted'
@@ -186,6 +187,11 @@ export interface Transfer {
   decision_record_id: string | null;
   executed_at: string;
   created_at: string;
+  status: 'executed' | 'pending_approval' | 'rejected';
+  approved_by: string | null;
+  approved_at: string | null;
+  rejection_reason: string | null;
+  pending_reason?: string | null;
 }
 
 export interface TransferRequest {
@@ -199,12 +205,18 @@ export interface TransferRequest {
 export interface TransferHistoryEntry {
   id: string;
   asset_id: string;
+  asset_name?: string;
   from_investor_id: string;
   from_name: string;
   to_investor_id: string;
   to_name: string;
   units: number;
   executed_at: string;
+  status: 'executed' | 'pending_approval' | 'rejected';
+  approved_by: string | null;
+  approved_at: string | null;
+  rejection_reason: string | null;
+  pending_reason?: string | null;
 }
 
 export interface ValidationResult {
@@ -414,6 +426,8 @@ export interface OnboardingRecord {
   asset_id: string;
   status: OnboardingStatus;
   requested_units: number;
+  owner_tag: string | null;
+  handoff_notes: string | null;
   eligibility_decision_id: string | null;
   approval_decision_id: string | null;
   reviewed_by: string | null;

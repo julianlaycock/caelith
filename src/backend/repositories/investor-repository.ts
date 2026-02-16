@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { query, execute, queryWithTenant, executeWithTenant, DEFAULT_TENANT_ID } from '../db.js';
-import { Investor, CreateInvestorInput, UpdateInvestorInput } from '../models/index.js';
+import { Investor, CreateInvestorInput, UpdateInvestorInput, ClassificationEvidence } from '../models/index.js';
 
 /**
  * Investor Repository - Handles all database operations for investors
@@ -17,6 +17,9 @@ interface InvestorRow {
   tax_id: string | null;
   lei: string | null;
   email: string | null;
+  classification_date: string | null;
+  classification_evidence: string | ClassificationEvidence[] | null;
+  classification_method: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +37,11 @@ function rowToInvestor(row: InvestorRow): Investor {
     tax_id: row.tax_id,
     lei: row.lei,
     email: row.email,
+    classification_date: row.classification_date ?? null,
+    classification_evidence: row.classification_evidence
+      ? (typeof row.classification_evidence === 'string' ? JSON.parse(row.classification_evidence) : row.classification_evidence)
+      : [],
+    classification_method: row.classification_method ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -53,11 +61,14 @@ export async function createInvestor(input: CreateInvestorInput): Promise<Invest
   const tax_id = input.tax_id ?? null;
   const lei = input.lei ?? null;
   const email = input.email ?? null;
+  const classification_date = input.classification_date ?? null;
+  const classification_evidence = input.classification_evidence ? JSON.stringify(input.classification_evidence) : '[]';
+  const classification_method = input.classification_method ?? null;
 
   await execute(
-    `INSERT INTO investors (id, tenant_id, name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, DEFAULT_TENANT_ID, input.name, input.jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, now, now]
+    `INSERT INTO investors (id, tenant_id, name, jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, classification_date, classification_evidence, classification_method, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, DEFAULT_TENANT_ID, input.name, input.jurisdiction, accredited, investor_type, kyc_status, kyc_expiry, tax_id, lei, email, classification_date, classification_evidence, classification_method, now, now]
   );
 
   const investor: Investor = {
@@ -71,6 +82,9 @@ export async function createInvestor(input: CreateInvestorInput): Promise<Invest
     tax_id,
     lei,
     email,
+    classification_date,
+    classification_evidence: input.classification_evidence ?? [],
+    classification_method,
     created_at: now,
     updated_at: now,
   };
@@ -163,6 +177,21 @@ export async function updateInvestor(
   if (input.email !== undefined) {
     updates.push('email = ?');
     params.push(input.email);
+  }
+
+  if (input.classification_date !== undefined) {
+    updates.push('classification_date = ?');
+    params.push(input.classification_date);
+  }
+
+  if (input.classification_evidence !== undefined) {
+    updates.push('classification_evidence = ?');
+    params.push(JSON.stringify(input.classification_evidence));
+  }
+
+  if (input.classification_method !== undefined) {
+    updates.push('classification_method = ?');
+    params.push(input.classification_method);
   }
 
   if (updates.length === 0) {

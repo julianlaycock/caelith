@@ -40,7 +40,22 @@ export async function ensureAuth(): Promise<void> {
   }
 }
 
+/**
+ * Reset DB for e2e tests. Requires backend running with NODE_ENV=test ENABLE_RESET=true.
+ * Throws descriptive error if reset endpoint is disabled.
+ */
 export async function resetDb(): Promise<void> {
   await ensureAuth();
-  await api('/reset', { method: 'POST' });
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${authToken}`,
+  };
+  const res = await fetch(`${API_BASE}/reset`, { method: 'POST', headers });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(
+      `Reset endpoint is disabled outside test mode. ` +
+      `Start backend with: NODE_ENV=test ENABLE_RESET=true npm run dev:backend`
+    );
+  }
 }

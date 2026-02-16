@@ -20,7 +20,7 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
       'Summarize my portfolio compliance status',
       'What risk flags need immediate attention?',
       'What are the SIF investor requirements?',
-      'What if minimum investment changed to €200K?',
+      'What if minimum investment changed to EUR 200K?',
     ],
   },
   '/funds': {
@@ -37,7 +37,7 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
     prompts: [
       'What are the well-informed investor requirements?',
       'Explain KYC/AML requirements for fund investors',
-      'What is the €125,000 minimum investment rule?',
+      'What is the EUR 125,000 minimum investment rule?',
       'Which investor types qualify for SIF funds?',
     ],
   },
@@ -46,7 +46,7 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
     prompts: [
       'Why was the last transfer rejected?',
       'What checks are applied to transfer validation?',
-      'What if minimum investment changed to €200K?',
+      'What if minimum investment changed to EUR 200K?',
       'Explain transfer restriction rules',
     ],
   },
@@ -55,7 +55,7 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
     prompts: [
       'Create a rule to block retail investors',
       'What eligibility rules should a SIF fund have?',
-      'Draft a rule for €125K minimum investment',
+      'Draft a rule for EUR 125K minimum investment',
       'Explain how composite rules work',
     ],
   },
@@ -83,13 +83,11 @@ const DEFAULT_PROMPTS = [
   'What are the SIF investor requirements?',
   'Why was the last transfer rejected?',
   'Create a rule to block retail investors',
-  'What if minimum investment changed to €200K?',
+  'What if minimum investment changed to EUR 200K?',
 ];
 
 function getPromptsForPath(pathname: string): string[] {
-  // Exact match first
   if (PAGE_PROMPTS[pathname]) return PAGE_PROMPTS[pathname].prompts;
-  // Prefix match (e.g., /funds/[id] → /funds)
   const prefix = '/' + pathname.split('/').filter(Boolean)[0];
   if (PAGE_PROMPTS[prefix]) return PAGE_PROMPTS[prefix].prompts;
   return DEFAULT_PROMPTS;
@@ -170,25 +168,17 @@ export function CopilotPanel({
 
   return (
     <>
-      {/* Backdrop for mobile */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/20 md:hidden"
-          onClick={onClose}
-        />
-      )}
+      {open && <div className="fixed inset-0 z-40 bg-black/20 md:hidden" onClick={onClose} />}
 
-      {/* Panel */}
       <div
-        className={`fixed top-0 right-0 z-50 flex h-full flex-col bg-bg-secondary shadow-xl transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 top-0 z-50 flex h-full flex-col bg-bg-secondary shadow-xl transition-transform duration-300 ease-in-out ${
           open ? 'translate-x-0' : 'translate-x-full'
         } w-full md:w-[400px]`}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-edge px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-500/15">
-              <svg className="h-4 w-4 text-accent-300" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#24364A]/15">
+              <svg className="h-4 w-4 text-[#24364A]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
               </svg>
             </div>
@@ -197,6 +187,7 @@ export function CopilotPanel({
           <button
             onClick={onClose}
             className="rounded-md p-1.5 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink"
+            aria-label="Close copilot"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -204,12 +195,11 @@ export function CopilotPanel({
           </button>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {messages.length === 0 && !loading && (
-            <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent-500/10">
-                <svg className="h-6 w-6 text-accent-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#24364A]/10">
+                <svg className="h-6 w-6 text-[#24364A]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
                 </svg>
               </div>
@@ -222,7 +212,7 @@ export function CopilotPanel({
                   <button
                     key={prompt}
                     onClick={() => sendMessage(prompt)}
-                    className="w-full rounded-lg border border-edge px-3 py-2 text-left text-xs text-ink-secondary transition-colors hover:border-accent-500/30 hover:bg-accent-500/10"
+                    className="w-full rounded-lg border border-edge px-3 py-2 text-left text-xs text-ink-secondary transition-colors hover:border-[#24364A]/30 hover:bg-[#24364A]/10"
                   >
                     {prompt}
                   </button>
@@ -235,23 +225,21 @@ export function CopilotPanel({
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                  msg.role === 'user'
-                    ? 'bg-accent-500 text-white'
-                    : 'bg-bg-tertiary text-ink'
+                  msg.role === 'user' ? 'bg-[#24364A] text-white' : 'bg-bg-tertiary text-ink'
                 }`}
               >
                 {msg.role === 'assistant' && msg.intent && (
-                  <span className="mb-1 inline-block rounded bg-accent-500/15 px-1.5 py-0.5 text-[10px] font-medium text-accent-300">
+                  <span className="mb-1 inline-block rounded bg-[#24364A]/15 px-1.5 py-0.5 text-[10px] font-medium text-[#24364A]">
                     {msg.intent.replace('_', ' ')}
                   </span>
                 )}
-                <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                <div className="break-words whitespace-pre-wrap">{msg.content}</div>
                 {msg.citations && msg.citations.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {msg.citations.map((c, j) => (
                       <span
                         key={j}
-                        className="inline-block rounded-full bg-bg-secondary/90 border border-edge px-2 py-0.5 text-[10px] text-ink-secondary"
+                        className="inline-block rounded-full border border-edge bg-bg-secondary/90 px-2 py-0.5 text-[10px] text-ink-secondary"
                         title={c.excerpt}
                       >
                         {c.documentTitle}
@@ -277,7 +265,7 @@ export function CopilotPanel({
           )}
 
           {error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600">
               {error}
               <button
                 onClick={() => {
@@ -295,7 +283,6 @@ export function CopilotPanel({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
         <form onSubmit={handleSubmit} className="border-t border-edge p-3">
           <div className="flex items-end gap-2">
             <textarea
@@ -305,12 +292,12 @@ export function CopilotPanel({
               onKeyDown={handleKeyDown}
               placeholder="Ask a compliance question..."
               rows={1}
-              className="flex-1 resize-none rounded-lg border border-edge bg-bg-primary text-ink px-3 py-2 text-sm placeholder:text-ink-muted focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30"
+              className="flex-1 resize-none rounded-lg border border-edge bg-bg-primary px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-[#24364A] focus:outline-none focus:ring-1 focus:ring-[#24364A]/30"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-accent-500 text-white transition-colors hover:bg-accent-600 disabled:opacity-40"
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#24364A] text-white transition-colors hover:bg-[#1F2F40] disabled:opacity-40"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
@@ -327,12 +314,13 @@ export function CopilotToggleButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-accent-500 text-white shadow-lg transition-all hover:bg-accent-600 hover:shadow-xl hover:scale-105"
+      className="fixed bottom-6 right-6 z-30 flex h-12 items-center gap-2.5 rounded-full bg-[#24364A] px-5 text-white shadow-lg transition-all hover:scale-105 hover:bg-[#1F2F40] hover:shadow-xl"
       title="Open Compliance Copilot"
     >
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
       </svg>
+      <span className="text-sm font-medium">Compliance Copilot</span>
     </button>
   );
 }

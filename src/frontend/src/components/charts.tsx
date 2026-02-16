@@ -17,36 +17,36 @@ import { formatCompactNumber, formatInvestorType, classNames } from '../lib/util
 // ── Color Palette ────────────────────────────────────────
 
 const CHART_COLORS = [
-  '#22D3EE', // accent-400
-  '#06B6D4', // accent-500
-  '#67E8F9', // accent-300
-  '#A5F3FC', // accent-200
-  '#0891B2', // accent-600
-  '#0E7490', // accent-700
-  '#155E75', // accent-800
+  '#24364A', // navy
+  '#6E655D', // dark taupe
+  '#8A7A69', // muted bronze
+  '#B39B7A', // warm stone
+  '#D8BA8E', // palette accent
+  '#BDB0A4', // soft taupe
+  '#9AA3AA', // slate neutral
 ];
 
 const KYC_COLORS: Record<string, string> = {
-  verified: '#34D399',
-  pending: '#FBBF24',
-  expired: '#F87171',
-  expiring_soon: '#FB923C',
+  verified: '#3D6658',
+  pending: '#A5834F',
+  expired: '#8A4A45',
+  expiring_soon: '#9C6E2D',
 };
 
-const VIOLATION_COLOR = '#DC2626';
+const VIOLATION_COLOR = '#8A4A45';
 
 // ── Shared Tooltip Style ─────────────────────────────────
 
 const tooltipStyle = {
   contentStyle: {
-    background: '#111827',
-    border: '1px solid #334155',
+    background: '#F8F4EB',
+    border: '1px solid #C6BEB1',
     borderRadius: '8px',
     fontSize: '12px',
-    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)',
+    boxShadow: '0 8px 20px -12px rgb(45 39 34 / 0.35)',
   },
-  itemStyle: { color: '#F1F5F9' },
-  labelStyle: { color: '#94A3B8', fontWeight: 600 },
+  itemStyle: { color: '#2D2722' },
+  labelStyle: { color: '#5A524B', fontWeight: 600 },
 };
 
 // ── 1. Investor Type Allocation (Donut) ──────────────────
@@ -84,7 +84,7 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({ data, o
                 innerRadius={55}
                 outerRadius={85}
                 dataKey="value"
-                stroke="#0A0E1A"
+                stroke="#EAE5D8"
                 strokeWidth={2}
                 style={onTypeClick ? { cursor: 'pointer' } : undefined}
                 onClick={onTypeClick ? (_: unknown, index: number) => onTypeClick(chartData[index].rawType) : undefined}
@@ -170,7 +170,7 @@ export const JurisdictionExposureBar = React.memo(function JurisdictionExposureB
             <XAxis
               type="number"
               tickFormatter={formatCompactNumber}
-              tick={{ fontSize: 11, fill: '#64748B' }}
+              tick={{ fontSize: 11, fill: '#6E655D' }}
               axisLine={false}
               tickLine={false}
             />
@@ -178,7 +178,7 @@ export const JurisdictionExposureBar = React.memo(function JurisdictionExposureB
               type="category"
               dataKey="name"
               width={36}
-              tick={{ fontSize: 11, fill: '#94A3B8' }}
+              tick={{ fontSize: 11, fill: '#5A524B' }}
               axisLine={false}
               tickLine={false}
             />
@@ -186,7 +186,7 @@ export const JurisdictionExposureBar = React.memo(function JurisdictionExposureB
               formatter={(value) => [formatCompactNumber(Number(value)) + ' units', 'Allocated']}
               {...tooltipStyle}
             />
-            <Bar dataKey="units" fill="#22D3EE" radius={[0, 4, 4, 0]} barSize={16} />
+            <Bar dataKey="units" fill="#A5834F" radius={[0, 4, 4, 0]} barSize={16} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -314,7 +314,7 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({ d
           >
             <XAxis
               type="number"
-              tick={{ fontSize: 11, fill: '#64748B' }}
+              tick={{ fontSize: 11, fill: '#6E655D' }}
               axisLine={false}
               tickLine={false}
               allowDecimals={false}
@@ -323,7 +323,7 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({ d
               type="category"
               dataKey="name"
               width={160}
-              tick={{ fontSize: 10, fill: '#94A3B8' }}
+              tick={{ fontSize: 10, fill: '#5A524B' }}
               axisLine={false}
               tickLine={false}
             />
@@ -377,31 +377,31 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
               : 'low';
           const riskColor =
             riskLevel === 'high'
-              ? '#DC2626'
+              ? '#8A4A45'
               : riskLevel === 'medium'
-              ? '#EA580C'
-              : '#34D399';
-          const riskBg =
+              ? '#9C6E2D'
+              : '#3D6658';
+          const riskBgColor =
             riskLevel === 'high'
-              ? 'bg-red-500/10'
+              ? '#8A4A451A'
               : riskLevel === 'medium'
-              ? 'bg-amber-500/10'
-              : 'bg-accent-500/10';
+              ? '#9C6E2D1A'
+              : '#3D66581A';
 
           return (
             <div key={fund.fund_name} className="rounded-lg border border-edge-subtle p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-medium text-ink">{fund.fund_name}</span>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${riskBg}`}
-                  style={{ color: riskColor }}
+                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ color: riskColor, backgroundColor: riskBgColor }}
                 >
                   {riskLevel}
                 </span>
               </div>
               <div className="space-y-1.5">
                 <ConcentrationBar label="Top investor" value={fund.top_investor_pct} color={riskColor} />
-                <ConcentrationBar label="Top 3 investors" value={fund.top3_investor_pct} color="#22C55E" />
+                <ConcentrationBar label="Top 3 investors" value={fund.top3_investor_pct} color="#3D6658" />
               </div>
               <div className="mt-2 flex items-center justify-between text-[10px] text-ink-tertiary">
                 <span>HHI: {fund.hhi.toLocaleString()}</span>

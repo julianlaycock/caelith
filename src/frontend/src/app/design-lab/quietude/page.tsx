@@ -24,7 +24,7 @@ export default function QuietudeGalleryPage() {
                 href={`/design-lab/quietude/${variant.id}`}
                 className="rounded-lg border border-[#BDB4A6] bg-[#E8E3D7] px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#433D37] transition hover:bg-[#DED7CA]"
               >
-                Open {variant.id.toUpperCase()} · {variant.name}
+                Open {variant.id.toUpperCase()} - {variant.name}
               </Link>
             ))}
           </div>
@@ -58,3 +58,4 @@ export default function QuietudeGalleryPage() {
     </div>
   );
 }
+

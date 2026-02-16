@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
@@ -30,6 +30,79 @@ const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'gray' | 'red'> = {
   liquidating: 'red',
 };
 
+interface FundChecklist {
+  assetsConfigured: boolean;
+  criteriaConfigured: boolean;
+  investorsOnboarded: boolean;
+  noCriticalFlags: boolean;
+  // Compliance score data
+  totalInvestors: number;
+  expiredKyc: number;
+  expiringKyc: number;
+  highFlags: number;
+  mediumFlags: number;
+}
+
+function ComplianceScore({ checklist }: { checklist: FundChecklist }) {
+  // Synthesize a verdict from checklist data
+  const hasHighFlags = checklist.highFlags > 0;
+  const hasExpiredKyc = checklist.expiredKyc > 0;
+  const hasExpiringKyc = checklist.expiringKyc > 0;
+  const isSetupComplete = checklist.assetsConfigured && checklist.criteriaConfigured;
+
+  let status: 'compliant' | 'warning' | 'critical' | 'setup';
+  let label: string;
+  let detail: string;
+
+  if (!isSetupComplete) {
+    status = 'setup';
+    label = 'Setup Required';
+    detail = 'Complete fund configuration';
+  } else if (hasHighFlags || hasExpiredKyc) {
+    status = 'critical';
+    const issues: string[] = [];
+    if (hasExpiredKyc) issues.push(`${checklist.expiredKyc} expired KYC`);
+    if (hasHighFlags) issues.push(`${checklist.highFlags} critical flag${checklist.highFlags !== 1 ? 's' : ''}`);
+    label = 'Action Required';
+    detail = issues.join(' · ');
+  } else if (hasExpiringKyc || checklist.mediumFlags > 0) {
+    status = 'warning';
+    const issues: string[] = [];
+    if (hasExpiringKyc) issues.push(`${checklist.expiringKyc} KYC expiring`);
+    if (checklist.mediumFlags > 0) issues.push(`${checklist.mediumFlags} flag${checklist.mediumFlags !== 1 ? 's' : ''}`);
+    label = 'Review Needed';
+    detail = issues.join(' · ');
+  } else {
+    status = 'compliant';
+    label = 'Compliant';
+    detail = checklist.totalInvestors > 0 ? `${checklist.totalInvestors} investors verified` : 'All checks passing';
+  }
+
+  const styles = {
+    compliant: 'bg-emerald-500/10 text-emerald-600 ring-emerald-500/20',
+    warning: 'bg-amber-500/10 text-amber-600 ring-amber-500/20',
+    critical: 'bg-red-500/10 text-red-600 ring-red-500/20',
+    setup: 'bg-bg-tertiary text-ink-tertiary ring-edge',
+  };
+
+  const dots = {
+    compliant: 'bg-emerald-500',
+    warning: 'bg-amber-500',
+    critical: 'bg-red-500',
+    setup: 'bg-ink-muted',
+  };
+
+  return (
+    <div className={`flex items-center gap-2 rounded-lg px-3 py-2 ring-1 ${styles[status]}`}>
+      <span className={`h-2 w-2 rounded-full flex-shrink-0 ${dots[status]}`} />
+      <div className="min-w-0">
+        <p className="text-xs font-semibold">{label}</p>
+        <p className="text-[10px] opacity-70">{detail}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function FundsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editFund, setEditFund] = useState<FundStructure | null>(null);
@@ -38,8 +111,46 @@ export default function FundsPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [checklists, setChecklists] = useState<Record<string, FundChecklist>>({});
 
   const funds = useAsync(() => api.getFundStructures());
+
+  useEffect(() => {
+    const loadChecklists = async () => {
+      if (!funds.data || funds.data.length === 0) {
+        setChecklists({});
+        return;
+      }
+
+      const results = await Promise.allSettled(
+        funds.data.map(async (fund) => {
+          const report = await api.getComplianceReport(fund.id);
+          const checklist: FundChecklist = {
+            assetsConfigured: report.fund.assets.length > 0,
+            criteriaConfigured: report.eligibility_criteria.length > 0,
+            investorsOnboarded: report.fund.total_investors > 0,
+            noCriticalFlags: !report.risk_flags.some((flag) => flag.severity === 'high'),
+            totalInvestors: report.fund.total_investors,
+            expiredKyc: report.investor_breakdown.by_kyc_status.find(s => s.status === 'expired')?.count ?? 0,
+            expiringKyc: report.investor_breakdown.kyc_expiring_within_90_days.length,
+            highFlags: report.risk_flags.filter(f => f.severity === 'high').length,
+            mediumFlags: report.risk_flags.filter(f => f.severity === 'medium').length,
+          };
+          return { fundId: fund.id, checklist };
+        })
+      );
+
+      const next: Record<string, FundChecklist> = {};
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          next[result.value.fundId] = result.value.checklist;
+        }
+      }
+      setChecklists(next);
+    };
+
+    loadChecklists().catch(() => setChecklists({}));
+  }, [funds.data]);
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -134,8 +245,8 @@ export default function FundsPage() {
   return (
     <div>
       <PageHeader
-        title="Fund Structures"
-        description="Manage fund structures and view compliance reports"
+        title="Funds"
+        description="Manage funds and view compliance reports"
         action={
           <div className="flex items-center gap-2">
             <ExportMenu
@@ -261,6 +372,33 @@ export default function FundsPage() {
                 <p className="mb-2 text-xs text-ink-secondary">
                   <span className="font-medium text-ink-tertiary">AIFM:</span> {fund.aifm_name}
                 </p>
+              )}
+
+              {checklists[fund.id] && (
+                <div className="mt-3 mb-3">
+                  <ComplianceScore checklist={checklists[fund.id]} />
+                </div>
+              )}
+
+              {checklists[fund.id] && (
+                <div className="rounded-lg border border-edge-subtle bg-bg-tertiary p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-ink-tertiary">Setup Checklist</p>
+                  <div className="mt-2 space-y-1.5">
+                    {[
+                      { label: 'Asset configured', done: checklists[fund.id].assetsConfigured },
+                      { label: 'Eligibility criteria configured', done: checklists[fund.id].criteriaConfigured },
+                      { label: 'At least one investor onboarded', done: checklists[fund.id].investorsOnboarded },
+                      { label: 'No critical risk flags', done: checklists[fund.id].noCriticalFlags },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center justify-between text-xs">
+                        <span className="text-ink-secondary">{item.label}</span>
+                        <span className={item.done ? 'text-emerald-600' : 'text-amber-700'}>
+                          {item.done ? 'Ready' : 'Pending'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
 
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-edge-subtle">

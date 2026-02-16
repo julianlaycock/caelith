@@ -17,7 +17,9 @@ import {
   EmptyState,
   Badge,
   Alert,
+  ExportMenu,
 } from '../../components/ui';
+import { exportCSV } from '../../lib/export-csv';
 import { formatNumber, formatDate } from '../../lib/utils';
 import { ASSET_TYPES } from '../../lib/constants';
 
@@ -65,7 +67,18 @@ export default function AssetsPage() {
         title="Assets"
         description="Manage private asset definitions"
         action={
-          <Button onClick={() => setShowForm(true)}>+ Create Asset</Button>
+          <div className="flex items-center gap-2">
+            <ExportMenu
+              onExportCSV={() => {
+                if (!assets.data || assets.data.length === 0) return;
+                exportCSV('caelith-assets.csv',
+                  ['Name', 'Type', 'Total Units', 'Created'],
+                  assets.data.map(a => [a.name, a.asset_type, String(a.total_units), a.created_at])
+                );
+              }}
+            />
+            <Button onClick={() => setShowForm(true)}>+ New Asset</Button>
+          </div>
         }
       />
 
@@ -141,7 +154,7 @@ export default function AssetsPage() {
         <EmptyState
           title="No assets yet"
           description="Create your first asset to get started."
-          action={<Button onClick={() => setShowForm(true)}>+ Create Asset</Button>}
+          action={<Button onClick={() => setShowForm(true)}>+ New Asset</Button>}
         />
       )}
     </div>

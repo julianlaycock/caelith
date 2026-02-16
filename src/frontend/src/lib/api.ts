@@ -301,8 +301,28 @@ class ApiClient {
     return this.request<Transfer[]>(`/transfers${query}`);
   }
 
-  async getTransferHistory(assetId: string): Promise<TransferHistoryEntry[]> {
-    return this.request<TransferHistoryEntry[]>(`/transfers/history/${assetId}`);
+  async getTransferHistory(assetId?: string): Promise<TransferHistoryEntry[]> {
+    if (assetId) {
+      return this.request<TransferHistoryEntry[]>(`/transfers/history/${assetId}`);
+    }
+    return this.request<TransferHistoryEntry[]>('/transfers/history');
+  }
+
+  async getPendingTransfers(): Promise<Transfer[]> {
+    return this.request<Transfer[]>('/transfers/pending');
+  }
+
+  async approveTransfer(id: string): Promise<Transfer> {
+    return this.request<Transfer>(`/transfers/${id}/approve`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectTransfer(id: string, reason: string): Promise<Transfer> {
+    return this.request<Transfer>(`/transfers/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
   }
 
   // ── Events ────────────────────────────────────────────
@@ -368,9 +388,22 @@ class ApiClient {
     return this.request<OnboardingRecord>(`/onboarding/${id}`);
   }
 
-  async applyToFund(data: { investor_id: string; asset_id: string; requested_units: number }): Promise<OnboardingRecord> {
+  async applyToFund(data: {
+    investor_id: string;
+    asset_id: string;
+    requested_units: number;
+    owner_tag?: string;
+    handoff_notes?: string;
+  }): Promise<OnboardingRecord> {
     return this.request<OnboardingRecord>('/onboarding', {
       method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateOnboardingHandoff(id: string, data: { owner_tag?: string; handoff_notes?: string }): Promise<OnboardingRecord> {
+    return this.request<OnboardingRecord>(`/onboarding/${id}/handoff`, {
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
@@ -423,6 +456,22 @@ class ApiClient {
     if (typeof limit === 'number') searchParams.set('limit', String(limit));
     const query = searchParams.toString();
     return this.request<DecisionChainVerificationResult>(`/decisions/verify-chain${query ? `?${query}` : ''}`);
+  }
+
+  async downloadDecisionEvidenceBundle(decisionId: string): Promise<void> {
+    const headers: Record<string, string> = {};
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+    const res = await fetch(`${BASE_URL}/decisions/${decisionId}/evidence.pdf`, { headers });
+    if (!res.ok) throw new Error('Decision evidence export failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `decision-evidence-${decisionId.substring(0, 8)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   async updateFundStructure(id: string, data: Partial<CreateFundStructureRequest>): Promise<FundStructure> {

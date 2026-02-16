@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { api } from '../../../lib/api';
-import { PageHeader, Card, Badge, Button, SkeletonTable, ErrorMessage, EmptyState } from '../../../components/ui';
+import { PageHeader, Card, Badge, SkeletonTable, ErrorMessage, EmptyState } from '../../../components/ui';
+import { BackLink } from '../../../components/back-link';
 import { formatDate } from '../../../lib/utils';
 import type { Investor } from '../../../lib/types';
 
@@ -183,7 +184,6 @@ function BookIcon() {
 
 export default function JurisdictionPage() {
   const params = useParams();
-  const router = useRouter();
   const rawCode = typeof params.code === 'string' ? params.code : '';
   const code = rawCode.toUpperCase();
   const isValidCode = /^[A-Z]{2}$/.test(code);
@@ -240,11 +240,7 @@ export default function JurisdictionPage() {
         <PageHeader
           title="404 - Jurisdiction Not Found"
           description={`No page is available for jurisdiction code "${code || rawCode || 'unknown'}"`}
-          action={
-            <Button variant="secondary" size="sm" onClick={() => router.push('/')}>
-              Back to Dashboard
-            </Button>
-          }
+          action={<BackLink href="/" label="Back to Dashboard" />}
         />
         <Card>
           <div className="py-8 text-center">
@@ -269,22 +265,7 @@ export default function JurisdictionPage() {
             {framework && (
               <Badge variant="green">{framework}</Badge>
             )}
-            <Button variant="secondary" size="sm" onClick={() => router.back()}>
-              <svg
-                className="mr-1.5 h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-                />
-              </svg>
-              Back
-            </Button>
+            <BackLink href="/" label="Back to Dashboard" />
           </div>
         }
       />

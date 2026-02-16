@@ -59,7 +59,6 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const [investors, setInvestors] = useState<Investor[] | null>(null);
   const [funds, setFunds] = useState<FundStructure[] | null>(null);
 
-  // Cache entities on first open
   useEffect(() => {
     if (!open) return;
     setQuery('');
@@ -84,19 +83,26 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   }, [close, router]);
 
   const staticItems = useMemo<CommandItem[]>(() => [
-    // Pages
     { id: 'p-dashboard', category: 'page', name: 'Dashboard', subtitle: 'Overview & metrics', onSelect: () => navigate('/') },
     { id: 'p-funds', category: 'page', name: 'Funds', subtitle: 'Fund structures', onSelect: () => navigate('/funds') },
     { id: 'p-investors', category: 'page', name: 'Investors', subtitle: 'Investor registry', onSelect: () => navigate('/investors') },
     { id: 'p-transfers', category: 'page', name: 'Transfers', subtitle: 'Transfer management', onSelect: () => navigate('/transfers') },
     { id: 'p-rules', category: 'page', name: 'Rules', subtitle: 'Compliance rules', onSelect: () => navigate('/rules') },
-    { id: 'p-activity', category: 'page', name: 'Activity', subtitle: 'Audit log & decisions', onSelect: () => navigate('/audit') },
+    { id: 'p-activity', category: 'page', name: 'Audit', subtitle: 'Audit log & decisions', onSelect: () => navigate('/audit') },
     { id: 'p-onboarding', category: 'page', name: 'Onboarding', subtitle: 'Investor onboarding', onSelect: () => navigate('/onboarding') },
-    // Quick Actions
     { id: 'a-new-fund', category: 'action', name: 'New Fund', subtitle: 'Create a fund structure', onSelect: () => navigate('/funds?new=true') },
     { id: 'a-add-investor', category: 'action', name: 'Add Investor', subtitle: 'Register new investor', onSelect: () => navigate('/investors?new=true') },
     { id: 'a-simulate', category: 'action', name: 'Simulate Transfer', subtitle: 'Test transfer compliance', onSelect: () => navigate('/transfers?simulate=true') },
-    { id: 'a-copilot', category: 'action', name: 'Open Copilot', subtitle: 'AI compliance assistant', onSelect: () => { close(); /* copilot handled externally */ } },
+    {
+      id: 'a-copilot',
+      category: 'action',
+      name: 'Open Copilot',
+      subtitle: 'AI compliance assistant',
+      onSelect: () => {
+        close();
+        window.dispatchEvent(new CustomEvent('caelith:open-copilot'));
+      },
+    },
   ], [navigate, close]);
 
   const dynamicItems = useMemo<CommandItem[]>(() => {
@@ -107,7 +113,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           id: `inv-${inv.id}`,
           category: 'investor',
           name: inv.name,
-          subtitle: `${inv.investor_type} · ${inv.jurisdiction}`,
+          subtitle: `${inv.investor_type} - ${inv.jurisdiction}`,
           onSelect: () => navigate(`/investors/${inv.id}`),
         });
       }
@@ -118,7 +124,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           id: `fund-${f.id}`,
           category: 'fund',
           name: f.name,
-          subtitle: `${f.legal_form} · ${f.domicile}`,
+          subtitle: `${f.legal_form} - ${f.domicile}`,
           onSelect: () => navigate(`/funds/${f.id}`),
         });
       }
@@ -140,11 +146,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       }
     }
 
-    const sorted = Object.entries(byCategory).sort(
+    return Object.entries(byCategory).sort(
       ([a], [b]) => (categoryMeta[a]?.order ?? 99) - (categoryMeta[b]?.order ?? 99)
     );
-
-    return sorted;
   }, [query, allItems]);
 
   const flatFiltered = useMemo(() => filtered.flatMap(([, items]) => items), [filtered]);
@@ -156,10 +160,10 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex(i => Math.min(i + 1, flatFiltered.length - 1));
+      setSelectedIndex((i) => Math.min(i + 1, flatFiltered.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex(i => Math.max(i - 1, 0));
+      setSelectedIndex((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
       flatFiltered[selectedIndex]?.onSelect();
@@ -176,40 +180,36 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center pt-[15vh] animate-fade-in" onKeyDown={handleKeyDown}>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={close} />
-      <div className="relative z-10 w-full max-w-lg rounded-xl border border-edge bg-bg-secondary shadow-2xl shadow-black/30 overflow-hidden">
-        {/* Search input */}
+      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl border border-edge bg-bg-secondary shadow-2xl shadow-black/30">
         <div className="flex items-center gap-3 border-b border-edge-subtle px-4 py-3">
-          <svg className="h-5 w-5 text-ink-tertiary flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+          <svg className="h-5 w-5 flex-shrink-0 text-ink-tertiary" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
           <input
             ref={inputRef}
             type="text"
             value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search pages, investors, funds…"
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search pages, investors, funds..."
             className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink-muted outline-none"
           />
-          <kbd className="hidden sm:inline-flex items-center rounded border border-edge-subtle px-1.5 py-0.5 text-[10px] font-mono text-ink-muted">
+          <kbd className="hidden items-center rounded border border-edge-subtle px-1.5 py-0.5 font-mono text-[10px] text-ink-muted sm:inline-flex">
             ESC
           </kbd>
         </div>
 
-        {/* Results */}
         <div className="max-h-[320px] overflow-y-auto py-2">
           {flatFiltered.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-ink-tertiary">
-              No results found
-            </div>
+            <div className="px-4 py-8 text-center text-sm text-ink-tertiary">No results found</div>
           ) : (
             filtered.map(([category, items]) => (
               <div key={category}>
-                <div className="px-4 pt-2 pb-1">
+                <div className="px-4 pb-1 pt-2">
                   <span className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
                     {categoryMeta[category]?.label ?? category}
                   </span>
                 </div>
-                {items.map(item => {
+                {items.map((item) => {
                   flatIndex++;
                   const idx = flatIndex;
                   const isSelected = idx === selectedIndex;
@@ -218,22 +218,18 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                       key={item.id}
                       onClick={item.onSelect}
                       onMouseEnter={() => setSelectedIndex(idx)}
-                      className={`flex w-full items-center gap-3 px-4 py-2 text-left transition-colors ${
-                        isSelected ? 'bg-bg-tertiary border-l-2 border-l-accent-400' : 'border-l-2 border-l-transparent hover:bg-bg-tertiary'
+                      className={`flex w-full items-center gap-3 border-l-2 px-4 py-2 text-left transition-colors ${
+                        isSelected
+                          ? 'border-l-accent-400 bg-bg-tertiary'
+                          : 'border-l-transparent hover:bg-bg-tertiary'
                       }`}
                     >
-                      <span className="text-ink-tertiary flex-shrink-0">
-                        {CATEGORY_ICONS[item.category]}
+                      <span className="flex-shrink-0 text-ink-tertiary">{CATEGORY_ICONS[item.category]}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm text-ink">{item.name}</span>
+                        {item.subtitle && <span className="block truncate text-xs text-ink-secondary">{item.subtitle}</span>}
                       </span>
-                      <span className="flex-1 min-w-0">
-                        <span className="block text-sm text-ink truncate">{item.name}</span>
-                        {item.subtitle && (
-                          <span className="block text-xs text-ink-secondary truncate">{item.subtitle}</span>
-                        )}
-                      </span>
-                      <span className="text-[10px] text-ink-muted flex-shrink-0">
-                        {categoryMeta[item.category]?.label}
-                      </span>
+                      <span className="flex-shrink-0 text-[10px] text-ink-muted">{categoryMeta[item.category]?.label}</span>
                     </button>
                   );
                 })}

@@ -66,6 +66,57 @@ These capabilities are built and operational. They form the infrastructure for a
 | Compliance dashboard | Fund overview, rule health, KYC expirations, regulatory calendar | P2 |
 | API key management | Platform integration via scoped API keys (not JWT) | P2 |
 
+#### Regulatory Framework Compliance — Legal Logic Implementation
+
+Caelith implements deterministic compliance logic against the following regulatory frameworks. All logic is codified in the rules engine and eligibility check helper, producing auditable decision records with regulatory citations.
+
+**Primary Framework: AIFMD II (Directive 2024/927)**
+- **Transposition Deadline:** 16 April 2026 (Member States must transpose and apply)
+- **Transitional Provisions:** Loan origination grandfathering through 2029 (Art. 15a)
+- Some Member States may be late; the platform tracks effective dates per jurisdiction
+
+**Implemented Legal Logic (Deterministic Enforcement):**
+
+| # | Legal Requirement | Source | Implementation | Status |
+|---|-------------------|--------|----------------|--------|
+| L1 | **5-tier investor classification** | AIFMD Art 4(1)(ag-aj), MiFID II Annex II | `investor_type` enum: institutional, professional, semi_professional, well_informed, retail | ✅ Enforced |
+| L2 | **Investor classification evidence trail** | AIFMD II Art 4, MiFID II Art 69 | `classification_evidence` JSONB on investors: document type, reference, verification date, verifier. Methods: self_declaration, documentation, professional_assessment, regulatory_status | ✅ Implemented |
+| L3 | **Jurisdiction-specific eligibility criteria** | CSSF Circ 15/633, KAGB §1, CBI AIF Rulebook | `eligibility_criteria` table: per fund × jurisdiction × investor type, with min investment thresholds, suitability flags, source citations | ✅ Enforced |
+| L4 | **Minimum investment thresholds** | LU SIF Law Art 2 (€125K), KAGB §1 (€200K), CBI SI 257/2013 (€100K), ELTIF Reg Art 30 (€10K retail) | Rules engine `minimum_investment` check + eligibility criteria cross-reference | ✅ Enforced |
+| L5 | **KYC status and expiry validation** | AMLD 4/5/6, AIFMD Art 12(1)(e) | `kyc_required` rule: receiver must have verified, non-expired KYC. 30-day expiry warning triggers pending_approval | ✅ Enforced |
+| L6 | **Concentration limits** | AIFMD Art 14(1), ESMA Guidelines 2014/937 | `concentration_limit_pct` rule: max % of total units per investor. Checked with real-time asset aggregates | ✅ Enforced |
+| L7 | **Maximum investor limits** | SIF Law Art 2, fund-specific LPA terms | `maximum_investors` rule: max distinct investors per asset class | ✅ Enforced |
+| L8 | **Investor type whitelist per asset** | AIFMD Art 4(1), fund prospectus/LPA | `investor_type_whitelist` rule: only permitted investor types can receive transfers | ✅ Enforced |
+| L9 | **Leverage limits (commitment + gross method)** | AIFMD Art 25(3), AIFMD II Art 15(4-5), ESMA Guidelines on Leverage | `leverage_limit_commitment` and `leverage_limit_gross` on fund structures; rules engine blocks transfers if fund exceeds limits | ✅ Enforced |
+| L10 | **Liquidity Management Tools (LMTs)** | AIFMD II Art 16(2b), ESMA LMT Guidelines 2024 | `lmt_types` JSONB on fund structures: redemption gates, notice periods, swing pricing, anti-dilution levies, side pockets, suspension, redemption in kind. Per-fund configuration with activation thresholds | ✅ Tracked |
+| L11 | **Liquidity profile (Annex IV buckets)** | AIFMD Annex IV, Art 24(2) | 7-bucket liquidity profile: 1d, 2-7d, 8-30d, 31-90d, 91-180d, 181-365d, >365d | ✅ Reported |
+| L12 | **Geographic exposure** | AIFMD Annex IV | Per-fund geographic allocation breakdown | ✅ Reported |
+| L13 | **Counterparty exposure** | AIFMD Annex IV, Art 24(2)(d) | Top counterparties with LEI identifiers and exposure % | ✅ Reported |
+| L14 | **Decision provenance with integrity chain** | AIFMD Art 12(1)(d), GDPR Art 22(3) | Every compliance decision creates an immutable record with SHA-256 integrity chain, rule version snapshots, and temporal reconstruction capability | ✅ Enforced |
+| L15 | **AIFMD Annex IV reporting data** | AIFMD Art 24, Annex IV | AIF identification, investor concentration, principal exposures, leverage, liquidity, geographic/counterparty exposure, risk profile, compliance status | ✅ ~80% coverage |
+| L16 | **Fund structure modeling** | AIFMD Art 4(1)(a-f) | Legal form, domicile, regulatory framework, AIFM details with LEI, inception date, target size, currency | ✅ Implemented |
+| L17 | **Transfer approval workflow** | AIFMD Art 12(1), internal controls | Transfers exceeding threshold → pending_approval. KYC expiring within 30 days → pending_approval. RBAC-gated approval/rejection with decision records | ✅ Enforced |
+| L18 | **Onboarding workflow** | AIFMD Art 12(1)(e), AMLD due diligence | 6-step lifecycle: applied → eligible/ineligible → approved/rejected → allocated. Automated eligibility + manual approval gate | ✅ Implemented |
+
+**Pre-populated Jurisdiction Data:**
+
+| Jurisdiction | Fund Types | Investor Types | Min Investment | Source |
+|-------------|-----------|---------------|---------------|--------|
+| Luxembourg (SIF) | SIF | Professional, semi-professional, institutional | €0 / €125,000 (semi-pro) | SIF Law 13 Feb 2007, Art. 2 |
+| Luxembourg (RAIF) | RAIF | Professional, semi-professional, institutional | €0 / €125,000 (semi-pro) | RAIF Law 23 Jul 2016, Art. 3 |
+| Ireland (QIAIF) | QIAIF | Professional, institutional | €100,000 (professional) | CBI SI 257/2013 |
+| EU (ELTIF 2.0) | ELTIF | All types (retail-friendly) | €0 (retail, suitability req) / €10,000 (semi-pro/well-informed) | Regulation (EU) 2023/606, Art. 30 |
+
+**Known Gaps (Planned):**
+
+| # | Gap | Priority | Target |
+|---|-----|----------|--------|
+| G1 | Full Annex IV NCA electronic submission | P2 | Post-pilot |
+| G2 | ELTIF 2.0 suitability assessment questionnaire workflow | P1 | Sprint 5 |
+| G3 | Regulatory document RAG pipeline (AIFMD text ingestion) | P1 | Sprint 6 |
+| G4 | DORA ICT risk management integration | P3 | Vertical A |
+| G5 | MiCA tokenized fund shares compliance | P3 | Vertical C |
+
 #### Explicitly Out of Scope (This Phase)
 
 - Blockchain integration / on-chain rule export

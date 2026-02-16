@@ -1,4 +1,4 @@
-import { createEvent } from '../repositories/event-repository.js';
+﻿import { createEvent } from '../repositories/event-repository.js';
 import { DEFAULT_TENANT_ID, query } from '../db.js';
 import { ragService, RagResult } from './rag-service.js';
 import { compileNaturalLanguageRule } from './nl-rule-compiler.js';
@@ -90,7 +90,11 @@ interface AnthropicResponse {
 }
 
 function sanitizeMessage(input: string): string {
-  return input.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+  const withoutControls = Array.from(input).map((ch) => {
+    const code = ch.charCodeAt(0);
+    return (code >= 0 && code <= 31) || code === 127 ? ' ' : ch;
+  }).join('');
+  return withoutControls.replace(/\s+/g, ' ').trim();
 }
 
 function extractUuid(input: string): string | null {
@@ -322,7 +326,7 @@ async function summarizeRagAnswer(question: string, results: RagResult[]): Promi
 }
 
 function parseEuroAmount(message: string): number | null {
-  const match = message.match(/(?:�|eur)?\s*([0-9]{1,3}(?:[\s.,][0-9]{3})+|[0-9]+)(\s*[kKmM])?/i);
+  const match = message.match(/(?:€|eur|euro)?\s*([0-9]{1,3}(?:[\s.,][0-9]{3})+|[0-9]+)(\s*[kKmM])?/i);
   if (!match) {
     return null;
   }
@@ -342,7 +346,6 @@ function parseEuroAmount(message: string): number | null {
 
   return value;
 }
-
 async function enforceRateLimit(tenantId: string, userId: string): Promise<void> {
   const rows = await query<CountRow>(
     `SELECT COUNT(*)::int AS count
@@ -418,8 +421,9 @@ async function handleRegulatoryQa(message: string, tenantId: string): Promise<Co
       tenantId,
       topK: 5,
     });
-  } catch (err: any) {
-    console.warn('RAG query failed (embedding service may be unavailable):', err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn('RAG query failed (embedding service may be unavailable):', message);
   }
 
   if (results.length === 0) {
@@ -441,7 +445,7 @@ You have deep knowledge of:
 - MiFID II investor categorization
 - Luxembourg Company Law (1915 as amended)
 - SCSp, SCA, SICAV, SICAF structures
-- Well-informed investor requirements (€125,000 minimum or professional certification)
+- Well-informed investor requirements (EUR 125,000 minimum or professional certification)
 - KYC/AML requirements for fund administrators
 
 Answer the user's regulatory question accurately and concisely. Cite specific articles, laws, or directives when relevant. Format your answer clearly.
@@ -467,8 +471,9 @@ Note: This answer is based on regulatory knowledge, not from ingested documents.
           },
         ],
       };
-    } catch (err: any) {
-      console.warn('Regulatory QA fallback failed:', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn('Regulatory QA fallback failed:', message);
       return {
         intent: 'regulatory_qa',
         message: 'I\'m unable to answer regulatory questions right now. Please ensure the Anthropic API key is configured, or upload regulatory documents through /api/regulatory/ingest for document-based answers.',
@@ -600,7 +605,7 @@ async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<
   if (!newMinimum) {
     return {
       intent: 'what_if',
-      message: 'I could not detect the new threshold amount. Try phrasing like: "What if minimum investment changed to �200K?"',
+      message: 'I could not detect the new threshold amount. Try phrasing like: "What if minimum investment changed to EUR 200K?"',
     };
   }
 
@@ -649,7 +654,7 @@ async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<
   }
 
   const sample = impacted.slice(0, 5)
-    .map(row => `- ${row.name}: �${Number(row.invested_eur).toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
+    .map(row => `- ${row.name}: EUR ${Number(row.invested_eur).toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
     .join('\n');
 
   const details = sample
@@ -658,7 +663,7 @@ async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<
 
   return {
     intent: 'what_if',
-    message: `If ${fund.name} minimum investment is set to �${newMinimum.toLocaleString()}, ${impacted.length} investors would fail eligibility and approximately ${blockedTransfers} historical transfers would be blocked under the same threshold.${details}`,
+    message: `If ${fund.name} minimum investment is set to EUR ${newMinimum.toLocaleString()}, ${impacted.length} investors would fail eligibility and approximately ${blockedTransfers} historical transfers would be blocked under the same threshold.${details}`,
     suggestedActions: [
       {
         label: 'Review Eligibility Criteria',
@@ -717,3 +722,7 @@ export async function chat(request: CopilotRequest, tenantId: string, userId?: s
 
   return response;
 }
+
+
+
+

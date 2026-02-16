@@ -989,43 +989,43 @@ async function seed() {
   console.log('\n[Transfers]');
 
   const transfers = [
-    // ── SIF (4) — active secondary market ──
-    { id: TR1_ID,  asset_id: sifClassA,  from_id: calpersId,    to_id: rothschildId, units: 20000,  dr: DR4_ID,  fromName: 'CalPERS',    toName: 'Rothschild',    assetName: 'SIF A',      age: 48 },
-    { id: TR2_ID,  asset_id: sifClassA,  from_id: klausId,      to_id: erikId,       units: 15000,  dr: null,    fromName: 'Klaus',      toName: 'Erik',          assetName: 'SIF A',      age: 35 },
-    { id: TR3_ID,  asset_id: sifClassB,  from_id: norgesId,     to_id: lombardId,    units: 10000,  dr: null,    fromName: 'Norges',     toName: 'Lombard',       assetName: 'SIF B',      age: 22 },
-    { id: TR4_ID,  asset_id: sifClassA,  from_id: thomasId,     to_id: amelieId,     units: 10000,  dr: DR13_ID, fromName: 'Thomas',     toName: 'Amelie',        assetName: 'SIF A',      age: 20 },
+    // SIF (4)
+    { id: TR1_ID,  asset_id: sifClassA,   from_id: calpersId,    to_id: rothschildId, units: 20000,  dr: DR4_ID,  fromName: 'CalPERS',    toName: 'Rothschild',    assetName: 'SIF A',      age: 48, status: 'executed',         pending_reason: null,                                                     rejection_reason: null },
+    { id: TR2_ID,  asset_id: sifClassA,   from_id: klausId,      to_id: erikId,       units: 15000,  dr: null,    fromName: 'Klaus',      toName: 'Erik',          assetName: 'SIF A',      age: 35, status: 'pending_approval', pending_reason: 'Transfer exceeds delegated desk approval threshold.',      rejection_reason: null },
+    { id: TR3_ID,  asset_id: sifClassB,   from_id: norgesId,     to_id: lombardId,    units: 10000,  dr: null,    fromName: 'Norges',     toName: 'Lombard',       assetName: 'SIF B',      age: 22, status: 'rejected',         pending_reason: null,                                                     rejection_reason: 'Recipient accreditation evidence expired.' },
+    { id: TR4_ID,  asset_id: sifClassA,   from_id: thomasId,     to_id: amelieId,     units: 10000,  dr: DR13_ID, fromName: 'Thomas',     toName: 'Amelie',        assetName: 'SIF A',      age: 20, status: 'executed',         pending_reason: null,                                                     rejection_reason: null },
 
-    // ── RAIF (3) ──
-    { id: TR5_ID,  asset_id: raifClassA, from_id: norgesId,     to_id: allianzId,    units: 50000,  dr: DR10_ID, fromName: 'Norges',     toName: 'Allianz',       assetName: 'RAIF A',     age: 30 },
-    { id: TR6_ID,  asset_id: raifFeeder, from_id: rothschildId, to_id: tikehauId,    units: 30000,  dr: DR6_ID,  fromName: 'Rothschild', toName: 'Tikehau',       assetName: 'RAIF F',     age: 42 },
-    { id: TR7_ID,  asset_id: raifClassA, from_id: allianzId,    to_id: temasekId,    units: 40000,  dr: null,    fromName: 'Allianz',    toName: 'Temasek',       assetName: 'RAIF A',     age: 18 },
+    // RAIF (3)
+    { id: TR5_ID,  asset_id: raifClassA,  from_id: norgesId,     to_id: allianzId,    units: 50000,  dr: DR10_ID, fromName: 'Norges',     toName: 'Allianz',       assetName: 'RAIF A',     age: 30, status: 'executed',         pending_reason: null,                                                     rejection_reason: null },
+    { id: TR6_ID,  asset_id: raifFeeder,  from_id: rothschildId, to_id: tikehauId,    units: 30000,  dr: DR6_ID,  fromName: 'Rothschild', toName: 'Tikehau',       assetName: 'RAIF F',     age: 42, status: 'executed',         pending_reason: null,                                                     rejection_reason: null },
+    { id: TR7_ID,  asset_id: raifClassA,  from_id: allianzId,    to_id: temasekId,    units: 40000,  dr: null,    fromName: 'Allianz',    toName: 'Temasek',       assetName: 'RAIF A',     age: 18, status: 'pending_approval', pending_reason: 'Manual review required for concentration impact over 30%.', rejection_reason: null },
 
-    // ── Gamma (3) ──
-    { id: TR8_ID,  asset_id: gammaClassA, from_id: hansId,      to_id: muellerId,    units: 50000,  dr: DR8_ID,  fromName: 'Hans',       toName: 'Mueller',       assetName: 'Gamma A',    age: 37 },
-    { id: TR9_ID,  asset_id: gammaClassB, from_id: allianzId,   to_id: dublinId,     units: 100000, dr: null,    fromName: 'Allianz',    toName: 'Dublin Capital', assetName: 'Gamma B',   age: 15 },
-    { id: TR10_ID, asset_id: gammaClassB, from_id: lombardId,   to_id: temasekId,    units: 75000,  dr: null,    fromName: 'Lombard',    toName: 'Temasek',       assetName: 'Gamma B',    age: 8 },
+    // Gamma (3)
+    { id: TR8_ID,  asset_id: gammaClassA, from_id: hansId,       to_id: muellerId,    units: 50000,  dr: DR8_ID,  fromName: 'Hans',       toName: 'Mueller',       assetName: 'Gamma A',    age: 37, status: 'executed',         pending_reason: null,                                                     rejection_reason: null },
+    { id: TR9_ID,  asset_id: gammaClassB, from_id: allianzId,    to_id: dublinId,     units: 100000, dr: null,    fromName: 'Allianz',    toName: 'Dublin Capital', assetName: 'Gamma B',   age: 15, status: 'rejected',         pending_reason: null,                                                     rejection_reason: 'Recipient KYC is expired for this jurisdiction.' },
+    { id: TR10_ID, asset_id: gammaClassB, from_id: lombardId,    to_id: temasekId,    units: 75000,  dr: null,    fromName: 'Lombard',    toName: 'Temasek',       assetName: 'Gamma B',    age: 8,  status: 'pending_approval', pending_reason: 'Large transfer flagged for compliance second-level review.', rejection_reason: null },
 
-    // ── QIAIF (2) ──
-    { id: TR11_ID, asset_id: deltaInst,  from_id: calpersId,    to_id: temasekId,    units: 30000,  dr: DR3_ID,  fromName: 'CalPERS',    toName: 'Temasek',       assetName: 'QIAIF Inst', age: 50 },
-    { id: TR12_ID, asset_id: deltaClassB, from_id: rothschildId, to_id: tikehauId,   units: 15000,  dr: null,    fromName: 'Rothschild', toName: 'Tikehau',       assetName: 'QIAIF B',    age: 12 },
+    // QIAIF (2)
+    { id: TR11_ID, asset_id: deltaInst,   from_id: calpersId,    to_id: temasekId,    units: 30000,  dr: DR3_ID,  fromName: 'CalPERS',    toName: 'Temasek',       assetName: 'QIAIF Inst', age: 50, status: 'executed',         pending_reason: null,                                                     rejection_reason: null },
+    { id: TR12_ID, asset_id: deltaClassB, from_id: rothschildId, to_id: tikehauId,    units: 15000,  dr: null,    fromName: 'Rothschild', toName: 'Tikehau',       assetName: 'QIAIF B',    age: 12, status: 'pending_approval', pending_reason: 'Awaiting enhanced due diligence confirmation.',              rejection_reason: null },
 
-    // ── ELTIF (2) ──
-    { id: TR13_ID, asset_id: eltifRetail, from_id: thomasId,    to_id: marieId,      units: 50000,  dr: null,    fromName: 'Thomas',     toName: 'Marie',         assetName: 'ELTIF R',    age: 6 },
-    { id: TR14_ID, asset_id: eltifPro,   from_id: tikehauId,    to_id: sarahId,      units: 25000,  dr: null,    fromName: 'Tikehau',    toName: 'Sarah',         assetName: 'ELTIF P',    age: 3 },
+    // ELTIF (2)
+    { id: TR13_ID, asset_id: eltifRetail, from_id: thomasId,     to_id: marieId,      units: 50000,  dr: null,    fromName: 'Thomas',     toName: 'Marie',         assetName: 'ELTIF R',    age: 6,  status: 'pending_approval', pending_reason: 'Transfer queued for retail-investor suitability checkpoint.', rejection_reason: null },
+    { id: TR14_ID, asset_id: eltifPro,    from_id: tikehauId,    to_id: sarahId,      units: 25000,  dr: null,    fromName: 'Tikehau',    toName: 'Sarah',         assetName: 'ELTIF P',    age: 3,  status: 'executed',         pending_reason: null,                                                     rejection_reason: null },
   ];
 
   for (const tr of transfers) {
     if (await exists('transfers', tr.id)) {
-      console.log(`  → Transfer ${tr.fromName} → ${tr.toName} (${tr.assetName}) already exists`);
+      console.log(`  -> Transfer ${tr.fromName} -> ${tr.toName} (${tr.assetName}) already exists`);
     } else {
       const ts = daysAgo(tr.age);
       await execute(
         `INSERT INTO transfers
-           (id, asset_id, from_investor_id, to_investor_id, units, decision_record_id, executed_at, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`,
-        [tr.id, tr.asset_id, tr.from_id, tr.to_id, tr.units, tr.dr, ts]
+           (id, asset_id, from_investor_id, to_investor_id, units, decision_record_id, executed_at, created_at, status, approved_by, approved_at, rejection_reason, pending_reason)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8, NULL, NULL, $9, $10)`,
+        [tr.id, tr.asset_id, tr.from_id, tr.to_id, tr.units, tr.dr, ts, tr.status, tr.rejection_reason, tr.pending_reason]
       );
-      console.log(`  ✓ Transfer: ${tr.fromName} → ${tr.toName}: ${tr.units.toLocaleString()} ${tr.assetName} units (${tr.age}d ago)`);
+      console.log(`  OK Transfer: ${tr.fromName} -> ${tr.toName}: ${tr.units.toLocaleString()} ${tr.assetName} units (${tr.status})`);
     }
   }
 
@@ -1100,9 +1100,9 @@ async function seed() {
     { event_type: 'transfer.executed', entity_type: 'transfer', entity_id: TR5_ID,  payload: { from: 'Norges', to: 'Allianz', asset: 'RAIF A', units: 50000 },              label: 'Transfer Norges→Allianz',     age: 30 },
     { event_type: 'transfer.executed', entity_type: 'transfer', entity_id: TR6_ID,  payload: { from: 'Rothschild', to: 'Tikehau', asset: 'RAIF F', units: 30000 },          label: 'Transfer Rothschild→Tikehau', age: 42 },
     { event_type: 'transfer.executed', entity_type: 'transfer', entity_id: TR8_ID,  payload: { from: 'Hans', to: 'Mueller', asset: 'Gamma A', units: 50000 },               label: 'Transfer Hans→Mueller',       age: 37 },
-    { event_type: 'transfer.executed', entity_type: 'transfer', entity_id: TR9_ID,  payload: { from: 'Allianz', to: 'Dublin Capital', asset: 'Gamma B', units: 100000 },    label: 'Transfer Allianz→Dublin',     age: 15 },
+    { event_type: 'transfer.rejected', entity_type: 'transfer', entity_id: TR9_ID,  payload: { from: 'Allianz', to: 'Dublin Capital', asset: 'Gamma B', units: 100000, reason: 'Recipient KYC is expired for this jurisdiction.' }, label: 'Transfer Allianz->Dublin rejected', age: 15 },
     { event_type: 'transfer.executed', entity_type: 'transfer', entity_id: TR11_ID, payload: { from: 'CalPERS', to: 'Temasek', asset: 'QIAIF Inst', units: 30000 },         label: 'Transfer CalPERS→Temasek',    age: 50 },
-    { event_type: 'transfer.executed', entity_type: 'transfer', entity_id: TR13_ID, payload: { from: 'Thomas', to: 'Marie', asset: 'ELTIF R', units: 50000 },               label: 'Transfer Thomas→Marie',       age: 6 },
+    { event_type: 'transfer.pending_approval', entity_type: 'transfer', entity_id: TR13_ID, payload: { from: 'Thomas', to: 'Marie', asset: 'ELTIF R', units: 50000, reason: 'Transfer queued for retail-investor suitability checkpoint.' }, label: 'Transfer Thomas->Marie pending review', age: 6 },
     { event_type: 'transfer.executed', entity_type: 'transfer', entity_id: TR14_ID, payload: { from: 'Tikehau', to: 'Sarah', asset: 'ELTIF P', units: 25000 },              label: 'Transfer Tikehau→Sarah',      age: 3 },
 
     // ── Onboarding events (4 selected) ──

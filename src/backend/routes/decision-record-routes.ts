@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import PDFDocument from 'pdfkit';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { requireFound } from '../middleware/validate.js';
 import {
@@ -6,6 +7,7 @@ import {
   findDecisionsByAsset,
   findDecisionsBySubject,
 } from '../repositories/decision-record-repository.js';
+import { explainDecision } from '../services/decision-explain-service.js';
 import { query, DEFAULT_TENANT_ID } from '../db.js';
 import { verifyChain, sealAllUnsealed } from '../services/integrity-service.js';
 import { authorize } from '../middleware/auth.js';
@@ -73,17 +75,17 @@ router.get('/', asyncHandler(async (req, res) => {
     [...params, limit, offset]
   );
 
-  const parse = (val: unknown) => typeof val === 'string' ? JSON.parse(val) : val ?? {};
+  const parse = <T>(val: unknown): T => (typeof val === 'string' ? JSON.parse(val) : val ?? {}) as T;
   const decisions = rows.map((row) => ({
     id: row.id,
     decision_type: row.decision_type,
     asset_id: row.asset_id ?? null,
     asset_name: row.asset_name ?? null,
     subject_id: row.subject_id,
-    input_snapshot: parse(row.input_snapshot),
-    rule_version_snapshot: parse(row.rule_version_snapshot),
+    input_snapshot: parse<Record<string, unknown>>(row.input_snapshot),
+    rule_version_snapshot: parse<Record<string, unknown>>(row.rule_version_snapshot),
     result: row.result,
-    result_details: parse(row.result_details),
+    result_details: parse<Record<string, unknown>>(row.result_details),
     decided_by: row.decided_by ?? null,
     decided_by_name: row.decided_by_name ?? null,
     decided_by_email: row.decided_by_email ?? null,
@@ -116,6 +118,96 @@ router.get('/asset/:assetId', asyncHandler(async (req, res) => {
 router.get('/investor/:investorId', asyncHandler(async (req, res) => {
   const records = await findDecisionsBySubject(req.params.investorId);
   res.json(records);
+}));
+
+router.get('/:id/explain', asyncHandler(async (req, res) => {
+  const explanation = await explainDecision(req.params.id);
+  res.json(explanation);
+}));
+
+router.get('/:id/evidence.pdf', asyncHandler(async (req, res) => {
+  const record = await findDecisionRecordById(req.params.id);
+  requireFound(record, 'Decision record', req.params.id);
+  const decision = record!;
+
+  const doc = new PDFDocument({ size: 'A4', margin: 48 });
+  const filename = `decision-evidence-${decision.id.substring(0, 8)}.pdf`;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  doc.pipe(res);
+
+  const pageBottom = 790;
+  const left = 48;
+  const width = 499;
+  let y = 48;
+
+  const ensureSpace = (height: number): void => {
+    if (y + height > pageBottom) {
+      doc.addPage();
+      y = 48;
+    }
+  };
+
+  const writeLabelValue = (label: string, value: string): void => {
+    ensureSpace(26);
+    doc.fontSize(8).fillColor('#6E655D').text(label.toUpperCase(), left, y);
+    y += 11;
+    doc.fontSize(10).fillColor('#2D2722').text(value, left, y, { width });
+    y += 16;
+  };
+
+  const writeJsonBlock = (label: string, data: unknown): void => {
+    const serialized = JSON.stringify(data ?? {}, null, 2);
+    const chunks = serialized.match(/.{1,900}/gs) ?? ['{}'];
+    ensureSpace(20);
+    doc.fontSize(8).fillColor('#6E655D').text(label.toUpperCase(), left, y);
+    y += 12;
+    for (const chunk of chunks) {
+      const textHeight = doc.heightOfString(chunk, { width: width - 14 });
+      ensureSpace(textHeight + 16);
+      doc.roundedRect(left, y, width, textHeight + 10, 4).fill('#F2EFE0');
+      doc.fontSize(8).fillColor('#2D2722').text(chunk, left + 7, y + 5, { width: width - 14 });
+      y += textHeight + 16;
+    }
+  };
+
+  doc.rect(0, 0, doc.page.width, 58).fill('#24364A');
+  doc.fontSize(11).fillColor('#E3DDD9').text('CAELITH DECISION EVIDENCE BUNDLE', left, 20, {
+    width,
+    characterSpacing: 1,
+  });
+  doc.fontSize(8).fillColor('#D8BA8E').text(new Date().toISOString(), left, 36, { width });
+  y = 74;
+
+  writeLabelValue('Decision ID', decision.id);
+  writeLabelValue('Decision Type', decision.decision_type);
+  writeLabelValue('Result', decision.result);
+  writeLabelValue('Asset ID', decision.asset_id || '-');
+  writeLabelValue('Subject ID', decision.subject_id);
+  writeLabelValue('Decided At', decision.decided_at);
+  writeLabelValue('Integrity Hash', decision.integrity_hash || '-');
+  writeLabelValue('Previous Hash', decision.previous_hash || '-');
+
+  const checks = decision.result_details?.checks ?? [];
+  ensureSpace(20);
+  doc.fontSize(8).fillColor('#6E655D').text('CHECK OUTCOMES', left, y);
+  y += 12;
+  if (checks.length === 0) {
+    doc.fontSize(9).fillColor('#5A524B').text('No checks captured for this decision.', left, y, { width });
+    y += 16;
+  } else {
+    for (const check of checks) {
+      ensureSpace(22);
+      doc.fontSize(9).fillColor(check.passed ? '#3D6658' : '#8A4A45').text(check.passed ? 'PASS' : 'FAIL', left, y);
+      doc.fontSize(9).fillColor('#2D2722').text(`${check.rule}: ${check.message}`, left + 40, y, { width: width - 40 });
+      y += doc.heightOfString(`${check.rule}: ${check.message}`, { width: width - 40 }) + 6;
+    }
+  }
+
+  writeJsonBlock('Input Snapshot', decision.input_snapshot);
+  writeJsonBlock('Rule Snapshot', decision.rule_version_snapshot);
+
+  doc.end();
 }));
 
 router.get('/:id', asyncHandler(async (req, res) => {

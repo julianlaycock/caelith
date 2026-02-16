@@ -22,12 +22,14 @@ export async function createOnboardingRecord(
 ): Promise<OnboardingRecord> {
   const id = randomUUID();
   const now = new Date().toISOString();
+  const ownerTag = input.owner_tag ?? null;
+  const handoffNotes = input.handoff_notes ?? null;
 
   await execute(
     `INSERT INTO onboarding_records
-       (id, tenant_id, investor_id, asset_id, status, requested_units, applied_at, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, 'applied', $5, $6, $6, $6)`,
-    [id, DEFAULT_TENANT_ID, input.investor_id, input.asset_id, input.requested_units, now]
+       (id, tenant_id, investor_id, asset_id, status, requested_units, owner_tag, handoff_notes, applied_at, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, 'applied', $5, $6, $7, $8, $8, $8)`,
+    [id, DEFAULT_TENANT_ID, input.investor_id, input.asset_id, input.requested_units, ownerTag, handoffNotes, now]
   );
 
   return {
@@ -36,6 +38,8 @@ export async function createOnboardingRecord(
     asset_id: input.asset_id,
     status: 'applied',
     requested_units: input.requested_units,
+    owner_tag: ownerTag,
+    handoff_notes: handoffNotes,
     eligibility_decision_id: null,
     approval_decision_id: null,
     reviewed_by: null,
@@ -127,6 +131,18 @@ export async function updateOnboardingRecord(
     paramIdx++;
   }
 
+  if (updates.owner_tag !== undefined) {
+    setClauses.push(`owner_tag = $${paramIdx}`);
+    params.push(updates.owner_tag);
+    paramIdx++;
+  }
+
+  if (updates.handoff_notes !== undefined) {
+    setClauses.push(`handoff_notes = $${paramIdx}`);
+    params.push(updates.handoff_notes);
+    paramIdx++;
+  }
+
   params.push(DEFAULT_TENANT_ID);
   await execute(
     `UPDATE onboarding_records SET ${setClauses.join(', ')} WHERE id = $1 AND tenant_id = $${paramIdx}`,
@@ -142,6 +158,8 @@ interface OnboardingRow {
   asset_id: string;
   status: string;
   requested_units: number;
+  owner_tag: string | null;
+  handoff_notes: string | null;
   eligibility_decision_id: string | null;
   approval_decision_id: string | null;
   reviewed_by: string | null;
@@ -159,6 +177,8 @@ function rowToOnboardingRecord(row: OnboardingRow): OnboardingRecord {
     asset_id: row.asset_id,
     status: row.status as OnboardingStatus,
     requested_units: row.requested_units,
+    owner_tag: row.owner_tag ?? null,
+    handoff_notes: row.handoff_notes ?? null,
     eligibility_decision_id: row.eligibility_decision_id ?? null,
     approval_decision_id: row.approval_decision_id ?? null,
     reviewed_by: row.reviewed_by ?? null,

@@ -14,7 +14,9 @@ import {
   EmptyState,
   Badge,
   Alert,
+  ExportMenu,
 } from '../../components/ui';
+import { exportCSV } from '../../lib/export-csv';
 import { formatNumber, formatDate, formatDateTime, classNames, getErrorMessage, toAssetOptions, toInvestorOptions } from '../../lib/utils';
 import type { ApiError, OnboardingRecord } from '../../lib/types';
 
@@ -51,6 +53,8 @@ export default function OnboardingPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<OnboardingRecord | null>(null);
+  const [handoffOwner, setHandoffOwner] = useState('');
+  const [handoffNotes, setHandoffNotes] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [dragSupported, setDragSupported] = useState(true);
   const [rejectTarget, setRejectTarget] = useState<{ record: OnboardingRecord; fromDrag?: { targetCol: string } } | null>(null);
@@ -70,6 +74,12 @@ export default function OnboardingPage() {
       'draggable' in document.createElement('div');
     setDragSupported(supportsDnD);
   }, []);
+
+  useEffect(() => {
+    if (!selectedRecord) return;
+    setHandoffOwner(selectedRecord.owner_tag || '');
+    setHandoffNotes(selectedRecord.handoff_notes || '');
+  }, [selectedRecord]);
 
   // All onboarding records aggregated across assets
   const [allRecords, setAllRecords] = useState<OnboardingRecord[]>([]);
@@ -190,6 +200,8 @@ export default function OnboardingPage() {
     const investor_id = form.get('investor_id') as string;
     const asset_id = form.get('asset_id') as string;
     const requested_units = Number(form.get('requested_units'));
+    const owner_tag = ((form.get('owner_tag') as string) || '').trim();
+    const handoff_notes = ((form.get('handoff_notes') as string) || '').trim();
 
     if (!investor_id || !asset_id || !requested_units || requested_units <= 0) {
       setFormError('All fields are required. Units must be positive.');
@@ -197,7 +209,13 @@ export default function OnboardingPage() {
     }
 
     try {
-      await api.applyToFund({ investor_id, asset_id, requested_units });
+      await api.applyToFund({
+        investor_id,
+        asset_id,
+        requested_units,
+        owner_tag: owner_tag || undefined,
+        handoff_notes: handoff_notes || undefined,
+      });
       applyFormRef.current?.reset();
       setShowApplyForm(false);
       setFormError(null);
@@ -205,6 +223,25 @@ export default function OnboardingPage() {
       refetchRecords();
     } catch (err) {
       setFormError((err as ApiError).message || 'Failed to submit application');
+    }
+  };
+
+  const saveHandoffDetails = async () => {
+    if (!selectedRecord) return;
+    setActionLoading(selectedRecord.id + 'handoff');
+    setActionMsg(null);
+    try {
+      const updated = await api.updateOnboardingHandoff(selectedRecord.id, {
+        owner_tag: handoffOwner.trim() || undefined,
+        handoff_notes: handoffNotes.trim() || undefined,
+      });
+      setSelectedRecord(updated);
+      setActionMsg({ type: 'success', text: 'Handoff details updated.' });
+      refetchRecords();
+    } catch (err) {
+      setActionMsg({ type: 'error', text: (err as ApiError).message || 'Failed to update handoff details' });
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -352,9 +389,23 @@ export default function OnboardingPage() {
     <div>
       <PageHeader
         title="Onboarding"
-        description="Investor onboarding pipeline and eligibility management"
+        description="Manage investor onboarding and eligibility checks"
         action={
-          <Button onClick={() => setShowApplyForm(true)}>+ New Application</Button>
+          <div className="flex items-center gap-2">
+            <ExportMenu
+              onExportCSV={() => {
+                if (!allRecords.length) return;
+                exportCSV('caelith-onboarding.csv',
+                  ['Status', 'Investor ID', 'Asset ID', 'Requested Units', 'Applied At', 'Reviewed At'],
+                  allRecords.map(r => [
+                    r.status, r.investor_id, r.asset_id,
+                    String(r.requested_units), r.applied_at, r.reviewed_at || ''
+                  ])
+                );
+              }}
+            />
+            <Button onClick={() => setShowApplyForm(true)}>+ New Application</Button>
+          </div>
         }
       />
 
@@ -389,6 +440,18 @@ export default function OnboardingPage() {
           <Select label="Investor" name="investor_id" options={investorOptions} required />
           <Select label="Asset" name="asset_id" options={assetOptions} required />
           <Input label="Requested Units" name="requested_units" type="number" min={1} required placeholder="e.g., 10000" />
+          <Input label="Owner Tag" name="owner_tag" placeholder="e.g., Compliance Desk A" />
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1.5">
+              Handoff Notes
+            </label>
+            <textarea
+              name="handoff_notes"
+              rows={3}
+              className="w-full rounded-lg border border-edge bg-bg-primary px-3 py-2 text-sm text-ink placeholder:text-ink-tertiary focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30"
+              placeholder="Operational context for next reviewer..."
+            />
+          </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setShowApplyForm(false)}>Cancel</Button>
             <Button type="submit">Submit Application</Button>
@@ -435,6 +498,30 @@ export default function OnboardingPage() {
               )}
             </div>
 
+            <div className="rounded-lg border border-edge-subtle bg-bg-tertiary p-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Handoff</p>
+              <div className="space-y-3">
+                <Input
+                  label="Owner Tag"
+                  value={handoffOwner}
+                  onChange={(e) => setHandoffOwner(e.target.value)}
+                  placeholder="Assign operational owner"
+                />
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1.5">
+                    Handoff Notes
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={handoffNotes}
+                    onChange={(e) => setHandoffNotes(e.target.value)}
+                    className="w-full rounded-lg border border-edge bg-bg-primary px-3 py-2 text-sm text-ink placeholder:text-ink-tertiary focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30"
+                    placeholder="Context for next reviewer..."
+                  />
+                </div>
+              </div>
+            </div>
+
             {selectedRecord.rejection_reasons && selectedRecord.rejection_reasons.length > 0 && (
               <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-red-400 mb-1">Rejection Reasons</p>
@@ -447,6 +534,14 @@ export default function OnboardingPage() {
             )}
 
             <div className="flex justify-end gap-2 pt-2 border-t border-edge-subtle">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={actionLoading === selectedRecord.id + 'handoff'}
+                onClick={saveHandoffDetails}
+              >
+                {actionLoading === selectedRecord.id + 'handoff' ? 'Saving...' : 'Save Handoff'}
+              </Button>
               {selectedRecord.status === 'applied' && (
                 <>
                   <Button
@@ -802,6 +897,11 @@ export default function OnboardingPage() {
                       <p className="mt-1 text-xs text-ink-secondary truncate">
                         {assetMap[rec.asset_id] || rec.asset_id.slice(0, 8)}
                       </p>
+                      {rec.owner_tag && (
+                        <p className="mt-1 text-[11px] text-ink-tertiary">
+                          Owner: <span className="font-medium text-ink-secondary">{rec.owner_tag}</span>
+                        </p>
+                      )}
                       <div className="mt-2 flex items-center justify-between">
                         <span className="text-xs font-medium tabular-nums text-ink-secondary">
                           {formatNumber(rec.requested_units)} units

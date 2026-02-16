@@ -14,6 +14,7 @@
 
 import { query } from '../db.js';
 import { NotFoundError } from '../errors.js';
+import { LiquidityManagementTool, LiquidityBucket, GeographicExposure, CounterpartyExposure } from '../models/index.js';
 
 // ── Public Types ────────────────────────────────────────────
 
@@ -60,15 +61,31 @@ export interface AnnexIVReport {
     }>;
   };
 
+  leverage: {
+    commitment_method: number | null;
+    gross_method: number | null;
+    commitment_limit: number | null;
+    gross_limit: number | null;
+    leverage_compliant: boolean;
+  };
+
   risk_profile: {
     liquidity: {
       investor_redemption_frequency: string;
-      portfolio_liquidity_pct: number;
+      portfolio_liquidity_profile: LiquidityBucket[];
+      liquidity_management_tools: LiquidityManagementTool[];
     };
     operational: {
       total_open_risk_flags: number;
       high_severity_flags: number;
     };
+  };
+
+  geographic_focus: GeographicExposure[];
+
+  counterparty_risk: {
+    top_5_counterparties: CounterpartyExposure[];
+    total_counterparty_count: number;
   };
 
   compliance_status: {
@@ -96,6 +113,14 @@ interface FundRow {
   aifm_lei: string | null;
   inception_date: string | null;
   currency: string;
+  lmt_types: any;
+  leverage_limit_commitment: number | string | null;
+  leverage_limit_gross: number | string | null;
+  leverage_current_commitment: number | string | null;
+  leverage_current_gross: number | string | null;
+  liquidity_profile: any;
+  geographic_exposure: any;
+  counterparty_exposure: any;
 }
 
 interface AssetRow {
@@ -273,10 +298,20 @@ export async function generateAnnexIVReport(
     totalUnits > 500000000 ? 'Article 24(2)' :
     totalUnits > 100000000 ? 'Article 24(1)' : 'Article 24(4)';
 
-  // Portfolio liquidity: approximate as % of allocated units (simplified)
-  const liquidityPct = totalAllocated > 0
-    ? Math.round((totalAllocated / totalUnits) * 10000) / 100
-    : 100;
+  // Parse fund JSONB fields
+  const lmtTypes: LiquidityManagementTool[] = fund.lmt_types ? (typeof fund.lmt_types === 'string' ? JSON.parse(fund.lmt_types) : fund.lmt_types) : [];
+  const liquidityProfile: LiquidityBucket[] = fund.liquidity_profile ? (typeof fund.liquidity_profile === 'string' ? JSON.parse(fund.liquidity_profile) : fund.liquidity_profile) : [];
+  const geographicExposure: GeographicExposure[] = fund.geographic_exposure ? (typeof fund.geographic_exposure === 'string' ? JSON.parse(fund.geographic_exposure) : fund.geographic_exposure) : [];
+  const counterpartyExposure: CounterpartyExposure[] = fund.counterparty_exposure ? (typeof fund.counterparty_exposure === 'string' ? JSON.parse(fund.counterparty_exposure) : fund.counterparty_exposure) : [];
+
+  const leverageLimitCommitment = fund.leverage_limit_commitment != null ? Number(fund.leverage_limit_commitment) : null;
+  const leverageLimitGross = fund.leverage_limit_gross != null ? Number(fund.leverage_limit_gross) : null;
+  const leverageCurrentCommitment = fund.leverage_current_commitment != null ? Number(fund.leverage_current_commitment) : null;
+  const leverageCurrentGross = fund.leverage_current_gross != null ? Number(fund.leverage_current_gross) : null;
+
+  const leverageCompliant =
+    (leverageLimitCommitment == null || leverageCurrentCommitment == null || leverageCurrentCommitment <= leverageLimitCommitment) &&
+    (leverageLimitGross == null || leverageCurrentGross == null || leverageCurrentGross <= leverageLimitGross);
 
   return {
     aif_identification: {
@@ -327,15 +362,31 @@ export async function generateAnnexIVReport(
       })),
     },
 
+    leverage: {
+      commitment_method: leverageCurrentCommitment,
+      gross_method: leverageCurrentGross,
+      commitment_limit: leverageLimitCommitment,
+      gross_limit: leverageLimitGross,
+      leverage_compliant: leverageCompliant,
+    },
+
     risk_profile: {
       liquidity: {
         investor_redemption_frequency: 'Quarterly',
-        portfolio_liquidity_pct: liquidityPct,
+        portfolio_liquidity_profile: liquidityProfile,
+        liquidity_management_tools: lmtTypes,
       },
       operational: {
         total_open_risk_flags: totalRiskFlags,
         high_severity_flags: highSeverityFlags,
       },
+    },
+
+    geographic_focus: geographicExposure,
+
+    counterparty_risk: {
+      top_5_counterparties: counterpartyExposure.slice(0, 5),
+      total_counterparty_count: counterpartyExposure.length,
     },
 
     compliance_status: {

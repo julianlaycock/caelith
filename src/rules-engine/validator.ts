@@ -89,6 +89,90 @@ const checkTransferWhitelist: ValidationRule = (ctx): string | null => {
   return null;
 };
 
+// ── AIFMD Built-in Rules ────────────────────────────────────
+
+const checkInvestorTypeWhitelist: ValidationRule = (ctx): string | null => {
+  if (!ctx.rules.investor_type_whitelist || ctx.rules.investor_type_whitelist.length === 0) {
+    return null;
+  }
+  if (!ctx.rules.investor_type_whitelist.includes(ctx.toInvestor.investor_type)) {
+    return `Recipient investor type "${ctx.toInvestor.investor_type}" not in allowed types: [${ctx.rules.investor_type_whitelist.join(', ')}]`;
+  }
+  return null;
+};
+
+const checkMinimumInvestment: ValidationRule = (ctx): string | null => {
+  if (!ctx.rules.minimum_investment || ctx.rules.minimum_investment <= 0) {
+    return null;
+  }
+  if (ctx.transfer.units < ctx.rules.minimum_investment) {
+    return `Transfer of ${ctx.transfer.units} units is below minimum investment of ${ctx.rules.minimum_investment} units`;
+  }
+  return null;
+};
+
+const checkKycRequired: ValidationRule = (ctx): string | null => {
+  if (!ctx.rules.kyc_required) {
+    return null;
+  }
+  if (ctx.toInvestor.kyc_status !== 'verified') {
+    return `KYC required: recipient KYC status is "${ctx.toInvestor.kyc_status}", must be "verified"`;
+  }
+  if (ctx.toInvestor.kyc_expiry) {
+    const expiry = new Date(ctx.toInvestor.kyc_expiry);
+    if (expiry <= new Date()) {
+      return `KYC required: recipient KYC expired on ${ctx.toInvestor.kyc_expiry}`;
+    }
+  }
+  return null;
+};
+
+const checkMaximumInvestors: ValidationRule = (ctx): string | null => {
+  if (!ctx.rules.maximum_investors || !ctx.assetAggregates) {
+    return null;
+  }
+  const receiverAlreadyHolds = ctx.assetAggregates.receiver_existing_units > 0;
+  if (receiverAlreadyHolds) {
+    // Receiver is already an investor — count doesn't increase
+    return null;
+  }
+  if (ctx.assetAggregates.distinct_investor_count >= ctx.rules.maximum_investors) {
+    return `Maximum investor limit reached: ${ctx.assetAggregates.distinct_investor_count}/${ctx.rules.maximum_investors} investors. New investor "${ctx.toInvestor.name}" cannot be added.`;
+  }
+  return null;
+};
+
+const checkLeverageCompliance: ValidationRule = (ctx): string | null => {
+  if (!ctx.fund) return null;
+  if (ctx.fund.leverage_current_commitment != null && ctx.fund.leverage_limit_commitment != null) {
+    if (ctx.fund.leverage_current_commitment > ctx.fund.leverage_limit_commitment) {
+      return `Fund leverage (commitment method) ${ctx.fund.leverage_current_commitment}x exceeds limit ${ctx.fund.leverage_limit_commitment}x`;
+    }
+  }
+  if (ctx.fund.leverage_current_gross != null && ctx.fund.leverage_limit_gross != null) {
+    if (ctx.fund.leverage_current_gross > ctx.fund.leverage_limit_gross) {
+      return `Fund leverage (gross method) ${ctx.fund.leverage_current_gross}x exceeds limit ${ctx.fund.leverage_limit_gross}x`;
+    }
+  }
+  return null;
+};
+
+const checkConcentrationLimit: ValidationRule = (ctx): string | null => {
+  if (!ctx.rules.concentration_limit_pct || !ctx.assetAggregates) {
+    return null;
+  }
+  const totalUnits = ctx.assetAggregates.total_units;
+  if (totalUnits <= 0) return null;
+
+  const receiverUnitsAfter = ctx.assetAggregates.receiver_existing_units + ctx.transfer.units;
+  const concentrationPct = (receiverUnitsAfter / totalUnits) * 100;
+
+  if (concentrationPct > ctx.rules.concentration_limit_pct) {
+    return `Concentration limit violated: recipient would hold ${concentrationPct.toFixed(2)}% of total units (limit: ${ctx.rules.concentration_limit_pct}%)`;
+  }
+  return null;
+};
+
 // ── Rule registry with metadata ─────────────────────────────
 
 interface BuiltInRule {
@@ -104,24 +188,46 @@ const builtInRules: BuiltInRule[] = [
   { name: 'lockup_period', fn: checkLockup },
   { name: 'jurisdiction_whitelist', fn: checkJurisdiction },
   { name: 'transfer_whitelist', fn: checkTransferWhitelist },
+  // AIFMD-specific rules
+  { name: 'investor_type_whitelist', fn: checkInvestorTypeWhitelist },
+  { name: 'minimum_investment', fn: checkMinimumInvestment },
+  { name: 'kyc_required', fn: checkKycRequired },
+  { name: 'maximum_investors', fn: checkMaximumInvestors },
+  { name: 'concentration_limit', fn: checkConcentrationLimit },
+  { name: 'leverage_compliance', fn: checkLeverageCompliance },
 ];
 
 // ── Composite Rule Evaluation ───────────────────────────────
 
 function resolveField(ctx: ValidationContext, field: string): unknown {
   const map: Record<string, unknown> = {
+    // Sender fields
     'from.jurisdiction': ctx.fromInvestor.jurisdiction,
     'from.accredited': ctx.fromInvestor.accredited,
+    'from.investor_type': ctx.fromInvestor.investor_type,
+    'from.kyc_status': ctx.fromInvestor.kyc_status,
+    'from.kyc_expiry': ctx.fromInvestor.kyc_expiry,
     'from.name': ctx.fromInvestor.name,
     'from.id': ctx.fromInvestor.id,
+    // Receiver fields
     'to.jurisdiction': ctx.toInvestor.jurisdiction,
     'to.accredited': ctx.toInvestor.accredited,
+    'to.investor_type': ctx.toInvestor.investor_type,
+    'to.kyc_status': ctx.toInvestor.kyc_status,
+    'to.kyc_expiry': ctx.toInvestor.kyc_expiry,
     'to.name': ctx.toInvestor.name,
     'to.id': ctx.toInvestor.id,
+    // Transfer fields
     'transfer.units': ctx.transfer.units,
     'transfer.execution_date': ctx.transfer.execution_date,
+    // Holding fields
     'holding.units': ctx.fromHolding?.units ?? 0,
     'holding.acquired_at': ctx.fromHolding?.acquired_at ?? '',
+    // Fund structure fields (null-safe for non-fund-linked assets)
+    'fund.legal_form': ctx.fund?.legal_form ?? null,
+    'fund.domicile': ctx.fund?.domicile ?? null,
+    'fund.regulatory_framework': ctx.fund?.regulatory_framework ?? null,
+    'fund.status': ctx.fund?.status ?? null,
   };
   return map[field];
 }

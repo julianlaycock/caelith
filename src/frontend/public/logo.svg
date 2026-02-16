@@ -1,21 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" fill="none">
-  <!-- Logo 1: The Accent Mark — Shield-C with cyan accent bar -->
-  <rect width="400" height="120" fill="#0A0E1A"/>
-  
-  <!-- Shield/C icon -->
-  <g transform="translate(24, 16)">
-    <!-- Outer shield shape (C-like) -->
-    <path d="M44 0C19.7 0 0 19.7 0 44C0 68.3 19.7 88 44 88C56.2 88 67.2 83.2 75 75.2" 
-          stroke="#22D3EE" stroke-width="5" stroke-linecap="round" fill="none"/>
-    <!-- Inner accent bar cutting through -->
-    <line x1="20" y1="44" x2="65" y2="44" stroke="#22D3EE" stroke-width="5" stroke-linecap="round"/>
-    <!-- Small dot accent -->
-    <circle cx="72" cy="44" r="3" fill="#22D3EE"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" fill="none">
+  <rect width="520" height="160" rx="18" fill="#E4E0D4" />
+
+  <g transform="translate(28,20)">
+    <rect x="16" y="16" width="88" height="88" rx="24" fill="#DDE2E5" stroke="#3F3933" stroke-width="6" />
+    <path d="M30 40H90M30 60H90M30 80H90M40 30V90M60 30V90M80 30V90" stroke="#BDB0A4" stroke-width="3" />
+    <path d="M60 30L65 55L90 60L65 65L60 90L55 65L30 60L55 55L60 30Z" fill="#D8BA8E" stroke="#3F3933" stroke-width="5" stroke-linejoin="round" />
+    <circle cx="60" cy="60" r="4" fill="#3F3933" />
   </g>
-  
-  <!-- Wordmark -->
-  <text x="120" y="72" font-family="Space Grotesk, system-ui, sans-serif" font-weight="700" font-size="42" letter-spacing="0.15em" fill="#F1F5F9">CAELITH</text>
-  
-  <!-- Accent bar above wordmark -->
-  <rect x="120" y="24" width="28" height="2.5" rx="1.25" fill="#22D3EE"/>
+
+  <g transform="translate(170,56)">
+    <text x="0" y="28" font-family="Space Grotesk, system-ui, sans-serif" font-size="42" font-weight="700" letter-spacing="5" fill="#2D2722">CAELITH</text>
+    <text x="0" y="54" font-family="Space Grotesk, system-ui, sans-serif" font-size="12" font-weight="600" letter-spacing="2.4" fill="#5A524B">PRIVATE ASSET REGISTRY</text>
+  </g>
 </svg>
