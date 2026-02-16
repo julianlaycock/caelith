@@ -22,7 +22,7 @@ import { randomUUID } from 'crypto';
 import { runCoreEligibilityChecks } from './eligibility-check-helper.js';
 import { validateTransfer } from '../../rules-engine/validator.js';
 import { ValidationContext, TransferRequest, FundContext, AssetAggregates } from '../../rules-engine/types.js';
-import { Transfer, Asset, EligibilityCriteria } from '../models/index.js';
+import { Transfer, Asset, EligibilityCriteria, LiquidityManagementTool } from '../models/index.js';
 import { NotFoundError, BusinessLogicError } from '../errors.js';
 import { getActiveCompositeRules } from './composite-rules-service.js';
 import { withTransaction } from './transaction-helper.js';
@@ -144,7 +144,7 @@ export async function simulateTransfer(
     const rulesResult = validateTransfer(context);
 
     // Run eligibility checks if asset is fund-linked
-    const asset = await findAssetById(request.asset_id);
+    const asset = context.asset;
     let eligibilityChecks: Check[] = [];
     let criteria: EligibilityCriteria | null = null;
 
@@ -213,7 +213,7 @@ export async function executeTransfer(
     const rulesResult = validateTransfer(context);
 
     // Run eligibility checks if asset is fund-linked
-    const asset = await findAssetById(request.asset_id);
+    const asset = context.asset;
     let eligibilityChecks: Check[] = [];
     let criteria: EligibilityCriteria | null = null;
 
@@ -567,6 +567,26 @@ export async function rejectTransfer(
  * Helper: Build validation context from transfer request.
  * Now includes fund structure context and asset aggregates for AIFMD checks.
  */
+type JsonArray = string | unknown[] | null;
+
+interface FundContextRow {
+  legal_form: string;
+  domicile: string;
+  regulatory_framework: string;
+  status: string;
+  leverage_limit_commitment: number | string | null;
+  leverage_limit_gross: number | string | null;
+  leverage_current_commitment: number | string | null;
+  leverage_current_gross: number | string | null;
+  lmt_types: JsonArray;
+}
+
+function parseJsonArray<T>(value: JsonArray): T[] {
+  if (!value) return [];
+  if (typeof value === 'string') return JSON.parse(value) as T[];
+  return value as T[];
+}
+
 async function buildValidationContext(
   request: TransferRequest
 ): Promise<ValidationContext> {
@@ -593,10 +613,14 @@ async function buildValidationContext(
     throw new NotFoundError('Rules', request.asset_id);
   }
 
+  if (!asset) {
+    throw new NotFoundError('Asset', request.asset_id);
+  }
+
   // Resolve fund structure context (if asset is fund-linked)
   let fund: FundContext | null = null;
-  if (asset?.fund_structure_id) {
-    const fundRows = await query<{ legal_form: string; domicile: string; regulatory_framework: string; status: string; leverage_limit_commitment: number | null; leverage_limit_gross: number | null; leverage_current_commitment: number | null; leverage_current_gross: number | null; lmt_types: any }>(
+  if (asset.fund_structure_id) {
+    const fundRows = await query<FundContextRow>(
       `SELECT legal_form, domicile, regulatory_framework, status, leverage_limit_commitment, leverage_limit_gross, leverage_current_commitment, leverage_current_gross, lmt_types FROM fund_structures WHERE id = $1`,
       [asset.fund_structure_id]
     );
@@ -607,36 +631,35 @@ async function buildValidationContext(
         domicile: r.domicile,
         regulatory_framework: r.regulatory_framework,
         status: r.status,
-        leverage_limit_commitment: r.leverage_limit_commitment ? Number(r.leverage_limit_commitment) : null,
-        leverage_limit_gross: r.leverage_limit_gross ? Number(r.leverage_limit_gross) : null,
-        leverage_current_commitment: r.leverage_current_commitment ? Number(r.leverage_current_commitment) : null,
-        leverage_current_gross: r.leverage_current_gross ? Number(r.leverage_current_gross) : null,
-        lmt_types: r.lmt_types ? (typeof r.lmt_types === 'string' ? JSON.parse(r.lmt_types) : r.lmt_types) : [],
+        leverage_limit_commitment: r.leverage_limit_commitment != null ? Number(r.leverage_limit_commitment) : null,
+        leverage_limit_gross: r.leverage_limit_gross != null ? Number(r.leverage_limit_gross) : null,
+        leverage_current_commitment: r.leverage_current_commitment != null ? Number(r.leverage_current_commitment) : null,
+        leverage_current_gross: r.leverage_current_gross != null ? Number(r.leverage_current_gross) : null,
+        lmt_types: parseJsonArray<LiquidityManagementTool>(r.lmt_types),
       };
     }
   }
 
   // Resolve asset aggregates for concentration/max-investor checks
   let assetAggregates: AssetAggregates | null = null;
-  if (asset) {
-    const [countRes, receiverHolding] = await Promise.all([
-      query<{ count: string }>(
-        `SELECT COUNT(DISTINCT investor_id) as count FROM holdings WHERE asset_id = $1 AND units > 0`,
-        [request.asset_id]
-      ),
-      findHoldingByInvestorAndAsset(request.to_investor_id, request.asset_id),
-    ]);
-    assetAggregates = {
-      total_units: asset.total_units,
-      distinct_investor_count: Number(countRes[0]?.count ?? 0),
-      receiver_existing_units: receiverHolding?.units ?? 0,
-    };
-  }
+  const [countRes, receiverHolding] = await Promise.all([
+    query<{ count: string }>(
+      `SELECT COUNT(DISTINCT investor_id) as count FROM holdings WHERE asset_id = $1 AND units > 0`,
+      [request.asset_id]
+    ),
+    findHoldingByInvestorAndAsset(request.to_investor_id, request.asset_id),
+  ]);
+  assetAggregates = {
+    total_units: asset.total_units,
+    distinct_investor_count: Number(countRes[0]?.count ?? 0),
+    receiver_existing_units: receiverHolding?.units ?? 0,
+  };
 
   return {
     transfer: request,
     fromInvestor,
     toInvestor,
+    asset,
     fromHolding,
     rules,
     customRules,

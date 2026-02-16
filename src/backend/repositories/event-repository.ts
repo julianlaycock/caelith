@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, parseJSON, stringifyJSON, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { execute, parseJSON, stringifyJSON, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Event, CreateEventInput, EventType, EntityType } from '../models/index.js';
 import { dispatchEvent } from '../services/webhook-service.js';
 

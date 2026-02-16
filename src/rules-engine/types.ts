@@ -5,7 +5,7 @@
  * and rule versioning.
  */
 
-import { RuleSet, Investor, Holding } from '../backend/models/index.js';
+import { RuleSet, Investor, Holding, Asset, LiquidityManagementTool } from '../backend/models/index.js';
 
 /**
  * Transfer request to be validated
@@ -30,7 +30,7 @@ export interface FundContext {
   leverage_limit_gross?: number | null;
   leverage_current_commitment?: number | null;
   leverage_current_gross?: number | null;
-  lmt_types?: any[];
+  lmt_types?: LiquidityManagementTool[];
 }
 
 /**
@@ -51,6 +51,7 @@ export interface ValidationContext {
   transfer: TransferRequest;
   fromInvestor: Investor;
   toInvestor: Investor;
+  asset?: Asset | null;
   fromHolding: Holding | null;
   rules: RuleSet;
   customRules?: CompositeRule[];

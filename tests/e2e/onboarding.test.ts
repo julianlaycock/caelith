@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { api, resetDb, ensureAuth } from '../fixtures/api-helper';
+import { api, resetDb } from '../fixtures/api-helper';
 
 interface CreatedEntity {
   id: string;
@@ -35,6 +35,11 @@ interface EligibilityCheckResponse {
 interface ReviewResponse {
   onboarding: OnboardingRecord;
   decision_record_id: string;
+}
+
+interface ApiErrorShape {
+  status: number;
+  error?: string;
 }
 
 describe('Onboarding Workflow (Slice 5)', () => {
@@ -313,8 +318,9 @@ describe('Onboarding Workflow (Slice 5)', () => {
       try {
         await api(`/onboarding/${record.id}/check-eligibility`, { method: 'POST' });
         expect.unreachable('Should have thrown');
-      } catch (err: any) {
-        expect([400, 422]).toContain(err.status);
+      } catch (err: unknown) {
+        const e = err as ApiErrorShape;
+        expect([400, 422]).toContain(e.status);
       }
     });
 
@@ -332,8 +338,9 @@ describe('Onboarding Workflow (Slice 5)', () => {
       try {
         await api(`/onboarding/${record.id}/allocate`, { method: 'POST' });
         expect.unreachable('Should have thrown');
-      } catch (err: any) {
-        expect([400, 422]).toContain(err.status);
+      } catch (err: unknown) {
+        const e = err as ApiErrorShape;
+        expect([400, 422]).toContain(e.status);
       }
     });
   });
@@ -350,9 +357,10 @@ describe('Onboarding Workflow (Slice 5)', () => {
           body: JSON.stringify({ investor_id: professionalId }),
         });
         expect.unreachable('Should have thrown');
-      } catch (err: any) {
-        expect([400, 422]).toContain(err.status);
-        expect(err.error).toBe('VALIDATION_ERROR');
+      } catch (err: unknown) {
+        const e = err as ApiErrorShape;
+        expect([400, 422]).toContain(e.status);
+        expect(e.error).toBe('VALIDATION_ERROR');
       }
     });
   });

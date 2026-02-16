@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { api, resetDb, ensureAuth } from '../fixtures/api-helper';
+import { api, resetDb } from '../fixtures/api-helper';
 
 interface CreatedEntity {
   id: string;
@@ -21,6 +21,11 @@ interface EligibilityResult {
   checks: Array<{ rule: string; passed: boolean; message: string }>;
   criteria_applied: Record<string, unknown> | null;
   decision_record_id: string;
+}
+
+interface ApiErrorShape {
+  status: number;
+  error?: string;
 }
 
 describe('Eligibility Check (Slice 1)', () => {
@@ -277,9 +282,10 @@ describe('Eligibility Check (Slice 1)', () => {
         }),
       });
       expect.unreachable('Should have thrown');
-    } catch (err: any) {
-      expect(err.status).toBe(404);
-      expect(err.error).toBe('NOT_FOUND');
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape;
+      expect(e.status).toBe(404);
+      expect(e.error).toBe('NOT_FOUND');
     }
   });
 
@@ -293,9 +299,10 @@ describe('Eligibility Check (Slice 1)', () => {
         }),
       });
       expect.unreachable('Should have thrown');
-    } catch (err: any) {
-      expect(err.status).toBe(404);
-      expect(err.error).toBe('NOT_FOUND');
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape;
+      expect(e.status).toBe(404);
+      expect(e.error).toBe('NOT_FOUND');
     }
   });
 });

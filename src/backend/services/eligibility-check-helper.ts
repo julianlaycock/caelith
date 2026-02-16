@@ -19,7 +19,7 @@ export interface EligibilityInput {
     kyc_status: string;
     kyc_expiry: string | null;
     classification_method?: string | null;
-    classification_evidence?: any[] | null;
+    classification_evidence?: unknown[] | null;
     classification_date?: string | null;
   };
   fundStructureId: string;

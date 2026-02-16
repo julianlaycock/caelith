@@ -10,6 +10,7 @@ import { verifyToken, TokenPayload } from '../services/auth-service.js';
 import { DEFAULT_TENANT_ID } from '../db.js';
 
 // Extend Express Request to include user
+/* eslint-disable @typescript-eslint/no-namespace */
 declare global {
   namespace Express {
     interface Request {
@@ -17,6 +18,7 @@ declare global {
     }
   }
 }
+/* eslint-enable @typescript-eslint/no-namespace */
 
 /**
  * Verify JWT token from Authorization header

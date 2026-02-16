@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, parseJSON, stringifyJSON, queryWithTenant, executeWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { execute, parseJSON, stringifyJSON, queryWithTenant, executeWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { RuleSet, CreateRuleSetInput, InvestorType } from '../models/index.js';
 
 /**

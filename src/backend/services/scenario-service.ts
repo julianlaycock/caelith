@@ -4,7 +4,7 @@
  * Answers: "If we change eligibility criteria X, which current investors would be affected?"
  */
 
-import { query, DEFAULT_TENANT_ID } from '../db.js';
+import { query } from '../db.js';
 import { findFundStructureById } from '../repositories/fund-structure-repository.js';
 import { runCoreEligibilityChecks } from './eligibility-check-helper.js';
 import { recordDecisionWithResult } from './decision-record-helper.js';

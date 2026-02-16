@@ -113,14 +113,14 @@ interface FundRow {
   aifm_lei: string | null;
   inception_date: string | null;
   currency: string;
-  lmt_types: any;
+  lmt_types: string | unknown[] | null;
   leverage_limit_commitment: number | string | null;
   leverage_limit_gross: number | string | null;
   leverage_current_commitment: number | string | null;
   leverage_current_gross: number | string | null;
-  liquidity_profile: any;
-  geographic_exposure: any;
-  counterparty_exposure: any;
+  liquidity_profile: string | unknown[] | null;
+  geographic_exposure: string | unknown[] | null;
+  counterparty_exposure: string | unknown[] | null;
 }
 
 interface AssetRow {
@@ -135,7 +135,6 @@ interface TypeRow { investor_type: string; count: string; total_units: string }
 interface DomicileRow { jurisdiction: string; count: string; total_units: string }
 interface TopInvestorRow { total_units: string }
 interface KycRow { status: string; count: string }
-interface DecisionViolationRow { violation_count: number }
 
 // ── Helpers ─────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { query, execute, closeDb } from '../../src/backend/db.js';
+import { execute } from '../../src/backend/db.js';
 import {
   createAsset,
   findAssetById,

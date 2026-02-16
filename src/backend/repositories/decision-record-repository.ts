@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { query, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import {
   DecisionRecord,
   CreateDecisionRecordInput,

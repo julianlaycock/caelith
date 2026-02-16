@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it } from 'vitest';
 
 /**
  * Multi-tenant context tests — DEFERRED

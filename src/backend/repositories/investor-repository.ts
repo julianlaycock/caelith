@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, queryWithTenant, executeWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { execute, queryWithTenant, executeWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Investor, CreateInvestorInput, UpdateInvestorInput, ClassificationEvidence } from '../models/index.js';
 
 /**

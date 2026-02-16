@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { query, execute, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
+import { query, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import {
   FundStructure,
   CreateFundStructureInput,
@@ -70,14 +70,14 @@ export async function updateFundStructure(id: string, input: UpdateFundStructure
   if (input.inception_date !== undefined) { sets.push(`inception_date = $${idx++}`); params.push(input.inception_date); }
   if (input.target_size !== undefined) { sets.push(`target_size = $${idx++}`); params.push(input.target_size); }
   if (input.status !== undefined) { sets.push(`status = $${idx++}`); params.push(input.status); }
-  if (input.lmt_types !== undefined) { sets.push(`lmt_types = $${idx++}`); params.push(JSON.stringify(input.lmt_types) as any); }
+  if (input.lmt_types !== undefined) { sets.push(`lmt_types = $${idx++}`); params.push(JSON.stringify(input.lmt_types)); }
   if (input.leverage_limit_commitment !== undefined) { sets.push(`leverage_limit_commitment = $${idx++}`); params.push(input.leverage_limit_commitment); }
   if (input.leverage_limit_gross !== undefined) { sets.push(`leverage_limit_gross = $${idx++}`); params.push(input.leverage_limit_gross); }
   if (input.leverage_current_commitment !== undefined) { sets.push(`leverage_current_commitment = $${idx++}`); params.push(input.leverage_current_commitment); }
   if (input.leverage_current_gross !== undefined) { sets.push(`leverage_current_gross = $${idx++}`); params.push(input.leverage_current_gross); }
-  if (input.liquidity_profile !== undefined) { sets.push(`liquidity_profile = $${idx++}`); params.push(JSON.stringify(input.liquidity_profile) as any); }
-  if (input.geographic_exposure !== undefined) { sets.push(`geographic_exposure = $${idx++}`); params.push(JSON.stringify(input.geographic_exposure) as any); }
-  if (input.counterparty_exposure !== undefined) { sets.push(`counterparty_exposure = $${idx++}`); params.push(JSON.stringify(input.counterparty_exposure) as any); }
+  if (input.liquidity_profile !== undefined) { sets.push(`liquidity_profile = $${idx++}`); params.push(JSON.stringify(input.liquidity_profile)); }
+  if (input.geographic_exposure !== undefined) { sets.push(`geographic_exposure = $${idx++}`); params.push(JSON.stringify(input.geographic_exposure)); }
+  if (input.counterparty_exposure !== undefined) { sets.push(`counterparty_exposure = $${idx++}`); params.push(JSON.stringify(input.counterparty_exposure)); }
 
   if (sets.length === 0) return findFundStructureById(id);
 
@@ -96,6 +96,8 @@ export async function updateFundStructure(id: string, input: UpdateFundStructure
   return result[0] ? rowToFundStructure(result[0]) : null;
 }
 
+type JsonArray = string | unknown[] | null;
+
 interface FundStructureRow {
   id: string;
   name: string;
@@ -108,22 +110,22 @@ interface FundStructureRow {
   target_size: number | string | null;
   currency: string;
   status: string;
-  lmt_types: any;
+  lmt_types: JsonArray;
   leverage_limit_commitment: number | string | null;
   leverage_limit_gross: number | string | null;
   leverage_current_commitment: number | string | null;
   leverage_current_gross: number | string | null;
-  liquidity_profile: any;
-  geographic_exposure: any;
-  counterparty_exposure: any;
+  liquidity_profile: JsonArray;
+  geographic_exposure: JsonArray;
+  counterparty_exposure: JsonArray;
   created_at: string | Date;
   updated_at: string | Date;
 }
 
-function parseJsonb<T>(val: any): T[] {
+function parseJsonb<T>(val: JsonArray): T[] {
   if (!val) return [];
-  if (typeof val === 'string') return JSON.parse(val);
-  return val;
+  if (typeof val === 'string') return JSON.parse(val) as T[];
+  return val as T[];
 }
 
 function rowToFundStructure(row: FundStructureRow): FundStructure {

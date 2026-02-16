@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { api, resetDb, ensureAuth } from '../fixtures/api-helper';
+import { api, resetDb } from '../fixtures/api-helper';
 
 interface CreatedEntity {
   id: string;
@@ -20,6 +20,14 @@ interface SimulationResult {
   summary: string;
   decision_record_id?: string;
   eligibility_criteria_applied?: Record<string, unknown> | null;
+}
+
+interface ApiErrorShape {
+  status: number;
+  error?: string;
+  message?: string;
+  violations?: string[];
+  details?: string[];
 }
 
 describe('Transfer Eligibility (Slice 2)', () => {
@@ -245,10 +253,11 @@ describe('Transfer Eligibility (Slice 2)', () => {
         }),
       });
       expect.unreachable('Should have thrown');
-    } catch (err: any) {
-      expect(err.status).toBe(422);
-      expect(['TRANSFER_FAILED', 'BUSINESS_LOGIC_ERROR']).toContain(err.error);
-      expect((err.violations ?? err.details ?? [err.message]).length).toBeGreaterThan(0);
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape;
+      expect(e.status).toBe(422);
+      expect(['TRANSFER_FAILED', 'BUSINESS_LOGIC_ERROR']).toContain(e.error);
+      expect((e.violations ?? e.details ?? [e.message]).length).toBeGreaterThan(0);
     }
   });
 

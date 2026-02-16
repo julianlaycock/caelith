@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { api, resetDb, ensureAuth } from '../fixtures/api-helper';
+import { api, resetDb } from '../fixtures/api-helper';
 
 interface CreatedEntity {
   id: string;
@@ -44,6 +44,10 @@ interface ComplianceReport {
     severity: string;
     message: string;
   }>;
+}
+
+interface ApiErrorShape {
+  status: number;
 }
 
 describe('Compliance Report (Slice 6)', () => {
@@ -217,8 +221,9 @@ describe('Compliance Report (Slice 6)', () => {
     try {
       await api('/reports/compliance/00000000-0000-0000-0000-999999999999');
       expect.unreachable('Should have thrown');
-    } catch (err: any) {
-      expect(err.status).toBe(404);
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape;
+      expect(e.status).toBe(404);
     }
   });
 });
