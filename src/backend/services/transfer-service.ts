@@ -22,7 +22,7 @@ import { randomUUID } from 'crypto';
 import { runCoreEligibilityChecks } from './eligibility-check-helper.js';
 import { validateTransfer } from '../../rules-engine/validator.js';
 import { ValidationContext, TransferRequest, FundContext, AssetAggregates } from '../../rules-engine/types.js';
-import { Transfer, Asset, EligibilityCriteria, LiquidityManagementTool, DecisionCheck } from '../models/index.js';
+import { Transfer, Asset, EligibilityCriteria, LiquidityManagementTool, DecisionCheck, DecisionResult } from '../models/index.js';
 import { NotFoundError, BusinessLogicError } from '../errors.js';
 import { getActiveCompositeRules } from './composite-rules-service.js';
 import { withTransaction } from './transaction-helper.js';
@@ -119,6 +119,56 @@ async function runEligibilityChecks(
   return { checks, criteria: result.criteria };
 }
 
+// ── Shared Validation ───────────────────────────────────────
+
+interface FullValidationResult {
+  context: ValidationContext;
+  allChecks: DecisionCheck[];
+  allViolations: string[];
+  valid: boolean;
+  criteria: EligibilityCriteria | null;
+  decisionRecordId: string;
+}
+
+/**
+ * Run full transfer validation (rules engine + eligibility + decision record).
+ * Shared by both simulate and execute paths.
+ */
+async function runFullValidation(
+  request: TransferRequest,
+  resolveResult: (valid: boolean) => DecisionResult
+): Promise<FullValidationResult> {
+  const context = await buildValidationContext(request);
+  const rulesResult = validateTransfer(context);
+
+  const asset = context.asset;
+  let eligibilityChecks: DecisionCheck[] = [];
+  let criteria: EligibilityCriteria | null = null;
+
+  if (asset && asset.fund_structure_id) {
+    const investmentAmount = request.units * (asset.unit_price ? Number(asset.unit_price) : 0);
+    const eligResult = await runEligibilityChecks(asset, context.toInvestor, investmentAmount);
+    eligibilityChecks = eligResult.checks;
+    criteria = eligResult.criteria;
+  }
+
+  const allChecks = mergeChecks(eligibilityChecks, rulesResult.checks);
+  const allViolations = allChecks.filter(c => !c.passed).map(c => c.message);
+  const valid = allViolations.length === 0;
+
+  const decisionRecord = await recordDecisionWithResult({
+    decisionType: 'transfer_validation',
+    assetId: request.asset_id,
+    subjectId: request.to_investor_id,
+    inputSnapshot: { transfer_request: request },
+    ruleVersionSnapshot: { rules_engine: context.rules, eligibility_criteria: criteria },
+    checks: allChecks,
+    result: resolveResult(valid),
+  });
+
+  return { context, allChecks, allViolations, valid, criteria, decisionRecordId: decisionRecord.id };
+}
+
 // ── Public API ──────────────────────────────────────────────
 
 /**
@@ -128,44 +178,8 @@ export async function simulateTransfer(
   request: TransferRequest
 ): Promise<SimulationResult> {
   try {
-    // Build validation context
-    const context = await buildValidationContext(request);
-
-    // Run rules engine (existing checks)
-    const rulesResult = validateTransfer(context);
-
-    // Run eligibility checks if asset is fund-linked
-    const asset = context.asset;
-    let eligibilityChecks: DecisionCheck[] = [];
-    let criteria: EligibilityCriteria | null = null;
-
-    if (asset && asset.fund_structure_id) {
-      const investmentAmount = request.units * (asset.unit_price ? Number(asset.unit_price) : 0);
-      const eligResult = await runEligibilityChecks(asset, context.toInvestor, investmentAmount);
-      eligibilityChecks = eligResult.checks;
-      criteria = eligResult.criteria;
-    }
-
-    // Merge checks from both engines with deterministic duplicate handling.
-    const allChecks = mergeChecks(eligibilityChecks, rulesResult.checks);
-    const allViolations = allChecks.filter(c => !c.passed).map(c => c.message);
-    const valid = allViolations.length === 0;
-
-    // Write decision record
-    const decisionRecord = await recordDecisionWithResult({
-      decisionType: 'transfer_validation',
-      assetId: request.asset_id,
-      subjectId: request.to_investor_id,
-      inputSnapshot: {
-        transfer_request: request,
-      },
-      ruleVersionSnapshot: {
-        rules_engine: context.rules,
-        eligibility_criteria: criteria,
-      },
-      checks: allChecks,
-      result: 'simulated',
-    });
+    const { allChecks, allViolations, valid, criteria, decisionRecordId } =
+      await runFullValidation(request, () => 'simulated');
 
     const totalChecks = allChecks.length;
     const passedChecks = allChecks.filter(c => c.passed).length;
@@ -177,7 +191,7 @@ export async function simulateTransfer(
       summary: valid
         ? `Transfer approved (simulated). ${passedChecks}/${totalChecks} checks passed.`
         : `Transfer rejected (simulated). ${allViolations.length} violation(s). ${passedChecks}/${totalChecks} checks passed.`,
-      decision_record_id: decisionRecord.id,
+      decision_record_id: decisionRecordId,
       eligibility_criteria_applied: criteria,
     };
   } catch (error) {
@@ -197,45 +211,8 @@ export async function executeTransfer(
   request: TransferRequest
 ): Promise<TransferExecutionResult> {
   try {
-    // Build validation context
-    const context = await buildValidationContext(request);
-
-    // Run rules engine (existing checks)
-    const rulesResult = validateTransfer(context);
-
-    // Run eligibility checks if asset is fund-linked
-    const asset = context.asset;
-    let eligibilityChecks: DecisionCheck[] = [];
-    let criteria: EligibilityCriteria | null = null;
-
-    if (asset && asset.fund_structure_id) {
-      const investmentAmount = request.units * (asset.unit_price ? Number(asset.unit_price) : 0);
-      const eligResult = await runEligibilityChecks(asset, context.toInvestor, investmentAmount);
-      eligibilityChecks = eligResult.checks;
-      criteria = eligResult.criteria;
-    }
-
-    // Combine checks from both engines with deterministic duplicate handling.
-    const allChecks = mergeChecks(eligibilityChecks, rulesResult.checks);
-    const allViolations = allChecks.filter(c => !c.passed).map(c => c.message);
-    const valid = allViolations.length === 0;
-
-    // Write decision record
-    const decisionRecord = await recordDecisionWithResult({
-      decisionType: 'transfer_validation',
-      assetId: request.asset_id,
-      subjectId: request.to_investor_id,
-      inputSnapshot: {
-        transfer_request: request,
-      },
-      ruleVersionSnapshot: {
-        rules_engine: context.rules,
-        eligibility_criteria: criteria,
-      },
-      checks: allChecks,
-      result: valid ? 'approved' : 'rejected',
-    });
-    const decisionRecordId = decisionRecord.id;
+    const { context, allViolations, valid, decisionRecordId } =
+      await runFullValidation(request, (v) => v ? 'approved' : 'rejected');
 
     if (!valid) {
       // Log rejection event

@@ -122,9 +122,10 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(securityHeaders);
+const DEFAULT_DEV_ORIGINS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003'];
 const ALLOWED_ORIGINS = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
-  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003'];
+  : (process.env.NODE_ENV === 'production' ? [] : DEFAULT_DEV_ORIGINS);
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void): void => {
@@ -184,7 +185,7 @@ app.get('/api/health/ready', async (_req: express.Request, res: express.Response
 });
 
 // API info endpoint
-app.get('/api', (req, res) => {
+app.get('/api', (_req, res) => {
   res.json({
     name: 'Private Asset Registry API',
     version: '1.0.0',

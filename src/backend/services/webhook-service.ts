@@ -226,41 +226,66 @@ export async function dispatchEvent(
 }
 
 /**
- * Attempt to deliver a webhook payload
+ * Attempt to deliver a webhook payload with exponential backoff retry.
+ * Retries up to MAX_DELIVERY_ATTEMPTS times on network errors or 5xx responses.
+ * Backoff schedule: ~1s, ~4s, ~16s (base * 4^attempt with jitter).
  */
+const MAX_DELIVERY_ATTEMPTS = 3;
+const BACKOFF_BASE_MS = 1000;
+
 async function deliverWebhook(
   deliveryId: string,
   url: string,
   body: string,
   signature: string
 ): Promise<void> {
-  const now = new Date().toISOString();
+  for (let attempt = 0; attempt < MAX_DELIVERY_ATTEMPTS; attempt++) {
+    const now = new Date().toISOString();
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Caelith-Signature': signature,
-        'X-Caelith-Event': JSON.parse(body).event_type,
-      },
-      body,
-      signal: controller.signal,
-    });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Caelith-Signature': signature,
+          'X-Caelith-Event': JSON.parse(body).event_type,
+        },
+        body,
+        signal: controller.signal,
+      });
 
-    clearTimeout(timeout);
+      clearTimeout(timeout);
 
-    await execute(
-      `UPDATE webhook_deliveries SET status = ?, response_code = ?, attempts = attempts + 1, last_attempt_at = ? WHERE id = ?`,
-      [res.ok ? 'success' : 'failed', res.status, now, deliveryId]
-    );
-  } catch {
-    await execute(
-      `UPDATE webhook_deliveries SET status = ?, attempts = attempts + 1, last_attempt_at = ? WHERE id = ?`,
-      ['failed', now, deliveryId]
-    );
+      const succeeded = res.ok;
+      const retryable = res.status >= 500;
+
+      await execute(
+        `UPDATE webhook_deliveries SET status = ?, response_code = ?, attempts = attempts + 1, last_attempt_at = ? WHERE id = ?`,
+        [succeeded ? 'success' : 'failed', res.status, now, deliveryId]
+      );
+
+      if (succeeded || !retryable) return;
+
+      // 5xx — retry with backoff
+      if (attempt < MAX_DELIVERY_ATTEMPTS - 1) {
+        const delayMs = BACKOFF_BASE_MS * 4 ** attempt + Math.floor(Math.random() * 500);
+        logger.warn('Webhook delivery got 5xx, retrying', { deliveryId, attempt, status: res.status });
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    } catch (err) {
+      await execute(
+        `UPDATE webhook_deliveries SET status = ?, attempts = attempts + 1, last_attempt_at = ? WHERE id = ?`,
+        ['failed', now, deliveryId]
+      );
+
+      if (attempt < MAX_DELIVERY_ATTEMPTS - 1) {
+        const delayMs = BACKOFF_BASE_MS * 4 ** attempt + Math.floor(Math.random() * 500);
+        logger.warn('Webhook delivery failed, retrying', { deliveryId, attempt, error: err });
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
   }
 }

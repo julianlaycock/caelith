@@ -10,7 +10,6 @@ import {
   parseCsv,
   autoMapColumns,
   csvToPayload,
-  type ImportEntityType,
 } from './csv-import-service.js';
 
 // ── CSV Parser Tests ──────────────────────────────────────────────────────────

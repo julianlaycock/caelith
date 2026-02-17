@@ -213,9 +213,7 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
 
     try {
       const text = await selectedFile.text();
-      console.log('[CSV Debug] File read, length:', text.length);
       const result = parseCsvFull(text, entityType);
-      console.log('[CSV Debug] Parsed:', { columns: result.columns, totalRows: result.totalRows, allRowsCount: result.allRows.length, suggestedMapping: result.suggestedMapping });
 
       if (result.totalRows === 0) {
         setError('CSV file is empty or contains no data rows.');
@@ -227,7 +225,6 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
       setColumnMapping(result.suggestedMapping);
       setStep('map');
     } catch (err) {
-      console.error('[CSV Debug] Parse error:', err);
       setError(err instanceof Error ? err.message : 'Failed to parse CSV file.');
     }
   }, [entityType]);
@@ -263,18 +260,9 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
   const mappedRequiredFields = requiredFields.filter(f => Object.values(columnMapping).includes(f));
   const allRequiredMapped = mappedRequiredFields.length === requiredFields.length;
 
-  // ── Initialize editable rows when entering preview step ─
-
-  useEffect(() => {
-    console.log('[CSV Debug] useEffect fired:', { step, hasParseResult: !!parseResult, allRowsLen: allRows.length, editedRowsLen: editedRows.length, columnMapping });
-    if (step !== 'preview') return;
+  const buildPreviewRows = useCallback(() => {
     if (!parseResult || allRows.length === 0) {
-      console.log('[CSV Debug] BAIL: no parseResult or allRows empty');
-      return;
-    }
-    if (editedRows.length > 0) {
-      console.log('[CSV Debug] BAIL: editedRows already initialized');
-      return;
+      return { fields: [] as string[], rows: [] as string[][] };
     }
 
     const fields: string[] = [];
@@ -282,24 +270,47 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
 
     for (const sf of schemaFields) {
       const csvCol = Object.entries(columnMapping).find(([, target]) => target === sf.field)?.[0];
-      if (csvCol) {
-        fields.push(sf.field);
-        colIndices.push(parseResult.columns.indexOf(csvCol));
-      }
+      if (!csvCol) continue;
+
+      const colIndex = parseResult.columns.indexOf(csvCol);
+      if (colIndex < 0) continue;
+
+      fields.push(sf.field);
+      colIndices.push(colIndex);
     }
-
-    console.log('[CSV Debug] Mapped fields:', fields, 'colIndices:', colIndices);
-
-    setMappedFields(fields);
 
     const rows = allRows.map(row =>
       colIndices.map(idx => (idx >= 0 && idx < row.length ? row[idx] : ''))
     );
-    console.log('[CSV Debug] Built editedRows:', rows.length, 'rows, first row:', rows[0]);
+
+    return { fields, rows };
+  }, [allRows, columnMapping, parseResult, schemaFields]);
+
+  const initializePreview = useCallback(() => {
+    const { fields, rows } = buildPreviewRows();
+    setMappedFields(fields);
     setEditedRows(rows);
     setPage(0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, parseResult, allRows]);
+    return { fields, rows };
+  }, [buildPreviewRows]);
+
+  const handleNextToPreview = useCallback(() => {
+    const { fields } = initializePreview();
+    if (fields.length === 0) {
+      setError('No mapped columns were found. Please map at least one column.');
+      return;
+    }
+    setError(null);
+    setStep('preview');
+  }, [initializePreview]);
+
+  // ── Initialize editable rows when entering preview step ─
+
+  useEffect(() => {
+    if (step !== 'preview') return;
+    if (editedRows.length > 0 && mappedFields.length > 0) return;
+    initializePreview();
+  }, [step, editedRows.length, mappedFields.length, initializePreview]);
 
   // ── Validation ─────────────────────────────────────────
 
@@ -373,8 +384,6 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
       window.open(api.getTemplateDownloadUrl(entityType), '_blank');
     });
   };
-
-  console.log('[CSV Debug] Render:', { step, hasParseResult: !!parseResult, editedRowsLen: editedRows.length, mappedFieldsLen: mappedFields.length });
 
   // ── Step: Upload ───────────────────────────────────────
   if (step === 'upload') {
@@ -525,7 +534,7 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
           <Button variant="secondary" onClick={() => { setStep('upload'); setFile(null); setParseResult(null); setAllRows([]); }}>
             Back
           </Button>
-          <Button onClick={() => { setEditedRows([]); setStep('preview'); }} disabled={!allRequiredMapped}>
+          <Button onClick={handleNextToPreview} disabled={!allRequiredMapped}>
             Next: Preview & Edit
           </Button>
         </div>
@@ -665,7 +674,7 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
         </div>
 
         <div className="mt-6 flex justify-between">
-          <Button variant="secondary" onClick={() => { setEditedRows([]); setStep('map'); }}>Back</Button>
+          <Button variant="secondary" onClick={() => { setEditedRows([]); setMappedFields([]); setStep('map'); }}>Back</Button>
           <Button onClick={handleImport} disabled={hasRequiredEmpty}>
             Import {editedRows.length} {ENTITY_TYPE_LABELS[entityType]}
           </Button>

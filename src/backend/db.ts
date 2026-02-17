@@ -16,12 +16,18 @@ export const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000099';
 types.setTypeParser(20, (val: string) => parseInt(val, 10));
 types.setTypeParser(1700, (val: string) => parseFloat(val));
 
+// Enforce SSL/TLS in production to prevent cleartext database traffic
+const sslConfig = process.env.NODE_ENV === 'production'
+  ? { ssl: { rejectUnauthorized: process.env.PG_SSL_REJECT_UNAUTHORIZED !== 'false' } }
+  : {};
+
 const pool = new Pool({
   connectionString:
     process.env.DATABASE_URL || 'postgresql://caelith:caelith@localhost:5432/caelith',
   max: parseInt(process.env.PG_POOL_MAX || '20', 10),
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  ...sslConfig,
 });
 
 pool.on('error', (err) => {

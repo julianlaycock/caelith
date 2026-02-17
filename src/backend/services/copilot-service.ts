@@ -5,11 +5,7 @@ import { compileNaturalLanguageRule } from './nl-rule-compiler.js';
 import type { EntityType } from '../models/index.js';
 import { RateLimitError, ValidationError } from '../errors.js';
 import { logger } from '../lib/logger.js';
-
-const ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const ANTHROPIC_TIMEOUT_MS = 30_000;
-const MAX_RETRIES = 3;
+import { callAnthropic, isAnthropicConfigured, ANTHROPIC_MODEL } from './anthropic-client.js';
 
 const VALID_ENTITY_TYPES: Set<EntityType> = new Set([
   'asset',
@@ -78,16 +74,6 @@ interface InvestorImpactRow {
 
 interface CountRow {
   count: number;
-}
-
-interface AnthropicContentBlock {
-  type: string;
-  text?: string;
-  name?: string;
-}
-
-interface AnthropicResponse {
-  content: AnthropicContentBlock[];
 }
 
 function sanitizeMessage(input: string): string {
@@ -165,61 +151,10 @@ function heuristicIntent(message: string): CopilotIntent {
   return 'regulatory_qa';
 }
 
-async function callAnthropic(body: Record<string, unknown>): Promise<AnthropicResponse> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error('ANTHROPIC_API_KEY not configured');
-  }
-
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), ANTHROPIC_TIMEOUT_MS);
-
-    try {
-      const response = await fetch(ANTHROPIC_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        const payload = await response.text().catch(() => '');
-        const retryable = response.status === 429 || response.status >= 500;
-
-        if (retryable && attempt < MAX_RETRIES - 1) {
-          const delayMs = Math.min(8000, 400 * 2 ** attempt) + Math.floor(Math.random() * 200);
-          await new Promise(resolve => setTimeout(resolve, delayMs));
-          continue;
-        }
-
-        throw new Error(`Anthropic API error ${response.status}: ${payload.slice(0, 300)}`);
-      }
-
-      return await response.json() as AnthropicResponse;
-    } catch (err: unknown) {
-      lastError = err instanceof Error ? err : new Error('Unknown Anthropic request error');
-
-      if (attempt < MAX_RETRIES - 1) {
-        const delayMs = Math.min(8000, 400 * 2 ** attempt) + Math.floor(Math.random() * 200);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      }
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-
-  throw lastError || new Error('Anthropic request failed');
-}
+// callAnthropic imported from anthropic-client.ts
 
 async function classifyIntent(message: string): Promise<CopilotIntent> {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!isAnthropicConfigured()) {
     return heuristicIntent(message);
   }
 
@@ -297,7 +232,7 @@ async function summarizeRagAnswer(question: string, results: RagResult[]): Promi
     return 'No regulatory documents have been ingested yet for this tenant.';
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!isAnthropicConfigured()) {
     return `Top regulatory context for "${question}":\n\n${results
       .slice(0, 2)
       .map(result => `- ${result.content.slice(0, 500)}...`)
