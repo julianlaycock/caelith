@@ -73,6 +73,9 @@ export async function analyzeScenarioImpact(request: ScenarioRequest): Promise<S
   if (!fund_structure_id) {
     throw new ValidationError('fund_structure_id is required');
   }
+  if (!proposed_changes || typeof proposed_changes !== 'object') {
+    throw new ValidationError('proposed_changes object is required');
+  }
 
   const fund = await findFundStructureById(fund_structure_id);
   if (!fund) {
