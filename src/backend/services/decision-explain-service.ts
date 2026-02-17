@@ -58,7 +58,7 @@ const RULE_EXPLANATIONS: Record<string, { explanation: string; basis: string }> 
   },
   'minimum_investment': {
     explanation: 'The investment amount must meet the regulatory minimum threshold for the investor\'s classification in this jurisdiction.',
-    basis: 'Jurisdiction-specific: LU SIF Law Art 2 (€125K semi-pro), KAGB §1 (€200K semi-pro), CBI SI 257/2013 (€100K qualifying)',
+    basis: 'Jurisdiction-specific: LU SIF Law Art 2 (€125K well-informed investor), KAGB §1(19) Nr. 33a (€200K semi-professional), CBI SI 257/2013 (€100K qualifying investor)',
   },
   'suitability_required': {
     explanation: 'A suitability assessment is required for this investor type before proceeding.',
@@ -74,7 +74,7 @@ const RULE_EXPLANATIONS: Record<string, { explanation: string; basis: string }> 
   },
   'classification_evidence': {
     explanation: 'Classification evidence documents the basis for the investor\'s regulatory categorization.',
-    basis: 'MiFID II Art 69, AIFMD II Art 4 — record-keeping requirements',
+    basis: 'MiFID II Art 16(6)-(7), AIFMD Art 22 — record-keeping requirements',
   },
   'self_transfer': {
     explanation: 'Transfers to the same investor are prohibited.',

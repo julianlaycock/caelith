@@ -39,6 +39,7 @@ import tenantRoutes from './routes/tenant-routes.js';
 import { createRegulatoryRoutes } from './routes/regulatory-routes.js';
 import { createCopilotRoutes } from './routes/copilot-routes.js';
 import scenarioRoutes from './routes/scenario-routes.js';
+import importRoutes from './routes/import-routes.js';
 import { isResetEndpointEnabled, shouldBootstrapAdmin } from './config/security-config.js';
 
 // Validate required environment variables at startup
@@ -142,11 +143,26 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(sanitizeInput);
 
-// Request ID middleware — attach unique ID to every request for tracing
+// Request ID + structured request logging
+import { logger } from './lib/logger.js';
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   const requestId = (req.headers['x-request-id'] as string) || randomUUID();
   res.setHeader('X-Request-Id', requestId);
   (req as express.Request & { requestId?: string }).requestId = requestId;
+
+  const start = Date.now();
+  res.on('finish', () => {
+    const durationMs = Date.now() - start;
+    const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
+    logger[level](`${req.method} ${req.path} ${res.statusCode}`, {
+      requestId,
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      durationMs,
+      userId: (req as express.Request & { user?: { id: string } }).user?.id,
+    });
+  });
   next();
 });
 
@@ -217,6 +233,7 @@ app.use('/api/tenants', authenticate, tenantRoutes);
 app.use('/api/regulatory', authenticate, createRegulatoryRoutes());
 app.use('/api/copilot', authenticate, createCopilotRoutes());
 app.use('/api/scenarios', authenticate, scenarioRoutes);
+app.use('/api/import', authenticate, authorize('admin'), importRoutes);
 
 // Test-only: reset database
 app.post('/api/reset', authenticate, authorize('admin'), async (_req, res): Promise<void> => {

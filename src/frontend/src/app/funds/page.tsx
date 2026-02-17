@@ -22,6 +22,7 @@ import { exportCSV } from '../../lib/export-csv';
 import { formatDate } from '../../lib/utils';
 import { LEGAL_FORMS, DOMICILES, FRAMEWORKS, STATUSES } from '../../lib/constants';
 import type { ApiError, FundStructure, CreateFundStructureRequest, LegalForm, RegulatoryFramework, FundStatus } from '../../lib/types';
+import { CsvUploadWizard } from '../../components/csv-upload-wizard';
 
 const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'gray' | 'red'> = {
   active: 'green',
@@ -105,6 +106,7 @@ function ComplianceScore({ checklist }: { checklist: FundChecklist }) {
 
 export default function FundsPage() {
   const [showForm, setShowForm] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const [editFund, setEditFund] = useState<FundStructure | null>(null);
   const [deleteFund, setDeleteFund] = useState<FundStructure | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -262,6 +264,7 @@ export default function FundsPage() {
                 );
               }}
             />
+            <Button variant="secondary" onClick={() => setShowCsvImport(true)}>Import CSV</Button>
             <Button onClick={() => setShowForm(true)}>+ New Fund</Button>
           </div>
         }
@@ -324,6 +327,15 @@ export default function FundsPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* CSV Import Modal */}
+      <Modal open={showCsvImport} onClose={() => setShowCsvImport(false)} title="Import Fund Structures from CSV" size="lg">
+        <CsvUploadWizard
+          entityType="fund_structures"
+          onComplete={() => { setShowCsvImport(false); funds.refetch(); }}
+          onCancel={() => setShowCsvImport(false)}
+        />
       </Modal>
 
       {funds.loading ? (

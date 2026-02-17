@@ -13,6 +13,7 @@ import {
   ConcentrationRiskGrid,
 } from '../components/charts';
 import { formatNumber, formatDateTime, classNames, getErrorMessage } from '../lib/utils';
+import { SetupWizard } from '../components/setup-wizard';
 import type { FundStructure, ComplianceReport, CapTableEntry, DecisionRecord, Investor, Event } from '../lib/types';
 
 interface FundReportPair {
@@ -248,6 +249,7 @@ export default function DashboardPage() {
   const [capTables, setCapTables] = useState<Map<string, CapTableEntry[]>>(new Map());
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [wizardDismissed, setWizardDismissed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRisk, setSelectedRisk] = useState<RiskFlag | null>(null);
   const [violationAsset, setViolationAsset] = useState<string | null>(null);
@@ -466,7 +468,13 @@ export default function DashboardPage() {
         <span className="rounded-lg bg-accent-500 px-3 py-1.5 text-xs font-medium text-white">{today}</span>
       </div>
 
-      {/* Metric Cards — compact */}
+      {/* When no funds exist, show Setup Wizard as the primary content */}
+      {!loading && fundReports.length === 0 && !wizardDismissed && (
+        <SetupWizard onComplete={() => { setWizardDismissed(true); fetchData(); }} />
+      )}
+
+      {/* Metric Cards — only shown when data exists */}
+      {(loading || fundReports.length > 0) && (
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {loading ? (
           <>
@@ -511,6 +519,81 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+      )}
+
+      {/* Onboarding Checklist — shown whenever setup is not fully complete */}
+      {!loading && (() => {
+        const hasFunds = fundReports.length > 0;
+        const hasInvestors = allInvestors.length > 0;
+        const hasRules = reports.some((r) => r.eligibility_criteria.length > 0);
+        const hasDecisions = reports.some((r) => r.recent_decisions.length > 0);
+        const steps = [
+          { label: 'Create a fund structure', done: hasFunds, href: '/funds' },
+          { label: 'Add investors', done: hasInvestors, href: '/investors' },
+          { label: 'Configure eligibility rules', done: hasRules, href: '/rules' },
+          { label: 'Run a compliance check', done: hasDecisions, href: '/onboarding' },
+        ];
+        const completed = steps.filter((s) => s.done).length;
+        if (completed === steps.length) {
+          return (
+            <div className="mb-4">
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                <div className="flex items-center gap-2">
+                  <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm font-medium text-emerald-300">Setup complete — your compliance engine is ready</p>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        if (!hasFunds && !hasInvestors) return null;
+        return (
+          <div className="mb-4">
+            <Card>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm font-semibold text-ink">Getting Started</p>
+                  <p className="text-xs text-ink-secondary">{completed} of {steps.length} steps complete</p>
+                </div>
+                <div className="h-2 w-24 rounded-full bg-bg-tertiary overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-accent-500 transition-all"
+                    style={{ width: `${(completed / steps.length) * 100}%` }}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {steps.map((step) => (
+                  <div
+                    key={step.label}
+                    className={classNames(
+                      'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                      step.done ? 'text-ink-tertiary' : 'text-ink cursor-pointer hover:bg-bg-tertiary'
+                    )}
+                    onClick={!step.done ? () => router.push(step.href) : undefined}
+                  >
+                    {step.done ? (
+                      <svg className="h-4 w-4 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    ) : (
+                      <span className="h-4 w-4 flex-shrink-0 rounded-full border-2 border-edge" />
+                    )}
+                    <span className={step.done ? 'line-through' : 'font-medium'}>{step.label}</span>
+                    {!step.done && (
+                      <svg className="h-3.5 w-3.5 ml-auto text-ink-muted" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                      </svg>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        );
+      })()}
 
       {!loading && actionQueue.length > 0 && (
         <div className="mb-6">
@@ -773,15 +856,6 @@ export default function DashboardPage() {
             <SkeletonRow />
           </Card>
         </div>
-      )}
-
-      {!loading && fundReports.length === 0 && (
-        <Card>
-          <div className="py-8 text-center">
-            <p className="text-sm font-medium text-ink">No funds found</p>
-            <p className="mt-1 text-sm text-ink-secondary">Run <code className="rounded bg-bg-tertiary px-1 py-0.5 font-mono text-xs">npm run seed:showcase</code> in the project root, then refresh.</p>
-          </div>
-        </Card>
       )}
 
       {/* Risk Detail Slide-Out Panel */}

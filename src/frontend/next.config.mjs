@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  async redirects() {
+    return [
+      { source: '/activity', destination: '/audit', permanent: true },
+      { source: '/alerts', destination: '/audit', permanent: true },
+    ];
+  },
   async rewrites() {
     const target = process.env.BACKEND_API_REWRITE_TARGET;
     if (!target) return [];

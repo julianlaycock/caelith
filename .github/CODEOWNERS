@@ -1,0 +1,6 @@
+# Security-critical paths require admin review
+src/backend/middleware/auth.ts @caelith/security
+src/backend/middleware/security.ts @caelith/security
+src/backend/config/ @caelith/security
+docker-compose.yml @caelith/platform
+.github/workflows/ @caelith/platform

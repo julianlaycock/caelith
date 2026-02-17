@@ -33,6 +33,9 @@ import type {
   CopilotResponse,
   DecisionExplanation,
   ScenarioResult,
+  BulkImportPayload,
+  BulkImportResult,
+  CsvParseResult,
 } from './types';
 
 const resolveBaseUrl = (): string => {
@@ -63,20 +66,28 @@ class ApiClient {
     return this.token;
   }
 
-  async downloadCapTablePdf(assetId: string): Promise<void> {
+  private async downloadFile(path: string, filename: string, errorMsg: string): Promise<void> {
     const headers: Record<string, string> = {};
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
-    const res = await fetch(`${BASE_URL}/holdings/cap-table/${assetId}/pdf`, { headers });
-    if (!res.ok) throw new Error('PDF download failed');
+    const res = await fetch(`${BASE_URL}${path}`, { headers });
+    if (!res.ok) throw new Error(errorMsg);
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `cap-table-${assetId.substring(0, 8)}.pdf`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async downloadCapTablePdf(assetId: string): Promise<void> {
+    return this.downloadFile(
+      `/holdings/cap-table/${assetId}/pdf`,
+      `cap-table-${assetId.substring(0, 8)}.pdf`,
+      'PDF download failed'
+    );
   }
 
   private async request<T>(
@@ -461,19 +472,11 @@ class ApiClient {
   }
 
   async downloadDecisionEvidenceBundle(decisionId: string): Promise<void> {
-    const headers: Record<string, string> = {};
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-    const res = await fetch(`${BASE_URL}/decisions/${decisionId}/evidence.pdf`, { headers });
-    if (!res.ok) throw new Error('Decision evidence export failed');
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `decision-evidence-${decisionId.substring(0, 8)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    return this.downloadFile(
+      `/decisions/${decisionId}/evidence.pdf`,
+      `decision-evidence-${decisionId.substring(0, 8)}.pdf`,
+      'Decision evidence export failed'
+    );
   }
 
   // 🧠 Decision Explanation
@@ -510,19 +513,11 @@ class ApiClient {
   }
 
   async downloadComplianceReportPdf(fundStructureId: string): Promise<void> {
-    const headers: Record<string, string> = {};
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-    const res = await fetch(`${BASE_URL}/reports/compliance/${fundStructureId}/pdf`, { headers });
-    if (!res.ok) throw new Error('PDF download failed');
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `compliance-report-${fundStructureId.substring(0, 8)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    return this.downloadFile(
+      `/reports/compliance/${fundStructureId}/pdf`,
+      `compliance-report-${fundStructureId.substring(0, 8)}.pdf`,
+      'PDF download failed'
+    );
   }
 
   // ── NL Rule Compiler ──────────────────────────────────
@@ -542,6 +537,76 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ message, context }),
     });
+  }
+
+  async copilotFeedback(messageId: string, rating: 'up' | 'down'): Promise<void> {
+    await this.request<void>('/copilot/feedback', {
+      method: 'POST',
+      body: JSON.stringify({ messageId, rating }),
+    });
+  }
+
+  // ── Bulk Import ──────────────────────────────────────
+  async bulkImport(payload: BulkImportPayload): Promise<BulkImportResult> {
+    return this.request<BulkImportResult>('/import/bulk', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // ── CSV Import ────────────────────────────────────────
+  async parseCsv(file: File, entityType: string): Promise<CsvParseResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('entityType', entityType);
+
+    const url = `${BASE_URL}/import/parse-csv`;
+    const headers: Record<string, string> = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+
+    const res = await fetch(url, { method: 'POST', headers, body: formData });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'UNKNOWN', message: 'CSV parse failed' }));
+      throw err as ApiError;
+    }
+    return res.json() as Promise<CsvParseResult>;
+  }
+
+  async importCsv(
+    file: File,
+    entityType: string,
+    columnMapping: Record<string, string>,
+    mode: 'strict' | 'best_effort' = 'strict',
+  ): Promise<BulkImportResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('entityType', entityType);
+    formData.append('columnMapping', JSON.stringify(columnMapping));
+    formData.append('mode', mode);
+
+    const url = `${BASE_URL}/import/csv`;
+    const headers: Record<string, string> = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+
+    const res = await fetch(url, { method: 'POST', headers, body: formData });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'UNKNOWN', message: 'CSV import failed' }));
+      throw err as ApiError;
+    }
+    return res.json() as Promise<BulkImportResult>;
+  }
+
+  /** @deprecated Use downloadTemplate() for authenticated downloads */
+  getTemplateDownloadUrl(entityType: string): string {
+    return `${BASE_URL}/import/templates/${entityType}`;
+  }
+
+  async downloadTemplate(entityType: string): Promise<void> {
+    return this.downloadFile(
+      `/import/templates/${entityType}`,
+      `${entityType}-template.csv`,
+      'Template download failed'
+    );
   }
 }
 

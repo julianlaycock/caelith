@@ -22,7 +22,7 @@ import { randomUUID } from 'crypto';
 import { runCoreEligibilityChecks } from './eligibility-check-helper.js';
 import { validateTransfer } from '../../rules-engine/validator.js';
 import { ValidationContext, TransferRequest, FundContext, AssetAggregates } from '../../rules-engine/types.js';
-import { Transfer, Asset, EligibilityCriteria, LiquidityManagementTool } from '../models/index.js';
+import { Transfer, Asset, EligibilityCriteria, LiquidityManagementTool, DecisionCheck } from '../models/index.js';
 import { NotFoundError, BusinessLogicError } from '../errors.js';
 import { getActiveCompositeRules } from './composite-rules-service.js';
 import { withTransaction } from './transaction-helper.js';
@@ -33,20 +33,11 @@ import { query } from '../db.js';
 const APPROVAL_THRESHOLD_UNITS = Number(process.env.TRANSFER_APPROVAL_THRESHOLD || 10000);
 
 /**
- * Single check result (shared shape with rules engine)
- */
-interface Check {
-  rule: string;
-  passed: boolean;
-  message: string;
-}
-
-/**
  * Merge check arrays into a deterministic, de-duplicated list by rule name.
  * If the same rule appears multiple times, keep a failing check over a passing one.
  */
-function mergeChecks(...groups: Check[][]): Check[] {
-  const merged = new Map<string, Check>();
+function mergeChecks(...groups: DecisionCheck[][]): DecisionCheck[] {
+  const merged = new Map<string, DecisionCheck>();
 
   for (const group of groups) {
     for (const check of group) {
@@ -72,7 +63,7 @@ function mergeChecks(...groups: Check[][]): Check[] {
 export interface SimulationResult {
   valid: boolean;
   violations: string[];
-  checks: Check[];
+  checks: DecisionCheck[];
   summary: string;
   decision_record_id?: string;
   eligibility_criteria_applied?: EligibilityCriteria | null;
@@ -100,7 +91,7 @@ async function runEligibilityChecks(
   asset: Asset,
   toInvestor: { id: string; investor_type?: string; jurisdiction: string; kyc_status?: string; kyc_expiry?: string | null },
   investmentAmount: number
-): Promise<{ checks: Check[]; criteria: EligibilityCriteria | null }> {
+): Promise<{ checks: DecisionCheck[]; criteria: EligibilityCriteria | null }> {
   // Skip if asset has no fund structure
   if (!asset.fund_structure_id) {
     return { checks: [], criteria: null };
@@ -119,7 +110,7 @@ async function runEligibilityChecks(
   });
 
   // Map helper checks back to the local Check interface (compatible shape)
-  const checks: Check[] = result.checks.map(c => ({
+  const checks: DecisionCheck[] = result.checks.map(c => ({
     rule: c.rule,
     passed: c.passed,
     message: c.message,
@@ -145,7 +136,7 @@ export async function simulateTransfer(
 
     // Run eligibility checks if asset is fund-linked
     const asset = context.asset;
-    let eligibilityChecks: Check[] = [];
+    let eligibilityChecks: DecisionCheck[] = [];
     let criteria: EligibilityCriteria | null = null;
 
     if (asset && asset.fund_structure_id) {
@@ -214,7 +205,7 @@ export async function executeTransfer(
 
     // Run eligibility checks if asset is fund-linked
     const asset = context.asset;
-    let eligibilityChecks: Check[] = [];
+    let eligibilityChecks: DecisionCheck[] = [];
     let criteria: EligibilityCriteria | null = null;
 
     if (asset && asset.fund_structure_id) {

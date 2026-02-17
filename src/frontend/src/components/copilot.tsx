@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { api } from '../lib/api';
-import type { CopilotResponse, CopilotCitation, ApiError } from '../lib/types';
+import type { CopilotResponse, CopilotCitation, CopilotSuggestedAction, ApiError } from '../lib/types';
 
 interface ChatMessage {
   id: string;
@@ -11,6 +11,7 @@ interface ChatMessage {
   content: string;
   intent?: string;
   citations?: CopilotCitation[];
+  suggestedActions?: CopilotSuggestedAction[];
 }
 
 const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
@@ -113,6 +114,7 @@ export function CopilotPanel({
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<Record<string, 'up' | 'down'>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pathname = usePathname();
@@ -153,10 +155,11 @@ export function CopilotPanel({
           content: response.message,
           intent: response.intent,
           citations: response.citations,
+          suggestedActions: response.suggestedActions,
         },
       ]);
     } catch (err) {
-      const message = (err as ApiError)?.message || 'Something went wrong. Please try again.';
+      const message = (err as ApiError)?.message || 'Compliance Copilot is temporarily unavailable. Your compliance data is unaffected.';
       setError(message);
     } finally {
       setLoading(false);
@@ -182,7 +185,7 @@ export function CopilotPanel({
       <div
         className={`fixed right-0 top-0 z-50 flex h-full flex-col bg-bg-secondary shadow-xl transition-transform duration-300 ease-in-out ${
           open ? 'translate-x-0' : 'translate-x-full'
-        } w-full md:w-[400px]`}
+        } w-full md:w-[480px]`}
       >
         <div className="flex items-center justify-between border-b border-edge px-4 py-3">
           <div className="flex items-center gap-2.5">
@@ -213,9 +216,14 @@ export function CopilotPanel({
                 </svg>
               </div>
               <p className="mb-1 text-sm font-medium text-ink">Compliance Copilot</p>
-              <p className="mb-6 text-xs text-ink-tertiary">
+              <p className="mb-3 text-xs text-ink-tertiary">
                 Ask questions about regulations, decisions, or draft rules using natural language.
               </p>
+              <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                <p className="text-[11px] leading-relaxed text-amber-700">
+                  Compliance Copilot provides AI-generated informational assistance only. Responses do not constitute legal, regulatory, or compliance advice. All outputs require independent verification by a qualified professional. Caelith does not provide legal advice.
+                </p>
+              </div>
               <div className="w-full space-y-2">
                 {getPromptsForPath(pathname).map((prompt) => (
                   <button
@@ -238,23 +246,108 @@ export function CopilotPanel({
                 }`}
               >
                 {msg.role === 'assistant' && msg.intent && (
-                  <span className="mb-1 inline-block rounded bg-[#24364A]/15 px-1.5 py-0.5 text-[10px] font-medium text-[#24364A]">
-                    {msg.intent.replace('_', ' ')}
-                  </span>
+                  <div className="mb-1.5 flex items-center gap-1.5">
+                    <span className="inline-block rounded bg-[#24364A]/15 px-1.5 py-0.5 text-[10px] font-medium text-[#24364A]">
+                      {msg.intent.replace('_', ' ')}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-500" title="AI-assisted regulatory interpretation — requires human review">
+                      <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                      </svg>
+                      Caelith AI
+                    </span>
+                  </div>
                 )}
                 <div className="break-words whitespace-pre-wrap">{msg.content}</div>
                 {msg.citations && msg.citations.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-[9px] font-medium uppercase tracking-wider text-ink-tertiary mb-1">Sources</p>
+                    <div className="flex flex-wrap gap-1">
+                      {msg.citations.map((c, j) => (
+                        <span
+                          key={j}
+                          className="inline-flex items-center gap-1 rounded-full border border-accent-500/20 bg-accent-500/5 px-2 py-0.5 text-[10px] text-accent-300"
+                          title={c.excerpt}
+                        >
+                          <svg className="h-2.5 w-2.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                          </svg>
+                          {c.documentTitle}
+                          {c.articleRef ? `, ${c.articleRef}` : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {msg.suggestedActions && msg.suggestedActions.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {msg.citations.map((c, j) => (
-                      <span
+                    {msg.suggestedActions.map((sa, j) => (
+                      <button
                         key={j}
-                        className="inline-block rounded-full border border-edge bg-bg-secondary/90 px-2 py-0.5 text-[10px] text-ink-secondary"
-                        title={c.excerpt}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          sendMessage(sa.label);
+                        }}
+                        className="inline-flex items-center rounded-full border border-[#24364A]/20 bg-[#24364A]/5 px-2.5 py-1 text-[10px] font-medium text-[#24364A] transition-colors hover:bg-[#24364A]/10 hover:border-[#24364A]/30"
                       >
-                        {c.documentTitle}
-                        {c.articleRef ? `, ${c.articleRef}` : ''}
-                      </span>
+                        {sa.label}
+                      </button>
                     ))}
+                  </div>
+                )}
+                {msg.role === 'assistant' && (
+                  <div className="mt-2 border-t border-edge-subtle pt-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] text-ink-muted italic leading-tight">
+                        AI-generated — not legal or regulatory advice. Verify independently.
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const val = feedback[msg.id] === 'up' ? undefined : 'up';
+                            setFeedback((prev) => {
+                              const next = { ...prev };
+                              if (val) next[msg.id] = val; else delete next[msg.id];
+                              return next;
+                            });
+                            if (val) api.copilotFeedback(msg.id, 'up').catch(() => {});
+                          }}
+                          className={`rounded p-1 transition-colors ${
+                            feedback[msg.id] === 'up'
+                              ? 'text-emerald-500 bg-emerald-500/10'
+                              : 'text-ink-muted hover:text-ink-secondary hover:bg-bg-tertiary'
+                          }`}
+                          title="Helpful"
+                        >
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48a4.53 4.53 0 01-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904M14.25 9h2.25M5.904 18.75c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 01-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 10.203 4.167 9.75 5 9.75h1.053c.472 0 .745.556.5.96a8.958 8.958 0 00-1.302 4.665c0 1.194.232 2.333.654 3.375z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const val = feedback[msg.id] === 'down' ? undefined : 'down';
+                            setFeedback((prev) => {
+                              const next = { ...prev };
+                              if (val) next[msg.id] = val; else delete next[msg.id];
+                              return next;
+                            });
+                            if (val) api.copilotFeedback(msg.id, 'down').catch(() => {});
+                          }}
+                          className={`rounded p-1 transition-colors ${
+                            feedback[msg.id] === 'down'
+                              ? 'text-red-400 bg-red-500/10'
+                              : 'text-ink-muted hover:text-ink-secondary hover:bg-bg-tertiary'
+                          }`}
+                          title="Not helpful"
+                        >
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 15h2.25m8.024-9.75c.011.05.028.1.052.148.593 1.2.925 2.55.925 3.977 0 1.487-.36 2.89-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398-.306.774-1.086 1.227-1.918 1.227h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 001.302-4.665c0-1.194-.232-2.333-.654-3.375z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -299,7 +392,7 @@ export function CopilotPanel({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask a compliance question..."
+              placeholder="Ask about AIFMD eligibility, SIF requirements, or your fund's compliance..."
               rows={1}
               className="flex-1 resize-none rounded-lg border border-edge bg-bg-primary px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-[#24364A] focus:outline-none focus:ring-1 focus:ring-[#24364A]/30"
             />

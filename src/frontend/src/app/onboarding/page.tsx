@@ -50,6 +50,12 @@ const STATUS_BADGE: Record<string, 'green' | 'yellow' | 'red' | 'gray' | 'blue'>
 
 export default function OnboardingPage() {
   const [showApplyForm, setShowApplyForm] = useState(false);
+  const [showBulkApply, setShowBulkApply] = useState(false);
+  const [bulkAssetId, setBulkAssetId] = useState('');
+  const [bulkUnits, setBulkUnits] = useState('1000');
+  const [bulkSelectedInvestors, setBulkSelectedInvestors] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
   const [formError, setFormError] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<OnboardingRecord | null>(null);
@@ -192,6 +198,33 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleBulkApply = async () => {
+    if (!bulkAssetId || bulkSelectedInvestors.size === 0) return;
+    const units = Number(bulkUnits) || 1000;
+    setBulkLoading(true);
+    setBulkProgress({ done: 0, total: bulkSelectedInvestors.size });
+    let successCount = 0;
+    let failCount = 0;
+    const investorIds = Array.from(bulkSelectedInvestors);
+    for (const investorId of investorIds) {
+      try {
+        await api.applyToFund({ investor_id: investorId, asset_id: bulkAssetId, requested_units: units });
+        successCount++;
+      } catch {
+        failCount++;
+      }
+      setBulkProgress({ done: successCount + failCount, total: investorIds.length });
+    }
+    setBulkLoading(false);
+    setShowBulkApply(false);
+    setBulkSelectedInvestors(new Set());
+    setActionMsg({
+      type: failCount === 0 ? 'success' : 'error',
+      text: `Submitted ${successCount} application${successCount !== 1 ? 's' : ''}${failCount > 0 ? `, ${failCount} failed` : ''}.`,
+    });
+    refetchRecords();
+  };
+
   const handleApply = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError(null);
@@ -252,19 +285,15 @@ export default function OnboardingPage() {
     try {
       if (action === 'check') {
         const result = await api.checkOnboardingEligibility(record.id);
-        if (result.eligible) {
-          setActionMsg({ type: 'success', text: `${investorMap[record.investor_id] || 'Investor'} is eligible. All checks passed.` });
-        } else {
-          // Show results modal instead of silently moving to ineligible
-          setEligibilityResult({
-            record: result.onboarding,
-            eligible: false,
-            checks: result.checks,
-          });
-          setSelectedRecord(null);
-          refetchRecords();
-          return;
-        }
+        // Always show results modal — let user explicitly decide next step
+        setEligibilityResult({
+          record: result.onboarding,
+          eligible: result.eligible,
+          checks: result.checks,
+        });
+        setSelectedRecord(null);
+        refetchRecords();
+        return;
       } else if (action === 'approve') {
         await api.reviewOnboarding(record.id, { decision: 'approved' });
         setActionMsg({ type: 'success', text: 'Application approved.' });
@@ -404,6 +433,7 @@ export default function OnboardingPage() {
                 );
               }}
             />
+            <Button variant="secondary" onClick={() => setShowBulkApply(true)}>Bulk Apply</Button>
             <Button onClick={() => setShowApplyForm(true)}>+ New Application</Button>
           </div>
         }
@@ -438,7 +468,7 @@ export default function OnboardingPage() {
         <form ref={applyFormRef} onSubmit={handleApply} className="space-y-4">
           {formError && <Alert variant="error">{formError}</Alert>}
           <Select label="Investor" name="investor_id" options={investorOptions} required />
-          <Select label="Asset" name="asset_id" options={assetOptions} required />
+          <Select label="Fund / Share Class" name="asset_id" options={assetOptions} required />
           <Input label="Requested Units" name="requested_units" type="number" min={1} required placeholder="e.g., 10000" />
           <Input label="Owner Tag" name="owner_tag" placeholder="e.g., Compliance Desk A" />
           <div>
@@ -457,6 +487,96 @@ export default function OnboardingPage() {
             <Button type="submit">Submit Application</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Bulk Apply Modal */}
+      <Modal
+        open={showBulkApply}
+        onClose={() => { setShowBulkApply(false); setBulkSelectedInvestors(new Set()); }}
+        title="Bulk Apply Investors"
+      >
+        <div className="space-y-4">
+          <Select
+            label="Fund / Share Class"
+            value={bulkAssetId}
+            onChange={(e) => setBulkAssetId(e.target.value)}
+            options={[{ value: '', label: '— Select —' }, ...assetOptions]}
+          />
+          <Input
+            label="Requested Units (per investor)"
+            type="number"
+            value={bulkUnits}
+            onChange={(e) => setBulkUnits(e.target.value)}
+            min={1}
+          />
+          {investors.data && investors.data.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-medium uppercase tracking-wide text-ink-tertiary">
+                  Select Investors ({bulkSelectedInvestors.size} of {investors.data.length})
+                </label>
+                <button
+                  type="button"
+                  className="text-xs text-accent-400 hover:text-accent-300"
+                  onClick={() => {
+                    if (bulkSelectedInvestors.size === investors.data!.length) {
+                      setBulkSelectedInvestors(new Set());
+                    } else {
+                      setBulkSelectedInvestors(new Set(investors.data!.map(inv => inv.id)));
+                    }
+                  }}
+                >
+                  {bulkSelectedInvestors.size === investors.data.length ? 'Deselect All' : 'Select All'}
+                </button>
+              </div>
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-edge divide-y divide-edge-subtle">
+                {investors.data.map((inv) => (
+                  <label key={inv.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-bg-tertiary transition-colors">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-edge text-accent-400 focus:ring-accent-400"
+                      checked={bulkSelectedInvestors.has(inv.id)}
+                      onChange={(e) => {
+                        setBulkSelectedInvestors(prev => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(inv.id); else next.delete(inv.id);
+                          return next;
+                        });
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-ink truncate">{inv.name}</p>
+                      <p className="text-[10px] text-ink-tertiary">{inv.investor_type.replace(/_/g, ' ')} · {inv.jurisdiction}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+          {bulkLoading && (
+            <div className="rounded-lg bg-bg-tertiary p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-400 border-t-transparent" />
+                <p className="text-xs text-ink-secondary">Submitting {bulkProgress.done} of {bulkProgress.total}...</p>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-bg-tertiary overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-accent-500 transition-all"
+                  style={{ width: `${bulkProgress.total > 0 ? (bulkProgress.done / bulkProgress.total) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setShowBulkApply(false)} disabled={bulkLoading}>Cancel</Button>
+            <Button
+              onClick={handleBulkApply}
+              disabled={bulkLoading || !bulkAssetId || bulkSelectedInvestors.size === 0}
+            >
+              Submit {bulkSelectedInvestors.size} Application{bulkSelectedInvestors.size !== 1 ? 's' : ''}
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Detail / Action Modal */}
@@ -692,14 +812,25 @@ export default function OnboardingPage() {
       >
         {eligibilityResult && (
           <div className="space-y-4">
-            <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                </svg>
-                <p className="text-sm font-semibold text-red-300">Investor does not meet eligibility requirements</p>
+            {eligibilityResult.eligible ? (
+              <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm font-semibold text-emerald-300">All eligibility checks passed</p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                  </svg>
+                  <p className="text-sm font-semibold text-red-300">Investor does not meet eligibility requirements</p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wider text-ink-tertiary">Check Results</p>
@@ -735,19 +866,33 @@ export default function OnboardingPage() {
                 size="sm"
                 onClick={() => { setEligibilityResult(null); refetchRecords(); }}
               >
-                Close
+                {eligibilityResult.eligible ? 'Keep in Current Status' : 'Close'}
               </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => {
-                  const record = eligibilityResult.record;
-                  setEligibilityResult(null);
-                  openRejectModal(record);
-                }}
-              >
-                Reject with Reasons
-              </Button>
+              {!eligibilityResult.eligible && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => {
+                    const record = eligibilityResult.record;
+                    setEligibilityResult(null);
+                    openRejectModal(record);
+                  }}
+                >
+                  Reject with Reasons
+                </Button>
+              )}
+              {eligibilityResult.eligible && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEligibilityResult(null);
+                    setActionMsg({ type: 'success', text: `Investor advanced to Eligible. All checks passed.` });
+                    refetchRecords();
+                  }}
+                >
+                  Confirm Advance to Eligible
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -944,8 +1089,19 @@ export default function OnboardingPage() {
       ) : (
         <EmptyState
           title="No onboarding applications"
-          description="Submit a new application to start the investor onboarding process."
-          action={<Button onClick={() => setShowApplyForm(true)}>+ New Application</Button>}
+          description={
+            investors.data && investors.data.length > 0
+              ? `You have ${investors.data.length} investor${investors.data.length !== 1 ? 's' : ''} ready. Submit them for eligibility checking against your fund rules.`
+              : 'Import investors first, then submit them as onboarding applications for compliance checking.'
+          }
+          action={
+            <div className="flex items-center gap-2">
+              {investors.data && investors.data.length > 0 && assets.data && assets.data.length > 0 && (
+                <Button onClick={() => setShowBulkApply(true)}>Bulk Apply {investors.data.length} Investors</Button>
+              )}
+              <Button variant={investors.data && investors.data.length > 0 ? 'secondary' : 'primary'} onClick={() => setShowApplyForm(true)}>+ New Application</Button>
+            </div>
+          }
         />
       )}
     </div>

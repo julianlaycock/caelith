@@ -18,23 +18,17 @@ import { findInvestorById } from '../repositories/investor-repository.js';
 import { findAssetById } from '../repositories/asset-repository.js';
 import { createHolding, findHoldingByInvestorAndAsset } from '../repositories/holding-repository.js';
 import { createEvent } from '../repositories/event-repository.js';
-import { OnboardingRecord } from '../models/index.js';
+import { OnboardingRecord, DecisionCheck } from '../models/index.js';
 import { runCoreEligibilityChecks } from './eligibility-check-helper.js';
 import { NotFoundError, ValidationError, BusinessLogicError } from '../errors.js';
 import { recordDecision, recordDecisionWithResult } from './decision-record-helper.js';
 
 // ── Types ───────────────────────────────────────────────────
 
-interface Check {
-  rule: string;
-  passed: boolean;
-  message: string;
-}
-
 export interface EligibilityResult {
   onboarding: OnboardingRecord;
   eligible: boolean;
-  checks: Check[];
+  checks: DecisionCheck[];
   decision_record_id: string;
 }
 
@@ -160,7 +154,7 @@ export async function checkEligibility(
     throw new NotFoundError('Asset', onboarding.asset_id);
   }
 
-  let checks: Check[];
+  let checks: DecisionCheck[];
   let eligible: boolean;
 
   if (asset.fund_structure_id) {

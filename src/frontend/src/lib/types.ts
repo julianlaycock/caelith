@@ -78,7 +78,9 @@ export type EventType =
   | 'onboarding.withdrawn'
   | 'nl_compiler.attempt'
   | 'copilot.query'
-  | 'copilot.rule_proposed';
+  | 'copilot.rule_proposed'
+  | 'copilot.feedback'
+  | 'bulk_import.completed';
 
 export type EntityType =
   | 'asset'
@@ -91,7 +93,8 @@ export type EntityType =
   | 'eligibility_criteria'
   | 'decision_record'
   | 'onboarding_record'
-  | 'regulatory_document';
+  | 'regulatory_document'
+  | 'system';
 
 export interface Investor {
   id: string;
@@ -579,4 +582,119 @@ export interface ScenarioResult {
   units_at_risk: number;
   percentage_at_risk: number;
   decision_record_id: string;
+}
+
+// ── Bulk Import ─────────────────────────────────────
+export type ImportEntityType = 'investors' | 'fund_structures' | 'holdings' | 'eligibility_criteria';
+
+export interface CsvParseResult {
+  columns: string[];
+  preview: string[][];
+  totalRows: number;
+  suggestedMapping: Record<string, string>;
+}
+
+export interface BulkImportPayload {
+  fundStructures?: BulkFundStructure[];
+  investors?: BulkInvestor[];
+  holdings?: BulkHolding[];
+  eligibilityCriteria?: BulkEligibilityCriteria[];
+  mode?: 'strict' | 'best_effort';
+}
+
+export interface BulkFundStructure {
+  ref?: string;
+  name: string;
+  legal_form: LegalForm;
+  domicile: string;
+  regulatory_framework: RegulatoryFramework;
+  aifm_name?: string;
+  aifm_lei?: string;
+  inception_date?: string;
+  target_size?: number;
+  currency?: string;
+  status?: string;
+  asset_name?: string;
+  asset_type?: string;
+  total_units?: number;
+  unit_price?: number;
+}
+
+export interface BulkInvestor {
+  ref?: string;
+  name: string;
+  jurisdiction: string;
+  accredited?: boolean;
+  investor_type?: InvestorType;
+  kyc_status?: KycStatus;
+  kyc_expiry?: string;
+  tax_id?: string;
+  lei?: string;
+  email?: string;
+}
+
+export interface BulkHolding {
+  investor_ref?: string;
+  investor_id?: string;
+  asset_ref?: string;
+  asset_id?: string;
+  units: number;
+  acquired_at: string;
+}
+
+export interface BulkEligibilityCriteria {
+  fund_ref?: string;
+  fund_structure_id?: string;
+  jurisdiction: string;
+  investor_type: InvestorType;
+  minimum_investment: number;
+  maximum_allocation_pct?: number;
+  documentation_required?: string[];
+  suitability_required?: boolean;
+  source_reference?: string;
+  effective_date: string;
+}
+
+export interface BulkImportEntityResult {
+  id: string;
+  ref?: string;
+  name?: string;
+}
+
+export interface ImportRowError {
+  entityType: string;
+  index: number;
+  ref?: string;
+  errors: string[];
+}
+
+export interface ImportWarning {
+  entityType: string;
+  index: number;
+  message: string;
+  existingId?: string;
+  action: 'created' | 'skipped';
+}
+
+export interface BulkImportResult {
+  success: boolean;
+  summary: {
+    fund_structures: number;
+    assets: number;
+    investors: number;
+    holdings: number;
+    eligibility_criteria: number;
+    total: number;
+  };
+  created: {
+    fund_structures: BulkImportEntityResult[];
+    assets: BulkImportEntityResult[];
+    investors: BulkImportEntityResult[];
+    holdings: BulkImportEntityResult[];
+    eligibility_criteria: BulkImportEntityResult[];
+  };
+  ref_map: Record<string, string>;
+  errors?: ImportRowError[];
+  warnings?: ImportWarning[];
+  skipped: number;
 }

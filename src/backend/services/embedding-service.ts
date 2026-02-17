@@ -73,7 +73,9 @@ class HttpEmbeddingService implements EmbeddingService {
   private readonly apiKey: string;
 
   constructor() {
-    this.provider = getProvider();
+    const p = getProvider();
+    if (p === 'none') throw new Error('HttpEmbeddingService requires a configured provider');
+    this.provider = p;
     this.apiKey = getApiKey(this.provider);
   }
 

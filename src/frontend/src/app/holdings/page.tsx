@@ -19,9 +19,11 @@ import {
 import { exportCSV } from '../../lib/export-csv';
 import { formatNumber, formatPercentage, toAssetOptions, toInvestorOptions } from '../../lib/utils';
 import type { ApiError } from '../../lib/types';
+import { CsvUploadWizard } from '../../components/csv-upload-wizard';
 
 export default function HoldingsPage() {
   const [showForm, setShowForm] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const [selectedAssetId, setSelectedAssetId] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -84,6 +86,7 @@ export default function HoldingsPage() {
                 onExportPDF={() => api.downloadCapTablePdf(selectedAssetId)}
               />
             )}
+            <Button variant="secondary" onClick={() => setShowCsvImport(true)}>Import CSV</Button>
             <Button onClick={() => setShowForm(true)} disabled={!selectedAssetId}>+ Allocate Units</Button>
           </div>
         }
@@ -106,6 +109,15 @@ export default function HoldingsPage() {
             <Button type="submit">Allocate</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* CSV Import Modal */}
+      <Modal open={showCsvImport} onClose={() => setShowCsvImport(false)} title="Import Holdings from CSV" size="lg">
+        <CsvUploadWizard
+          entityType="holdings"
+          onComplete={() => { setShowCsvImport(false); capTable.refetch(); }}
+          onCancel={() => setShowCsvImport(false)}
+        />
       </Modal>
 
       {/* Asset Selector */}

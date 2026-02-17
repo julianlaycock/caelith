@@ -22,8 +22,25 @@ test-pdf.mjs
 # Local logs and runtime artifacts
 *.log
 frontend-dev.log
+
+# Local helper scripts (Windows/PowerShell launchers)
 start-backend.cmd
 start-dev.cmd
+set-vars.cmd
+setup-railway.cmd
+*.ps1.local
 
 # Local Codex/agent settings
 .claude/
+
+# IDE / editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Coverage reports
+coverage/
+
+# OS files
+Thumbs.db

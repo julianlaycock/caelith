@@ -461,11 +461,11 @@ Note: This answer is based on regulatory knowledge, not from ingested documents.
 
       return {
         intent: 'regulatory_qa',
-        message: answer,
+        message: `⚠️ UNVERIFIED — This response is based on the AI model's general regulatory knowledge, not verified document sources. All citations and regulatory references must be independently verified before reliance.\n\n${answer}\n\n---\nFor document-grounded analysis, upload regulatory documents through the platform.`,
         citations: [],
         suggestedActions: [
           {
-            label: 'Upload Documents for Enhanced Analysis',
+            label: 'Upload Documents for Verified Analysis',
             action: 'hint',
             payload: { endpoint: '/api/regulatory/ingest' },
           },

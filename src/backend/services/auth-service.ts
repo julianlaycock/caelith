@@ -10,6 +10,7 @@ import jwt from 'jsonwebtoken';
 import { randomUUID, randomBytes } from 'crypto';
 import { query, execute, DEFAULT_TENANT_ID } from '../db.js';
 import { ConflictError, UnauthorizedError, RateLimitError } from '../errors.js';
+import { logger } from '../lib/logger.js';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -82,8 +83,8 @@ async function recordLoginAttempt(email: string, success: boolean, ipAddress: st
        VALUES (?, ?, ?, ?, ?)`,
       [randomUUID(), email, success, ipAddress, new Date().toISOString()]
     );
-  } catch {
-    // Non-critical — don't fail login if audit insert fails (table may not exist yet)
+  } catch (err) {
+    logger.warn('Failed to record login attempt', { error: err });
   }
 }
 
@@ -96,8 +97,9 @@ async function isAccountLocked(email: string): Promise<boolean> {
       [email, cutoff]
     );
     return rows.length > 0 && rows[0].attempt_count >= MAX_LOGIN_ATTEMPTS;
-  } catch {
-    return false; // Fail open if table doesn't exist yet
+  } catch (err) {
+    logger.warn('Failed to check account lockout', { error: err });
+    return false;
   }
 }
 
@@ -111,8 +113,8 @@ async function createRefreshToken(userId: string): Promise<string> {
       `INSERT INTO refresh_tokens (id, user_id, token, expires_at, created_at) VALUES (?, ?, ?, ?, ?)`,
       [randomUUID(), userId, token, expiresAt, new Date().toISOString()]
     );
-  } catch {
-    // Table may not exist yet — return token anyway for backward compat
+  } catch (err) {
+    logger.warn('Failed to persist refresh token', { error: err });
   }
   return token;
 }
@@ -139,7 +141,8 @@ export async function refreshAccessToken(refreshToken: string): Promise<AuthResu
     const accessToken = generateToken(user);
 
     return { user, token: accessToken, refreshToken: newRefreshToken, expiresIn: 1800 };
-  } catch {
+  } catch (err) {
+    logger.warn('Failed to refresh access token', { error: err });
     return null;
   }
 }
@@ -147,8 +150,8 @@ export async function refreshAccessToken(refreshToken: string): Promise<AuthResu
 export async function revokeRefreshTokens(userId: string): Promise<void> {
   try {
     await execute(`DELETE FROM refresh_tokens WHERE user_id = ?`, [userId]);
-  } catch {
-    // Non-critical
+  } catch (err) {
+    logger.warn('Failed to revoke refresh tokens', { userId, error: err });
   }
 }
 

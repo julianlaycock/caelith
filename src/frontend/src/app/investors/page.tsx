@@ -26,6 +26,7 @@ import { formatDate, classNames } from '../../lib/utils';
 import { JURISDICTIONS } from '../../lib/constants';
 import type { Investor, InvestorType, KycStatus } from '../../lib/types';
 import { BackLink } from '../../components/back-link';
+import { CsvUploadWizard } from '../../components/csv-upload-wizard';
 
 function daysUntilExpiry(expiryDate: string | null | undefined) {
   if (!expiryDate) return null;
@@ -81,6 +82,7 @@ function InvestorsContent() {
   const kycFilter = searchParams.get('kyc');
 
   const [showForm, setShowForm] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const [editInvestor, setEditInvestor] = useState<Investor | null>(null);
   const formAction = useFormAction();
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -270,6 +272,7 @@ function InvestorsContent() {
                 );
               }}
             />
+            <Button variant="secondary" onClick={() => setShowCsvImport(true)}>Import CSV</Button>
             <Button onClick={() => setShowForm(true)}>+ New Investor</Button>
           </div>
         }
@@ -402,6 +405,15 @@ function InvestorsContent() {
             </div>
           </form>
         )}
+      </Modal>
+
+      {/* CSV Import Modal */}
+      <Modal open={showCsvImport} onClose={() => setShowCsvImport(false)} title="Import Investors from CSV" size="lg">
+        <CsvUploadWizard
+          entityType="investors"
+          onComplete={() => { setShowCsvImport(false); investors.refetch(); }}
+          onCancel={() => setShowCsvImport(false)}
+        />
       </Modal>
 
       {investors.loading ? (

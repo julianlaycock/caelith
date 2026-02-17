@@ -1,0 +1,5 @@
+name,legal_form,domicile,regulatory_framework,aifm_name,inception_date,currency,total_units,status
+"Caelith European Real Estate RAIF",RAIF,LU,AIFMD,"Caelith Management S.à r.l.",2025-09-01,EUR,10000,active
+"Rhine Valley Infrastructure SCSp",SCSp,LU,AIFMD,"Caelith Management S.à r.l.",2025-11-15,EUR,5000,active
+"Dublin Growth Equity QIAIF",QIAIF,IE,AIFMD,"Caelith Ireland Ltd",2026-01-10,EUR,20000,active
+"German Spezial-AIF Immobilien",Spezial_AIF,DE,national,"Rheinische Kapitalverwaltung GmbH",2025-06-01,EUR,8000,active

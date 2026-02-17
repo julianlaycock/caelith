@@ -85,11 +85,15 @@ export default function DecisionsPage() {
     }
   };
 
+  const [exportError, setExportError] = useState<string | null>(null);
+
   const handleExportEvidence = async (d: DecisionRecord) => {
+    setExportError(null);
     try {
       await api.downloadDecisionEvidenceBundle(d.id);
-    } catch {
-      // silent fail — PDF export may not be available
+    } catch (err) {
+      const message = (err as Error)?.message || 'Failed to generate evidence PDF';
+      setExportError(message);
     }
   };
 
@@ -97,7 +101,7 @@ export default function DecisionsPage() {
     <div>
       <PageHeader
         title="Decision Provenance"
-        description="Review immutable compliance decisions with full rule provenance"
+        description="Review tamper-evident compliance decisions with full rule provenance"
         action={
           <div className="flex items-center gap-2">
             <Button
@@ -249,6 +253,11 @@ export default function DecisionsPage() {
                 <Button variant="secondary" size="sm" onClick={() => handleExportEvidence(selectedDecision)}>
                   Export PDF
                 </Button>
+                {exportError && (
+                  <span className="text-[10px] text-red-400 max-w-[180px] truncate" title={exportError}>
+                    Export failed
+                  </span>
+                )}
                 <button
                   onClick={() => setSelectedDecision(null)}
                   className="rounded-lg p-1 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink transition-colors"
@@ -402,8 +411,27 @@ export default function DecisionsPage() {
                       <p className="text-xs text-emerald-600">{explanation.recommendation}</p>
                     </div>
 
-                    {/* Disclaimer */}
-                    <p className="text-[10px] text-ink-tertiary italic">{explanation.disclaimer}</p>
+                    {/* Trust actions */}
+                    <div className="flex items-center gap-2">
+                      <Button variant="primary" size="sm" onClick={() => handleExportEvidence(selectedDecision)}>
+                        Download Evidence Bundle
+                      </Button>
+                      {exportError && (
+                        <span className="text-xs text-red-400">{exportError}</span>
+                      )}
+                    </div>
+
+                    {/* AI-generated disclaimer */}
+                    <div className="rounded-lg border border-amber-500/15 bg-amber-500/5 px-3 py-2">
+                      <div className="flex items-start gap-2">
+                        <svg className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-amber-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                        </svg>
+                        <p className="text-[10px] text-amber-600/80 italic leading-relaxed">
+                          {explanation.disclaimer}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -435,7 +463,7 @@ export default function DecisionsPage() {
               {/* Disclaimer */}
               <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
                 <p className="text-xs text-amber-600">
-                  This decision record is immutable and tamper-evident. It represents the exact compliance state at the time of the decision. For regulatory inquiries, export the evidence bundle as PDF.
+                  This decision record is protected by a cryptographic integrity chain (SHA-256). Any modification to the record or its chain position is detectable. This provides tamper-evidence suitable for audit purposes. For regulatory inquiries, export the evidence bundle as PDF.
                 </p>
               </div>
             </div>

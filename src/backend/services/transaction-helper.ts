@@ -32,3 +32,27 @@ export async function withTransaction<T>(
     client.release();
   }
 }
+
+/**
+ * Like withTransaction, but also sets the app.tenant_id session variable
+ * after BEGIN so that RLS policies are enforced inside the transaction.
+ */
+export async function withTenantTransaction<T>(
+  tenantId: string,
+  fn: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  const pool = getPool();
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}

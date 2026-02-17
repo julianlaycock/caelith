@@ -1,0 +1,13 @@
+name,jurisdiction,investor_type,accredited,kyc_status,kyc_expiry,tax_id,lei,email
+"Rheinische Kapitalverwaltung GmbH",DE,institutional,true,verified,2027-03-15,DE298471625,5299007QVIQ7IO64NX37,ops@rheinische-kv.de
+"BGL BNP Paribas S.A.",LU,professional,true,verified,2027-06-30,LU10028374,9695005MSX1OYEMGDF46,compliance@bgl.lu
+"Zurich Cantonal Bank",CH,institutional,true,verified,2027-12-01,CHE-109.723.456,529900LN1190K8H9FP21,funds@zkb.ch
+"Patrimoine & Associés SARL",FR,well_informed,true,verified,2026-11-20,FR83429105781,,patrimoine@pa-invest.fr
+"Nordic Pension Fund AB",SE,institutional,true,verified,2028-01-15,SE559212-4567,5493006B2OP94ILSQF27,nordic@pensionab.se
+"Müller Family Office",DE,semi_professional,true,pending,,,,mueller@familyoffice.de
+"O'Brien & Partners Ltd",IE,professional,true,verified,2027-09-01,IE3214567TH,213800ZBHNI2MZBOTR95,desk@obrien-partners.ie
+"van der Berg Investments B.V.",NL,well_informed,false,pending,,,,
+"Stavros Shipping Holdings S.A.",GR,professional,true,expired,2025-06-01,EL094218756,,legal@stavros-shipping.gr
+"Caisse de Dépôt Luxembourg",LU,institutional,true,verified,2027-08-30,LU20038491,9695008R0FSVITJFX382,invest@cdl.lu
+"Wiener Privatbank AG",AT,professional,true,verified,2027-04-22,ATU62834519,529900GFWH3K47IOGT94,treasury@wienerpb.at
+"Retail Investor Hans Schmidt",DE,retail,false,pending,,,,hans.schmidt@mail.de

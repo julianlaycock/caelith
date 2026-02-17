@@ -1,0 +1,11 @@
+fund_ref,jurisdiction,investor_type,minimum_investment,effective_date,maximum_allocation_pct,suitability_required,source_reference
+"Caelith European Real Estate RAIF",LU,institutional,125000,2025-09-01,100,false,"AIFMD Art. 43 / CSSF Circular 18/698"
+"Caelith European Real Estate RAIF",LU,professional,125000,2025-09-01,100,false,"AIFMD Art. 43 / CSSF Circular 18/698"
+"Caelith European Real Estate RAIF",LU,well_informed,125000,2025-09-01,50,true,"CSSF FAQ - Well-Informed Investors"
+"Caelith European Real Estate RAIF",DE,institutional,100000,2025-09-01,100,false,"KAGB §293 para 1"
+"Rhine Valley Infrastructure SCSp",LU,institutional,250000,2025-11-15,100,false,"AIFMD Art. 43 / SCSp Law 2013"
+"Rhine Valley Infrastructure SCSp",CH,institutional,500000,2025-11-15,75,true,"Cross-border AIFMD passport"
+"Dublin Growth Equity QIAIF",IE,institutional,100000,2026-01-10,100,false,"Central Bank AIFMD Regulations S.I. 257/2013"
+"Dublin Growth Equity QIAIF",IE,professional,100000,2026-01-10,100,false,"Central Bank AIFMD Regulations S.I. 257/2013"
+"German Spezial-AIF Immobilien",DE,semi_professional,200000,2025-06-01,100,true,"KAGB §1 Abs. 19 Nr. 33"
+"German Spezial-AIF Immobilien",DE,institutional,100000,2025-06-01,100,false,"KAGB §1 Abs. 19 Nr. 32"

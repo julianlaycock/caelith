@@ -331,7 +331,9 @@ export type EventType =
   | 'onboarding.withdrawn'
   | 'nl_compiler.attempt'
   | 'copilot.query'
-  | 'copilot.rule_proposed';
+  | 'copilot.rule_proposed'
+  | 'copilot.feedback'
+  | 'bulk_import.completed';
 
 export type EntityType =
   | 'asset'
@@ -345,7 +347,8 @@ export type EntityType =
   | 'eligibility_criteria'
   | 'decision_record'
   | 'onboarding_record'
-  | 'regulatory_document';
+  | 'regulatory_document'
+  | 'system';
 
 // ============================================================================
 // CREATE INPUT TYPES

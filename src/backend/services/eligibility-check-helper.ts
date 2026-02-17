@@ -129,8 +129,8 @@ export async function runCoreEligibilityChecks(input: EligibilityInput): Promise
     ) {
       checks.push({
         rule: 'classification_evidence',
-        passed: true,
-        message: `WARNING: No classification evidence on file for ${investorType} investor. Evidence should be collected.`,
+        passed: false,
+        message: `No classification evidence on file for ${investorType} investor. Evidence of investor classification is required under applicable regulation (MiFID II Annex II, Loi SIF Art 2).`,
       });
     }
   }
