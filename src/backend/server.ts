@@ -24,7 +24,7 @@ import rulesRoutes from './routes/rules-routes.js';
 import transferRoutes from './routes/transfer-routes.js';
 import eventRoutes from './routes/event-routes.js';
 import authRoutes from './routes/auth-routes.js';
-import { authenticate, authorize } from './middleware/auth.js';
+import { authenticate, authorize, authorizeWrite } from './middleware/auth.js';
 import webhookRoutes from './routes/webhook-routes.js';
 import compositeRulesRoutes from './routes/composite-rules-routes.js';
 import templateRoutes from './routes/template-routes.js';
@@ -215,25 +215,26 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
 }));
 
 // Protected routes (auth required)
-app.use('/api/assets', authenticate, assetRoutes);
-app.use('/api/investors', authenticate, investorRoutes);
-app.use('/api/holdings', authenticate, holdingRoutes);
+// authorizeWrite: viewers can read (GET), only specified roles can write (POST/PUT/PATCH/DELETE)
+app.use('/api/assets', authenticate, authorizeWrite('admin', 'compliance_officer'), assetRoutes);
+app.use('/api/investors', authenticate, authorizeWrite('admin', 'compliance_officer'), investorRoutes);
+app.use('/api/holdings', authenticate, authorizeWrite('admin', 'compliance_officer'), holdingRoutes);
 app.use('/api/rules', authenticate, authorize('admin', 'compliance_officer'), rulesRoutes);
-app.use('/api/transfers', authenticate, transferRoutes);
-app.use('/api/events', authenticate, eventRoutes);
+app.use('/api/transfers', authenticate, authorizeWrite('admin', 'compliance_officer'), transferRoutes);
+app.use('/api/events', authenticate, authorizeWrite('admin'), eventRoutes);
 app.use('/api/webhooks', authenticate, authorize('admin'), webhookRoutes);
 app.use('/api/composite-rules', authenticate, authorize('admin', 'compliance_officer'), compositeRulesRoutes);
-app.use('/api/templates', authenticate, templateRoutes);
-app.use('/api/fund-structures', authenticate, fundStructureRoutes);
-app.use('/api/onboarding', authenticate, onboardingRoutes);
-app.use('/api/eligibility', authenticate, eligibilityRoutes);
-app.use('/api/decisions', authenticate, decisionRecordRoutes);
+app.use('/api/templates', authenticate, authorizeWrite('admin', 'compliance_officer'), templateRoutes);
+app.use('/api/fund-structures', authenticate, authorizeWrite('admin', 'compliance_officer'), fundStructureRoutes);
+app.use('/api/onboarding', authenticate, authorizeWrite('admin', 'compliance_officer'), onboardingRoutes);
+app.use('/api/eligibility', authenticate, authorizeWrite('admin', 'compliance_officer'), eligibilityRoutes);
+app.use('/api/decisions', authenticate, authorizeWrite('admin'), decisionRecordRoutes);
 app.use('/api/nl-rules', authenticate, authorize('admin', 'compliance_officer'), nlRulesRoutes);
-app.use('/api/reports', authenticate, complianceReportRoutes);
-app.use('/api/tenants', authenticate, tenantRoutes);
-app.use('/api/regulatory', authenticate, createRegulatoryRoutes());
+app.use('/api/reports', authenticate, authorizeWrite('admin'), complianceReportRoutes);
+app.use('/api/tenants', authenticate, authorizeWrite('admin'), tenantRoutes);
+app.use('/api/regulatory', authenticate, authorizeWrite('admin', 'compliance_officer'), createRegulatoryRoutes());
 app.use('/api/copilot', authenticate, createCopilotRoutes());
-app.use('/api/scenarios', authenticate, scenarioRoutes);
+app.use('/api/scenarios', authenticate, authorizeWrite('admin', 'compliance_officer'), scenarioRoutes);
 app.use('/api/import', authenticate, authorize('admin'), importRoutes);
 
 // Test-only: reset database

@@ -79,3 +79,37 @@ export function authorize(...roles: string[]) {
     next();
   };
 }
+
+/**
+ * Restrict write operations (POST/PUT/PATCH/DELETE) to specific roles.
+ * GET, HEAD, and OPTIONS requests pass through for all authenticated users.
+ * This enables read access for viewers while protecting data integrity.
+ */
+const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+export function authorizeWrite(...roles: string[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (READ_METHODS.has(req.method)) {
+      next();
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({
+        error: 'UNAUTHORIZED',
+        message: 'Not authenticated',
+      });
+      return;
+    }
+
+    if (!roles.includes(req.user.role)) {
+      res.status(403).json({
+        error: 'FORBIDDEN',
+        message: `Role '${req.user.role}' does not have write access. Required: ${roles.join(', ')}`,
+      });
+      return;
+    }
+
+    next();
+  };
+}
