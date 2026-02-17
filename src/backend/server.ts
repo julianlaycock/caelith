@@ -120,6 +120,11 @@ async function ensureAdminUser(): Promise<void> {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust first proxy hop (load balancer / reverse proxy) for accurate req.ip
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // Middleware
 app.use(securityHeaders);
 const DEFAULT_DEV_ORIGINS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003'];
@@ -207,12 +212,17 @@ app.use('/api', apiRateLimit);
 // Public routes (no auth required)
 app.use('/api/auth', authRateLimit, authRoutes);
 
-// API Documentation
+// API Documentation — require auth in production to prevent information disclosure
 const openapiDoc = parse(readFileSync('./openapi.yml', 'utf-8'));
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
+const swaggerHandler = [swaggerUi.serve, swaggerUi.setup(openapiDoc, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Caelith API Documentation',
-}));
+})] as const;
+if (process.env.NODE_ENV === 'production') {
+  app.use('/api/docs', authenticate, ...swaggerHandler);
+} else {
+  app.use('/api/docs', ...swaggerHandler);
+}
 
 // Protected routes (auth required)
 // authorizeWrite: viewers can read (GET), only specified roles can write (POST/PUT/PATCH/DELETE)

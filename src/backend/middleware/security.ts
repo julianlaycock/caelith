@@ -17,20 +17,21 @@ export function securityHeaders(_req: Request, res: Response, next: NextFunction
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
-  res.setHeader(
-    'Content-Security-Policy',
-    [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  // Next.js requires inline scripts
-      "style-src 'self' 'unsafe-inline'",                  // Tailwind requires inline styles
-      "img-src 'self' data: https:",
-      "font-src 'self'",
-      "connect-src 'self'",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ].join('; ')
-  );
+  const cspDirectives = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",   // Swagger UI requires inline scripts
+    "style-src 'self' 'unsafe-inline'",    // Swagger UI requires inline styles
+    "img-src 'self' data: https:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ];
+  if (process.env.NODE_ENV === 'production') {
+    cspDirectives.push('upgrade-insecure-requests');
+  }
+  res.setHeader('Content-Security-Policy', cspDirectives.join('; '));
   res.removeHeader('X-Powered-By');
 
   next();
