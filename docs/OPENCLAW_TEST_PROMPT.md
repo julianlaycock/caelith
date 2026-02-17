@@ -208,9 +208,9 @@ Loire Holdings,FR,well_informed,loire@example.com
 
 ---
 
-## Test 6: Eligibility Check — Explicit Advance Required
+## Test 6: Eligibility Check — Transparent Status Update
 
-**Goal:** Verify that running an eligibility check shows results in a modal and requires the user to explicitly choose to advance (no auto-movement).
+**Goal:** Verify that running an eligibility check shows results in a modal with honest status messaging. The backend auto-advances the status; the UI should clearly communicate this.
 
 **Steps:**
 1. You are on `/onboarding` with cards in the "Applied" column.
@@ -219,27 +219,21 @@ Loire Holdings,FR,well_informed,loire@example.com
 
 **Assertions (Eligibility results modal — eligible case):**
 - [ ] A modal opens titled "Eligibility Check Results".
-- [ ] If the investor is eligible: a green banner reads "All eligibility checks passed".
+- [ ] If the investor is eligible: a green banner reads "All eligibility checks passed" with a sub-line "Status updated to Eligible".
 - [ ] Individual check results are listed below, each with a green checkmark icon, the rule name, and a message.
-- [ ] Two buttons at the bottom: "Keep in Current Status" (secondary) and "Confirm Advance to Eligible" (primary).
+- [ ] A single "Close" button at the bottom.
 
-4. Click "Keep in Current Status".
+4. Click "Close".
 
 **Assertions:**
 - [ ] The modal closes.
-- [ ] The card remains in the "Applied" column. It did NOT move automatically.
-
-5. Click "Check" on the same card again.
-6. This time click "Confirm Advance to Eligible".
-
-**Assertions:**
-- [ ] A success message appears.
-- [ ] The card moves from the "Applied" column to the "Eligible" column.
+- [ ] A green success alert appears: "Eligibility check complete — investor advanced to Eligible."
+- [ ] The card has moved from the "Applied" column to the "Eligible" column.
 
 **If the investor is ineligible:**
-- [ ] A red banner reads "Investor does not meet eligibility requirements".
+- [ ] A red banner reads "Investor does not meet eligibility requirements" with a sub-line "Status updated to Ineligible".
 - [ ] Failed checks are shown with red X icons.
-- [ ] Buttons: "Close" (secondary) and "Reject with Reasons" (danger).
+- [ ] Buttons: "Reject with Reasons" (danger) and "Close".
 
 ---
 

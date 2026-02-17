@@ -49,13 +49,17 @@ export default function DecisionsPage() {
   const [explanation, setExplanation] = useState<DecisionExplanation | null>(null);
   const [explainLoading, setExplainLoading] = useState(false);
 
+  const [explainError, setExplainError] = useState<string | null>(null);
+
   const handleExplain = useCallback(async (decisionId: string) => {
     setExplainLoading(true);
+    setExplainError(null);
     try {
       const result = await api.explainDecision(decisionId);
       setExplanation(result);
     } catch (err) {
       console.error('Failed to explain decision:', err);
+      setExplainError('Unable to generate explanation. Please try again.');
     } finally {
       setExplainLoading(false);
     }
@@ -351,25 +355,30 @@ export default function DecisionsPage() {
               {/* AI Explanation */}
               <div>
                 {!explanation ? (
-                  <button
-                    onClick={() => handleExplain(selectedDecision.id)}
-                    disabled={explainLoading}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg border border-[#24364A]/20 bg-[#24364A]/5 px-4 py-3 text-sm font-medium text-[#24364A] transition-all hover:bg-[#24364A]/10 disabled:opacity-50"
-                  >
-                    {explainLoading ? (
-                      <>
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#24364A]/30 border-t-[#24364A]" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                        </svg>
-                        Explain This Decision
-                      </>
+                  <>
+                    <button
+                      onClick={() => handleExplain(selectedDecision.id)}
+                      disabled={explainLoading}
+                      className="w-full flex items-center justify-center gap-2 rounded-lg border border-[#24364A]/20 bg-[#24364A]/5 px-4 py-3 text-sm font-medium text-[#24364A] transition-all hover:bg-[#24364A]/10 disabled:opacity-50"
+                    >
+                      {explainLoading ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#24364A]/30 border-t-[#24364A]" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                          </svg>
+                          Explain This Decision
+                        </>
+                      )}
+                    </button>
+                    {explainError && (
+                      <p className="mt-2 text-sm text-red-600">{explainError}</p>
                     )}
-                  </button>
+                  </>
                 ) : (
                   <div className="space-y-4">
                     <SectionHeader title="AI Explanation" description="Regulatory context and recommendation" />

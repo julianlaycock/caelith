@@ -1,7 +1,7 @@
 {
-  "name": "private-asset-registry",
+  "name": "caelith",
   "version": "0.1.0",
-  "description": "Private Asset Registry & Transfer Rules Engine MVP",
+  "description": "AIFMD II compliance engine for EU alternative investment fund managers",
   "main": "src/backend/server.ts",
   "type": "module",
   "scripts": {
@@ -42,10 +42,10 @@
     "agent:prompt": "node scripts/agent-team-prompt.mjs"
   },
   "keywords": [
-    "private-assets",
+    "aifmd",
     "compliance",
-    "transfer-rules",
-    "mvp"
+    "regulatory",
+    "fund-management"
   ],
   "author": "",
   "license": "MIT",

@@ -364,9 +364,9 @@ export default function LoginPage() {
             <button onClick={() => scrollTo('pricing')} className="group rounded-full bg-[#D8BA8E] px-10 py-4 text-sm font-semibold text-accent-900 shadow-xl shadow-[#D8BA8E]/15 transition-all hover:bg-[#c9a878] hover:shadow-2xl hover:shadow-[#D8BA8E]/25 active:scale-[0.98]">
               Start Free <span className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
             </button>
-            <button className="group flex items-center gap-2.5 rounded-full border border-white/15 px-10 py-4 text-sm font-medium text-white/70 backdrop-blur-sm transition-all hover:border-white/30 hover:bg-white/[0.05] hover:text-white">
+            <button onClick={() => scrollTo('features')} className="group flex items-center gap-2.5 rounded-full border border-white/15 px-10 py-4 text-sm font-medium text-white/70 backdrop-blur-sm transition-all hover:border-white/30 hover:bg-white/[0.05] hover:text-white">
               <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20"><polygon points="8,4 8,16 17,10" /></svg>
-              Watch Demo
+              See How It Works
             </button>
           </div>
 
@@ -646,6 +646,7 @@ export default function LoginPage() {
               <div className="text-left">
                 <div className="text-sm font-semibold text-accent-950">Dr. Marcus Weber</div>
                 <div className="text-xs text-accent-950/40">Head of Risk & Compliance, Rhine Capital Partners</div>
+                <div className="text-[10px] text-accent-950/25 mt-0.5 italic">Composite illustration</div>
               </div>
             </div>
           </RevealDiv>
@@ -775,14 +776,14 @@ export default function LoginPage() {
               <p className="text-xs text-accent-950/40 leading-relaxed">Deterministic compliance enforcement for alternative investment fund managers.</p>
             </div>
             {[
-              { title: 'Product', links: ['Rules Engine', 'Decision Provenance', 'Regulatory Intelligence', 'API Docs'] },
-              { title: 'Company', links: ['About', 'Blog', 'Careers', 'Contact'] },
-              { title: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Data Processing', 'Security'] },
+              { title: 'Product', links: [{ label: 'Rules Engine', id: 'features' }, { label: 'Decision Provenance', id: 'features' }, { label: 'Regulatory Intelligence', id: 'features' }, { label: 'API Docs', id: 'signin' }] },
+              { title: 'Company', links: [{ label: 'About', id: 'how-it-works' }, { label: 'Contact', id: 'signin' }] },
+              { title: 'Legal', links: [{ label: 'Privacy Policy', id: 'signin' }, { label: 'Terms of Service', id: 'signin' }] },
             ].map((col) => (
               <div key={col.title}>
                 <h4 className="text-[10px] font-semibold text-accent-950 uppercase tracking-[0.15em] mb-4">{col.title}</h4>
                 <ul className="space-y-2.5">
-                  {col.links.map((l) => (<li key={l}><a href="#" className="text-xs text-accent-950/40 hover:text-accent-950 transition-colors">{l}</a></li>))}
+                  {col.links.map((l) => (<li key={l.label}><button onClick={() => scrollTo(l.id)} className="text-xs text-accent-950/40 hover:text-accent-950 transition-colors">{l.label}</button></li>))}
                 </ul>
               </div>
             ))}

@@ -159,7 +159,7 @@ export function CopilotPanel({
         },
       ]);
     } catch (err) {
-      const message = (err as ApiError)?.message || 'Compliance Copilot is temporarily unavailable. Your compliance data is unaffected.';
+      const message = (err as ApiError)?.message || 'Compliance Copilot could not process this request. Please check your connection and try again. Your compliance data is unaffected.';
       setError(message);
     } finally {
       setLoading(false);

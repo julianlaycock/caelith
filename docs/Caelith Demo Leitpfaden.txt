@@ -1,0 +1,223 @@
+  Caelith Demo Leitpfaden
+  
+  All Available User Accounts                                                                      
+
+  You have 3 seed scripts, each creates different accounts:
+
+  Script: demo-reset.ts
+  Command: npx tsx scripts/demo-reset.ts
+  Use Case: ALFI demo — clean slate, 1 user
+  ────────────────────────────────────────
+  Script: demo-reset.ts --with-data
+  Command: npx tsx scripts/demo-reset.ts --with-data
+  Use Case: Skip to onboarding demo
+  ────────────────────────────────────────
+  Script: seed-demo.ts
+  Command: npx tsx scripts/seed-demo.ts
+  Use Case: Full showcase (5 funds, 25 investors)
+  ────────────────────────────────────────
+  Script: clean-and-seed-admin.ts
+  Command: npx tsx scripts/clean-and-seed-admin.ts
+  Use Case: Dev reset
+
+  Accounts per script:
+
+  ┌──────────────────────┬────────────────────────┬──────────────┬────────────────────┐
+  │        Script        │         Email          │   Password   │        Role        │
+  ├──────────────────────┼────────────────────────┼──────────────┼────────────────────┤
+  │ demo-reset           │ demo@caelith.io        │ Demo1234!    │ admin              │
+  ├──────────────────────┼────────────────────────┼──────────────┼────────────────────┤
+  │ seed-demo            │ admin@caelith.com      │ Admin1234    │ admin              │
+  ├──────────────────────┼────────────────────────┼──────────────┼────────────────────┤
+  │                      │ compliance@caelith.com │ Compliance1! │ compliance_officer │
+  ├──────────────────────┼────────────────────────┼──────────────┼────────────────────┤
+  │                      │ ops@caelith.com        │ Ops12345!    │ admin              │
+  ├──────────────────────┼────────────────────────┼──────────────┼────────────────────┤
+  │                      │ demo@caelith.com       │ Demo1234!    │ viewer             │
+  ├──────────────────────┼────────────────────────┼──────────────┼────────────────────┤
+  │                      │ investor@caelith.com   │ Investor1!   │ viewer             │
+  ├──────────────────────┼────────────────────────┼──────────────┼────────────────────┤
+  │ clean-and-seed-admin │ admin@caelith.com      │ Admin1234    │ admin              │
+  └──────────────────────┴────────────────────────┴──────────────┴────────────────────┘
+
+  For the ALFI demo, use demo-reset.ts — it gives you the cleanest starting point.
+
+  ---
+  How to Start (3 Terminals)
+
+  Terminal 1 — Reset database:
+
+  cd C:\Users\julia\projects\private-asset-registry_Caelith_v2
+  npx tsx scripts/demo-reset.ts
+
+
+  Terminal 2 — Start everything (backend + frontend):
+
+  cd C:\Users\julia\projects\private-asset-registry_Caelith_v2
+  npm run dev
+
+
+  This runs both:
+  - Backend on http://localhost:3001
+  - Frontend on http://localhost:3000
+
+  Wait until you see both servers ready, then open http://localhost:3000/login.
+
+  Alternatively, run them separately if you want to see logs clearly:
+
+  # Terminal 2 — Backend only
+  npm run dev:backend
+
+  # Terminal 3 — Frontend only
+  npm run dev:frontend
+
+
+  ---
+  Pre-Flight Checklist
+
+  - PostgreSQL is running (caelith database exists)
+  - .env file is present (it already is —
+  DATABASE_URL=postgresql://caelith:caelith@localhost:5432/caelith)
+  - Ports 3000 and 3001 are free (the dev script auto-frees them)
+  - Save this CSV file to your Desktop as test-investors.csv:
+
+  company_name,country,type,email
+  Acme Capital,LU,professional,acme@example.com
+  Rhine Partners,DE,institutional,rhine@example.com
+  Loire Holdings,FR,well_informed,loire@example.com
+
+  ---
+  Demo Flow — 8 Minutes, 6 Acts
+
+  Act 1 — First Impression (1 min)
+
+  1. Go to http://localhost:3000/login
+  2. Login: demo@caelith.io / Demo1234!
+  3. You land on the Dashboard showing the Setup Wizard
+
+  What to show:
+  - "Welcome to Caelith" — no empty cards, no clutter
+  - Two paths: "Import from Spreadsheet" (green Recommended badge) and "Create Manually"
+  - Bottom link says "Explore the dashboard first"
+
+  Say: "This is what a compliance officer sees on day one. No training needed — the system guides  
+  them."
+
+  Act 2 — CSV Import (2 min)
+
+  1. Click "Import from Spreadsheet"
+  2. Select "Investors" from the entity picker
+  3. Show the 4-step stepper (Upload / Map Columns / Preview / Import)
+  4. Upload test-investors.csv
+  5. On Map Columns:
+    - Point out the sample values under each column name ("e.g. Acme Capital, Rhine Partners...")  
+    - Show the auto-mapping worked
+    - Quick detour: change email dropdown to Name * to trigger the amber duplicate warning, then   
+  fix it back
+  6. Click "Next: Preview & Edit" — show the editable table with dropdowns for enum fields
+  7. Click "Import 3 Investors" — watch the spinner, then the success screen
+  8. Point out the bridge CTA: "Start Eligibility Checks" box
+  9. Click "Continue to Dashboard" (not the eligibility button)
+
+  Say: "Flat files are the reality of fund administration. We parse, validate, and let them fix    
+  errors before anything hits the database."
+
+  Act 3 — Manual Fund Setup (1.5 min)
+
+  1. Dashboard shows Setup Wizard again. Click "Create Manually"
+  2. Fill in:
+    - Fund Name: Demo Fund I
+    - Legal Form: SIF — Specialised Investment Fund (Luxembourg)
+    - Domicile: LU (Luxembourg) — point out human-readable labels
+    - Framework: AIFMD
+    - Share Class Units: 10000 — point out label says "Share Class Units (authorized)"
+  3. Click "Next: Add Investors"
+  4. Add: Name Test Investor AG, Jurisdiction DE (Germany), Type Professional
+  5. Click "Next: Review" — point out button says "Create Fund & Import 1 Investor"
+  6. Click it, wait for success, click "Go to Dashboard"
+
+  Say: "Every dropdown uses human-readable labels — Luxembourg, not LU. Reduces classification     
+  errors at the source."
+
+  Act 4 — Dashboard With Data (30 sec)
+
+  1. Metric cards now visible: Active Funds 1, Verified Investors, etc.
+  2. Getting Started checklist: green checkmarks on completed steps
+  3. Click "Run a compliance check" in the checklist
+
+  Say: "Guided onboarding — the checklist tells you exactly what's next."
+
+  Act 5 — Onboarding Pipeline (2 min)
+
+  1. /onboarding shows empty state with message: "You have 4 investors ready."
+  2. Click "Bulk Apply" button
+  3. In the modal:
+    - Select Demo Fund I — Share Class A from dropdown (labeled "Fund / Share Class")
+    - Click "Select All"
+    - Note the button says "Submit 4 Applications"
+  4. Click submit — watch the progress bar ("Submitting 1 of 4...")
+  5. Kanban board appears with 5 columns, all cards in "Applied"
+  6. Click "Check" on any card
+  7. Eligibility Results modal opens:
+    - Green banner: "All eligibility checks passed — Status updated to Eligible"
+    - Individual checks listed with green checkmarks
+    - Single "Close" button — honest, transparent
+  8. Close the modal — card moves to "Eligible", green success toast
+
+  Say: "Every status change is transparent. No hidden mutations. The compliance officer sees       
+  exactly what the engine decided and why."
+
+  Act 6 — Compliance Copilot (1 min)
+
+  1. Click "Compliance Copilot" button (bottom-right floating button)
+  2. Panel slides in — 480px wide, not a narrow sidebar
+  3. Show the amber disclaimer box about AI-generated informational assistance
+  4. Click a suggested prompt (e.g., "What are the SIF investor requirements?")
+  5. Point out in the response:
+    - "Caelith AI" badge (not generic "AI-generated")
+    - Footer: "AI-generated — not legal or regulatory advice. Verify independently."
+    - Suggested follow-up chips (clickable pills below the response)
+  6. Close the panel
+
+  Say: "AI that knows it's not a lawyer. Every response carries a disclaimer. This is an assistant,
+   not a decision-maker."
+
+  ---
+  Emergency Fixes During Demo
+
+  Problem: Can't login
+  Fix: Run npx tsx scripts/demo-reset.ts again
+  ────────────────────────────────────────
+  Problem: Port in use
+  Fix: node scripts/free-port.js 3000 3001
+  ────────────────────────────────────────
+  Problem: Backend crash
+  Fix: Check Terminal 2 for errors, restart npm run dev:backend
+  ────────────────────────────────────────
+  Problem: Blank dashboard
+  Fix: Backend is probably down
+  ────────────────────────────────────────
+  Problem: CSV upload fails
+  Fix: Check the CSV has exact headers: company_name,country,type,email
+  ────────────────────────────────────────
+  Problem: Eligibility check says "ineligible"
+  Fix: Expected for investors with kyc_status: pending. Pick a different card.
+  ────────────────────────────────────────
+  Problem: Copilot returns error
+  Fix: AI API key may be missing or expired. Error message says "temporarily unavailable" — this is
+
+    graceful degradation by design.
+  ────────────────────────────────────────
+  Problem: Need to reset mid-demo
+  Fix: npx tsx scripts/demo-reset.ts — takes 3 seconds, then refresh the browser
+
+  ---
+  Quick-Reset Between Runs
+
+  If you need to demo twice (e.g., rehearsal + live):
+
+  npx tsx scripts/demo-reset.ts
+
+
+  Then refresh http://localhost:3000 — back to the login screen, clean slate. No restart needed for
+   the backend or frontend.

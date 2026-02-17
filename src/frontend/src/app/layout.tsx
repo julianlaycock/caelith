@@ -4,7 +4,7 @@ import { AuthLayout } from '../components/auth-layout';
 
 export const metadata: Metadata = {
   title: 'Caelith - Compliance Engine',
-  description: 'Compliance infrastructure for tokenized assets',
+  description: 'AIFMD II compliance engine for EU alternative investment fund managers',
   applicationName: 'Caelith',
   icons: {
     icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Caelith - Compliance Engine',
-    description: 'Compliance infrastructure for tokenized assets',
+    description: 'AIFMD II compliance engine for EU alternative investment fund managers',
     siteName: 'Caelith',
     type: 'website',
   },

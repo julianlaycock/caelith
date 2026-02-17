@@ -1,7 +1,7 @@
 /**
  * Express Server
  *
- * Main API server for Private Asset Registry
+ * Main API server for Caelith
  */
 
 import dotenv from 'dotenv';
@@ -192,7 +192,7 @@ app.get('/api/health/ready', async (_req: express.Request, res: express.Response
 // API info endpoint
 app.get('/api', (_req, res) => {
   res.json({
-    name: 'Private Asset Registry API',
+    name: 'Caelith API',
     version: '1.0.0',
     endpoints: {
       assets: '/api/assets',

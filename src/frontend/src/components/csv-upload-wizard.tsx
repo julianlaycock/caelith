@@ -267,9 +267,16 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
 
     const fields: string[] = [];
     const colIndices: number[] = [];
+    const mappedColumnByField = new Map<string, string>();
+
+    // Keep the last mapped CSV column for each target field, matching the UI warning text.
+    for (const csvCol of parseResult.columns) {
+      const targetField = columnMapping[csvCol];
+      if (targetField) mappedColumnByField.set(targetField, csvCol);
+    }
 
     for (const sf of schemaFields) {
-      const csvCol = Object.entries(columnMapping).find(([, target]) => target === sf.field)?.[0];
+      const csvCol = mappedColumnByField.get(sf.field);
       if (!csvCol) continue;
 
       const colIndex = parseResult.columns.indexOf(csvCol);
