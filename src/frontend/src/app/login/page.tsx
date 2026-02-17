@@ -125,7 +125,7 @@ const NAV_LINKS = [
   { label: 'Pricing', id: 'pricing' },
 ];
 
-const MARQUEE_ITEMS = ['AIFMD II', 'KAGB', 'CSSF', 'ELTIF 2.0', 'Annex IV', 'DORA', 'MiCA', 'UCITS VI', 'ESMA', 'AIFMD II', 'KAGB', 'CSSF', 'ELTIF 2.0', 'Annex IV', 'DORA', 'MiCA', 'UCITS VI', 'ESMA'];
+const MARQUEE_ITEMS = ['AIFMD II', 'KAGB', 'ELTIF 2.0', 'Annex IV', 'SIF Law', 'RAIF Law', 'AIFMD II', 'KAGB', 'ELTIF 2.0', 'Annex IV', 'SIF Law', 'RAIF Law'];
 
 const PROBLEM_CARDS = [
   { icon: '📊', title: 'Spreadsheet Risk', description: 'Critical compliance decisions buried in Excel. No audit trail, no version control, no enforcement. One wrong formula means regulatory breach.' },
@@ -135,8 +135,8 @@ const PROBLEM_CARDS = [
 
 const SOLUTION_METRICS = [
   { value: 50, suffix: 'ms', prefix: '< ', label: 'Rule evaluation time' },
-  { value: 100, suffix: '%', prefix: '', label: 'Decision auditability' },
-  { value: 0, suffix: '', prefix: '', label: 'Manual compliance steps', static: true },
+  { value: 100, suffix: '%', prefix: '', label: 'Decisions logged' },
+  { value: 6, suffix: '', prefix: '', label: 'Regulatory frameworks', static: true },
   { value: 0, suffix: '∞', prefix: '', label: 'Regulatory scalability', static: true },
 ];
 
@@ -145,32 +145,32 @@ const FEATURES = [
     tag: 'Rules Engine',
     headline: ['Configure once.', 'Enforce forever.'],
     description: 'Define compliance rules as deterministic logic — not guidelines. Every investment decision is evaluated against your complete ruleset in real time.',
-    items: ['Pre-trade & post-trade enforcement', 'Multi-jurisdiction rule stacking', 'Breach prevention, not detection', 'Version-controlled rule history'],
+    items: ['Pre-trade & post-trade evaluation', 'Multi-jurisdiction rule stacking', 'Pre-trade eligibility validation', 'Version-controlled rule history'],
   },
   {
     tag: 'Decision Provenance',
     headline: ['Every decision', 'hash-chained.'],
-    description: 'Every compliance decision produces an immutable, cryptographically signed audit record. When regulators ask for proof, you hand them a hash chain.',
+    description: 'Every compliance decision produces a hash-chained, tamper-evident audit record. When regulators ask for documentation, you have a verifiable decision trail.',
     items: ['SHA-256 hash-chained decisions', 'Tamper-evident audit log', 'Point-in-time regulatory snapshots', 'One-click regulator export'],
   },
   {
     tag: 'Regulatory Intelligence',
     headline: ['AIFMD II. KAGB.', 'ELTIF 2.0.'],
     description: 'Pre-built regulatory modules covering the full European alternative investment landscape. New regulations modeled before enforcement dates.',
-    items: ['AIFMD II full coverage', 'KAGB investment limits', 'ELTIF 2.0 eligibility rules', 'Annex IV reporting automation'],
+    items: ['AIFMD II eligibility & reporting', 'KAGB investment limits', 'ELTIF 2.0 eligibility rules', 'Annex IV reporting automation'],
   },
 ];
 
 const STEPS = [
   { num: '01', title: 'Configure', description: 'Define fund structures, regulatory jurisdictions, and compliance rules. Our rule builder translates legal text into deterministic logic.' },
   { num: '02', title: 'Onboard', description: 'Connect portfolio data, investor records, and counterparty information. Caelith integrates via API or file upload.' },
-  { num: '03', title: 'Prove', description: 'Every transaction evaluated in real time. Every decision logged. Every audit request answered with cryptographic proof.' },
+  { num: '03', title: 'Document', description: 'Every transaction evaluated in real time. Every decision logged. Every audit request answered with a verifiable decision trail.' },
 ];
 
 const PRICING_TIERS = [
   { name: 'Starter', price: 299, period: '/mo', description: 'For emerging managers getting compliant.', features: ['Up to 3 funds', 'AIFMD II rules engine', 'Basic audit trail', 'Email support', 'Monthly reporting'], cta: 'Start Free Trial', highlighted: false },
   { name: 'Professional', price: 799, period: '/mo', description: 'For growing firms with multi-fund complexity.', features: ['Up to 25 funds', 'Full regulatory coverage', 'Hash-chained provenance', 'Priority support', 'API access', 'Custom rule builder'], cta: 'Start Free Trial', highlighted: true },
-  { name: 'Enterprise', price: 0, period: '', description: 'For institutional managers and service providers.', features: ['Unlimited funds', 'Multi-entity support', 'Dedicated infrastructure', 'SLA guarantee', 'On-premise option', 'White-glove onboarding'], cta: 'Contact Sales', highlighted: false },
+  { name: 'Enterprise', price: 0, period: '', description: 'For institutional managers and service providers.', features: ['Unlimited funds', 'Multi-entity support', 'Dedicated infrastructure', 'Custom SLA terms', 'On-premise option', 'White-glove onboarding'], cta: 'Contact Sales', highlighted: false },
 ];
 
 /* ── Main ─────────────────────────── */
@@ -351,13 +351,13 @@ export default function LoginPage() {
 
           <h1 className="text-on-photo mx-auto max-w-5xl text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-bold leading-[1.05] tracking-tight text-white">
             The <span className="font-serif italic">compliance engine</span>
-            <br />that <span className="gradient-text-animate">proves</span> you&apos;re
-            <br />compliant.
+            <br />built for <span className="gradient-text-animate">auditable</span>
+            <br />decisions.
           </h1>
 
           <p className="text-on-photo-subtle mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/50 md:text-xl">
-            Deterministic regulatory enforcement for alternative investment fund managers.
-            Configure your rules. Caelith enforces them — and proves it.
+            Deterministic regulatory evaluation for alternative investment fund managers.
+            Configure your rules. Caelith evaluates them and documents every decision.
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -476,9 +476,9 @@ export default function LoginPage() {
               </div>
               <div className="text-center md:text-left md:border-l md:border-[#c6beb1]/30 md:pl-8">
                 <p className="text-sm font-serif italic text-accent-950/55 leading-relaxed">
-                  &ldquo;The industry is moving from best-effort compliance to provable compliance. The firms that adapt will thrive.&rdquo;
+                  &ldquo;Regulatory complexity is increasing faster than compliance teams can scale. Automation of documentation and audit trails is no longer optional.&rdquo;
                 </p>
-                <p className="text-[11px] text-accent-950/30 mt-2">— European Fund Administration Review, 2025</p>
+                <p className="text-[11px] text-accent-950/30 mt-2">— PwC Global Fund Distribution Report, 2024</p>
               </div>
             </div>
           </RevealDiv>
@@ -571,24 +571,24 @@ export default function LoginPage() {
                           <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${entry.result === 'PASS' ? 'bg-emerald-500/15 text-emerald-400' : entry.result === 'SEALED' ? 'bg-[#D8BA8E]/15 text-[#D8BA8E]' : 'bg-sky-500/15 text-sky-400'}`}>{entry.result}</span>
                         </div>
                       ))}
-                      <div className="pt-3 border-t border-white/[0.06] text-[10px] font-mono text-white/20">Chain: 4 decisions · Integrity: SHA-256 · Tamper-proof</div>
+                      <div className="pt-3 border-t border-white/[0.06] text-[10px] font-mono text-white/20">Chain: 4 decisions · Integrity: SHA-256 · Tamper-evident</div>
                     </div>
                   )}
                   {i === 2 && (
                     <div className="code-shimmer bg-accent-950 rounded-2xl p-7 shadow-2xl shadow-accent-950/50 border border-white/[0.04]">
                       <div className="grid grid-cols-3 gap-3">
                         {[
-                          { reg: 'AIFMD II', articles: 47, color: 'emerald' },
-                          { reg: 'KAGB', articles: 32, color: 'emerald' },
-                          { reg: 'ELTIF 2.0', articles: 18, color: 'emerald' },
-                          { reg: 'CSSF', articles: 12, color: 'emerald' },
-                          { reg: 'DORA', articles: 24, color: 'amber' },
-                          { reg: 'MiCA', articles: 15, color: 'amber' },
+                          { reg: 'AIFMD II', desc: 'Eligibility & Reporting', color: 'emerald' },
+                          { reg: 'KAGB', desc: 'Investment Limits', color: 'emerald' },
+                          { reg: 'ELTIF 2.0', desc: 'Eligibility Rules', color: 'emerald' },
+                          { reg: 'SIF Law', desc: 'LU Investor Types', color: 'emerald' },
+                          { reg: 'RAIF Law', desc: 'LU Fund Structures', color: 'emerald' },
+                          { reg: 'Annex IV', desc: 'AIFM Reporting', color: 'emerald' },
                         ].map((r) => (
                           <div key={r.reg} className="bg-white/[0.04] rounded-lg p-3 text-center border border-white/[0.04]">
                             <div className="text-[11px] font-semibold text-white/70 mb-1">{r.reg}</div>
-                            <div className="text-xl font-bold text-[#D8BA8E] font-mono">{r.articles}</div>
-                            <div className={`text-[9px] font-mono mt-0.5 ${r.color === 'emerald' ? 'text-emerald-400/70' : 'text-amber-400/70'}`}>{r.color === 'emerald' ? 'ACTIVE' : 'PLANNED'}</div>
+                            <div className="text-[10px] text-[#D8BA8E] font-medium mt-1">{r.desc}</div>
+                            <div className="text-[9px] font-mono mt-0.5 text-emerald-400/70">ACTIVE</div>
                           </div>
                         ))}
                       </div>
@@ -629,26 +629,15 @@ export default function LoginPage() {
 
       <SectionDivider />
 
-      {/* ── TESTIMONIAL ─────────────────────────── */}
+      {/* ── SCENARIO ─────────────────────────── */}
       <section className="py-28 md:py-40 px-6">
         <div className="max-w-4xl mx-auto">
           <RevealDiv className="text-center">
-            <svg className="w-12 h-12 text-[#D8BA8E]/20 mx-auto mb-10" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10H14.017zM0 21v-7.391c0-5.704 3.731-9.57 8.983-10.609L9.978 5.151c-2.432.917-3.995 3.638-3.995 5.849h4v10H0z" />
-            </svg>
+            <span className="text-[11px] font-mono text-[#D8BA8E] tracking-[0.2em] uppercase mb-4 block">Scenario</span>
             <blockquote className="font-serif text-2xl md:text-4xl lg:text-[2.75rem] font-normal text-accent-950 leading-[1.3] mb-10">
-              &ldquo;We moved from a 40-page Excel compliance workbook to Caelith in two weeks. Our last CSSF audit took 45 minutes instead of three days.&rdquo;
+              A mid-size KVG managing three fund structures reduced audit preparation from days to hours after implementing deterministic decision records and automated eligibility checks.
             </blockquote>
-            <div className="flex items-center justify-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-accent-950/[0.06] flex items-center justify-center">
-                <span className="text-sm font-semibold text-accent-950/60">MW</span>
-              </div>
-              <div className="text-left">
-                <div className="text-sm font-semibold text-accent-950">Dr. Marcus Weber</div>
-                <div className="text-xs text-accent-950/40">Head of Risk & Compliance, Rhine Capital Partners</div>
-                <div className="text-[10px] text-accent-950/25 mt-0.5 italic">Composite illustration</div>
-              </div>
-            </div>
+            <p className="text-xs text-accent-950/30">Illustrative scenario based on typical compliance workflows</p>
           </RevealDiv>
         </div>
       </section>
@@ -664,6 +653,7 @@ export default function LoginPage() {
               Simple, <span className="font-serif italic">transparent</span> pricing.
             </h2>
             <p className="text-sm text-accent-950/45 max-w-lg mx-auto">Start free. Upgrade when ready. No hidden fees.</p>
+            <p className="text-[10px] text-accent-950/25 mt-2">All prices exclusive of VAT. Subject to change.</p>
           </RevealDiv>
 
           <div className="grid md:grid-cols-3 gap-6 items-start">
@@ -761,6 +751,13 @@ export default function LoginPage() {
           </RevealDiv>
         </div>
       </section>
+
+      {/* ── LEGAL DISCLAIMER ─────────────────────────── */}
+      <div className="bg-[#eae7df] px-6 py-6">
+        <p className="max-w-4xl mx-auto text-[11px] text-accent-950/35 leading-relaxed text-center">
+          Caelith is a compliance support tool that assists fund managers with regulatory documentation and monitoring. It does not provide legal, regulatory, or compliance advice and does not guarantee compliance outcomes. All compliance decisions must be reviewed by qualified professionals. AI-generated outputs require independent verification.
+        </p>
+      </div>
 
       {/* ── FOOTER ─────────────────────────── */}
       <footer className="border-t border-[#c6beb1]/20 relative">
