@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Card, Button, Badge, Alert } from './ui';
 import { parseCsvFull } from '../lib/csv-parser';
@@ -213,7 +213,9 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
 
     try {
       const text = await selectedFile.text();
+      console.log('[CSV Debug] File read, length:', text.length);
       const result = parseCsvFull(text, entityType);
+      console.log('[CSV Debug] Parsed:', { columns: result.columns, totalRows: result.totalRows, allRowsCount: result.allRows.length, suggestedMapping: result.suggestedMapping });
 
       if (result.totalRows === 0) {
         setError('CSV file is empty or contains no data rows.');
@@ -225,6 +227,7 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
       setColumnMapping(result.suggestedMapping);
       setStep('map');
     } catch (err) {
+      console.error('[CSV Debug] Parse error:', err);
       setError(err instanceof Error ? err.message : 'Failed to parse CSV file.');
     }
   }, [entityType]);
@@ -260,17 +263,24 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
   const mappedRequiredFields = requiredFields.filter(f => Object.values(columnMapping).includes(f));
   const allRequiredMapped = mappedRequiredFields.length === requiredFields.length;
 
-  // ── Initialize editable rows from mapping ──────────────
+  // ── Initialize editable rows when entering preview step ─
 
-  const initializeEditedRows = useCallback(() => {
-    if (!parseResult || allRows.length === 0) return;
+  useEffect(() => {
+    console.log('[CSV Debug] useEffect fired:', { step, hasParseResult: !!parseResult, allRowsLen: allRows.length, editedRowsLen: editedRows.length, columnMapping });
+    if (step !== 'preview') return;
+    if (!parseResult || allRows.length === 0) {
+      console.log('[CSV Debug] BAIL: no parseResult or allRows empty');
+      return;
+    }
+    if (editedRows.length > 0) {
+      console.log('[CSV Debug] BAIL: editedRows already initialized');
+      return;
+    }
 
-    // Determine which schema fields are mapped and their CSV column indices
     const fields: string[] = [];
     const colIndices: number[] = [];
 
     for (const sf of schemaFields) {
-      // Find the CSV column mapped to this schema field
       const csvCol = Object.entries(columnMapping).find(([, target]) => target === sf.field)?.[0];
       if (csvCol) {
         fields.push(sf.field);
@@ -278,15 +288,18 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
       }
     }
 
+    console.log('[CSV Debug] Mapped fields:', fields, 'colIndices:', colIndices);
+
     setMappedFields(fields);
 
-    // Build editable rows: for each data row, extract the mapped column values
     const rows = allRows.map(row =>
       colIndices.map(idx => (idx >= 0 && idx < row.length ? row[idx] : ''))
     );
+    console.log('[CSV Debug] Built editedRows:', rows.length, 'rows, first row:', rows[0]);
     setEditedRows(rows);
     setPage(0);
-  }, [parseResult, allRows, columnMapping, schemaFields]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, parseResult, allRows]);
 
   // ── Validation ─────────────────────────────────────────
 
@@ -360,6 +373,8 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
       window.open(api.getTemplateDownloadUrl(entityType), '_blank');
     });
   };
+
+  console.log('[CSV Debug] Render:', { step, hasParseResult: !!parseResult, editedRowsLen: editedRows.length, mappedFieldsLen: mappedFields.length });
 
   // ── Step: Upload ───────────────────────────────────────
   if (step === 'upload') {
@@ -510,7 +525,7 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
           <Button variant="secondary" onClick={() => { setStep('upload'); setFile(null); setParseResult(null); setAllRows([]); }}>
             Back
           </Button>
-          <Button onClick={() => { initializeEditedRows(); setStep('preview'); }} disabled={!allRequiredMapped}>
+          <Button onClick={() => { setEditedRows([]); setStep('preview'); }} disabled={!allRequiredMapped}>
             Next: Preview & Edit
           </Button>
         </div>
@@ -520,7 +535,21 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
   }
 
   // ── Step: Preview & Edit ───────────────────────────────
-  if ((step === 'preview') && parseResult && editedRows.length > 0) {
+  if (step === 'preview' && parseResult) {
+    // Show loading while useEffect populates editedRows
+    if (editedRows.length === 0) {
+      return (
+        <>
+        <CsvStepper current="preview" />
+        <Card>
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-400 border-t-transparent mb-4" />
+            <p className="text-sm font-medium text-ink">Preparing editable preview...</p>
+          </div>
+        </Card>
+        </>
+      );
+    }
     const totalPages = Math.ceil(editedRows.length / ROWS_PER_PAGE);
     const pageRows = editedRows.slice(page * ROWS_PER_PAGE, (page + 1) * ROWS_PER_PAGE);
     const startRow = page * ROWS_PER_PAGE;
@@ -636,7 +665,7 @@ export function CsvUploadWizard({ entityType, onComplete, onCancel, onStartEligi
         </div>
 
         <div className="mt-6 flex justify-between">
-          <Button variant="secondary" onClick={() => setStep('map')}>Back</Button>
+          <Button variant="secondary" onClick={() => { setEditedRows([]); setStep('map'); }}>Back</Button>
           <Button onClick={handleImport} disabled={hasRequiredEmpty}>
             Import {editedRows.length} {ENTITY_TYPE_LABELS[entityType]}
           </Button>

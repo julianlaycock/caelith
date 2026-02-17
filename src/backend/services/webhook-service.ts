@@ -8,6 +8,7 @@
 import { randomUUID } from 'crypto';
 import { createHmac } from 'crypto';
 import { query, execute } from '../db.js';
+import { logger } from '../lib/logger.js';
 
 export interface Webhook {
   id: string;
@@ -35,10 +36,35 @@ export interface WebhookDelivery {
 /**
  * Validate webhook URL format
  */
+/**
+ * Blocked hostname patterns for SSRF protection.
+ * Prevents webhooks from targeting internal/private networks.
+ */
+const BLOCKED_HOSTS = [
+  'localhost', '127.0.0.1', '0.0.0.0', '[::1]',
+];
+const PRIVATE_IP_PREFIXES = ['10.', '172.16.', '172.17.', '172.18.', '172.19.',
+  '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.', '172.26.',
+  '172.27.', '172.28.', '172.29.', '172.30.', '172.31.', '192.168.', '169.254.'];
+
 function isValidWebhookUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+
+    // Enforce HTTPS in production
+    if (process.env.NODE_ENV === 'production' && parsed.protocol !== 'https:') {
+      return false;
+    }
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return false;
+    }
+
+    // Block private/internal hosts (SSRF protection)
+    const host = parsed.hostname.toLowerCase();
+    if (BLOCKED_HOSTS.includes(host)) return false;
+    if (PRIVATE_IP_PREFIXES.some(prefix => host.startsWith(prefix))) return false;
+
+    return true;
   } catch {
     return false;
   }
@@ -166,14 +192,14 @@ export async function dispatchEvent(
       try {
         types = JSON.parse(webhook.event_types);
       } catch {
-        console.error('[webhook] Invalid event_types for webhook', webhook.id);
+        logger.error('Invalid event_types JSON for webhook', { webhookId: webhook.id });
         continue;
       }
     } else {
       types = webhook.event_types;
     }
     if (!Array.isArray(types)) {
-      console.error('[webhook] event_types is not an array for webhook', webhook.id);
+      logger.error('event_types is not an array for webhook', { webhookId: webhook.id });
       continue;
     }
     if (!types.includes('*') && !types.includes(eventType)) {
@@ -194,7 +220,7 @@ export async function dispatchEvent(
 
     // Fire-and-forget delivery attempt
     deliverWebhook(deliveryId, webhook.url, body, signature).catch((err) => {
-      console.error('[webhook] Delivery failed for', deliveryId, ':', err instanceof Error ? err.message : err);
+      logger.error('Webhook delivery failed', { deliveryId, webhookId: webhook.id, error: err });
     });
   }
 }

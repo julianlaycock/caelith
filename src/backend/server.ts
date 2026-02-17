@@ -41,29 +41,30 @@ import { createCopilotRoutes } from './routes/copilot-routes.js';
 import scenarioRoutes from './routes/scenario-routes.js';
 import importRoutes from './routes/import-routes.js';
 import { isResetEndpointEnabled, shouldBootstrapAdmin } from './config/security-config.js';
+import { logger } from './lib/logger.js';
 
 // Validate required environment variables at startup
 const REQUIRED_ENV_VARS = ['JWT_SECRET', 'DATABASE_URL'] as const;
 for (const envVar of REQUIRED_ENV_VARS) {
   if (!process.env[envVar]) {
-    console.error(`FATAL: Missing required environment variable: ${envVar}`);
+    logger.error(`Missing required environment variable: ${envVar}`);
     process.exit(1);
   }
 }
 
 // Validate JWT_SECRET strength (HS256 requires >= 256 bits = 32 bytes)
 if ((process.env.JWT_SECRET as string).length < 32) {
-  console.error('FATAL: JWT_SECRET must be at least 32 characters for HS256 security');
+  logger.error('JWT_SECRET must be at least 32 characters for HS256 security');
   process.exit(1);
 }
 
 // Validate conditional API keys
 const EMBEDDING_PROVIDER = process.env.EMBEDDING_PROVIDER || 'openai';
 if (EMBEDDING_PROVIDER === 'openai' && !process.env.OPENAI_API_KEY) {
-  console.warn('WARNING: OPENAI_API_KEY not set but EMBEDDING_PROVIDER=openai — embeddings will fail');
+  logger.warn('OPENAI_API_KEY not set but EMBEDDING_PROVIDER=openai — embeddings will fail');
 }
 if (!process.env.ANTHROPIC_API_KEY) {
-  console.warn('WARNING: ANTHROPIC_API_KEY not set — copilot and NL compiler will be unavailable');
+  logger.warn('ANTHROPIC_API_KEY not set — copilot and NL compiler will be unavailable');
 }
 
 /**
@@ -77,15 +78,15 @@ async function ensureAdminUser(): Promise<void> {
   const bootstrap = shouldBootstrapAdmin(process.env.ADMIN_PASSWORD, process.env.NODE_ENV);
   if (!bootstrap.allowed) {
     if (bootstrap.fatal) {
-      console.error('FATAL: ADMIN_PASSWORD must be set in production.');
+      logger.error('ADMIN_PASSWORD must be set in production');
       process.exit(1);
     }
-    console.warn('WARNING: ADMIN_PASSWORD not set; skipping automatic admin bootstrap.');
+    logger.warn('ADMIN_PASSWORD not set; skipping automatic admin bootstrap');
     return;
   }
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
   if (!ADMIN_PASSWORD || !ADMIN_PASSWORD.trim()) {
-    console.warn('WARNING: ADMIN_PASSWORD not set; skipping automatic admin bootstrap.');
+    logger.warn('ADMIN_PASSWORD not set; skipping automatic admin bootstrap');
     return;
   }
 
@@ -96,13 +97,13 @@ async function ensureAdminUser(): Promise<void> {
     );
 
     if (existing.length > 0) {
-      console.info(`✅ Admin user (${ADMIN_EMAIL}) already exists.`);
+      logger.info(`Admin user (${ADMIN_EMAIL}) already exists`);
       return;
     }
 
     const id = randomUUID();
     const now = new Date().toISOString();
-    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
 
     await dbExecute(
       `INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
@@ -110,9 +111,9 @@ async function ensureAdminUser(): Promise<void> {
       [id, ADMIN_EMAIL, passwordHash, ADMIN_NAME, 'admin', true, now, now]
     );
 
-    console.info(`🔑 Admin user created: ${ADMIN_EMAIL}`);
+    logger.info(`Admin user created: ${ADMIN_EMAIL}`);
   } catch (error) {
-    console.error('⚠️  Failed to ensure admin user:', error);
+    logger.error('Failed to ensure admin user', { error });
   }
 }
 
@@ -144,7 +145,6 @@ app.use(express.json({ limit: '1mb' }));
 app.use(sanitizeInput);
 
 // Request ID + structured request logging
-import { logger } from './lib/logger.js';
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   const requestId = (req.headers['x-request-id'] as string) || randomUUID();
   res.setHeader('X-Request-Id', requestId);
@@ -273,7 +273,7 @@ app.use(errorHandler);
 
 // Graceful shutdown
 async function gracefulShutdown(signal: string): Promise<void> {
-  console.info(`\n${signal} received — shutting down gracefully...`);
+  logger.info(`${signal} received — shutting down gracefully`);
   await closeDb();
   process.exit(0);
 }
@@ -285,25 +285,17 @@ async function startServer(): Promise<void> {
   await ensureAdminUser();
 
   app.listen(PORT, () => {
-    console.info(`🚀 Server running on http://localhost:${PORT}`);
-    console.info(`📊 API: http://localhost:${PORT}/api`);
-    console.info(`💚 Health: http://localhost:${PORT}/health`);
-    console.info(`📖 Docs: http://localhost:${PORT}/api/docs`);
-    console.info('\n📋 Available endpoints:');
-    console.info('  POST /api/assets');
-    console.info('  GET  /api/assets');
-    console.info('  POST /api/investors');
-    console.info('  GET  /api/investors');
-    console.info('  POST /api/holdings');
-    console.info('  POST /api/rules');
-    console.info('  POST /api/transfers');
-    console.info('  POST /api/transfers/simulate');
-    console.info('  GET  /api/events');
+    logger.info(`Server running on http://localhost:${PORT}`, {
+      port: Number(PORT),
+      api: `/api`,
+      health: `/health`,
+      docs: `/api/docs`,
+    });
   });
 }
 
 startServer().catch((err) => {
-  console.error('Failed to start server:', err);
+  logger.error('Failed to start server', { error: err });
   process.exit(1);
 });
 

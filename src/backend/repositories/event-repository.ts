@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { execute, parseJSON, stringifyJSON, queryWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { Event, CreateEventInput, EventType, EntityType } from '../models/index.js';
 import { dispatchEvent } from '../services/webhook-service.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Event Repository - Handles all database operations for audit events
@@ -67,7 +68,7 @@ export async function createEvent(input: CreateEventInput): Promise<Event> {
     entity_type: input.entity_type,
     entity_id: input.entity_id,
   }).catch((err) => {
-    console.error('[webhook] Dispatch failed for event', id, ':', err instanceof Error ? err.message : err);
+    logger.error('Webhook dispatch failed for event', { eventId: id, error: err });
   });
 
   return event;

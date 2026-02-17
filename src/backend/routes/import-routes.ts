@@ -11,6 +11,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { ValidationError } from '../errors.js';
+import { logger } from '../lib/logger.js';
 import { executeBulkImport, BulkImportPayload } from '../services/import-service.js';
 import {
   parseCsvPreview,
@@ -130,8 +131,7 @@ router.post('/csv', upload.single('file'), asyncHandler(async (req, res) => {
     const result = await executeBulkImport(payload, req.user?.tenantId, req.user?.userId);
     res.status(201).json(result);
   } catch (importErr) {
-    console.error('[import/csv] IMPORT FAILED:', importErr instanceof Error ? importErr.message : importErr);
-    console.error('[import/csv] Stack:', importErr instanceof Error ? importErr.stack : 'no stack');
+    logger.error('CSV import failed', { error: importErr });
     throw importErr;
   }
 }));

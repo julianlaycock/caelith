@@ -4,6 +4,7 @@ import { ragService, RagResult } from './rag-service.js';
 import { compileNaturalLanguageRule } from './nl-rule-compiler.js';
 import type { EntityType } from '../models/index.js';
 import { RateLimitError, ValidationError } from '../errors.js';
+import { logger } from '../lib/logger.js';
 
 const ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
@@ -422,8 +423,7 @@ async function handleRegulatoryQa(message: string, tenantId: string): Promise<Co
       topK: 5,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn('RAG query failed (embedding service may be unavailable):', message);
+    logger.warn('RAG query failed (embedding service may be unavailable)', { error: err });
   }
 
   if (results.length === 0) {
@@ -472,8 +472,7 @@ Note: This answer is based on regulatory knowledge, not from ingested documents.
         ],
       };
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.warn('Regulatory QA fallback failed:', message);
+      logger.warn('Regulatory QA fallback failed', { error: err });
       return {
         intent: 'regulatory_qa',
         message: 'I\'m unable to answer regulatory questions right now. Please ensure the Anthropic API key is configured, or upload regulatory documents through /api/regulatory/ingest for document-based answers.',

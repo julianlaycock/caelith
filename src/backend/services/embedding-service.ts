@@ -1,5 +1,6 @@
 import { setTimeout as delay } from 'timers/promises';
 import { sanitizeEmbeddingText } from './text-sanitizer.js';
+import { logger } from '../lib/logger.js';
 
 const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
@@ -33,7 +34,7 @@ function getProvider(): EmbeddingProvider | 'none' {
     return explicit;
   }
   if (!explicit && !process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
-    console.warn('WARNING: No embedding API keys set. Embeddings disabled.');
+    logger.warn('No embedding API keys set — embeddings disabled');
     return 'none';
   }
   if (!explicit && !process.env.OPENAI_API_KEY && process.env.ANTHROPIC_API_KEY) {

@@ -13,6 +13,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { logger } from '../lib/logger.js';
 import { CompositeRule, RuleCondition } from '../../rules-engine/types.js';
 import { createEvent } from '../repositories/index.js';
 import { sanitizePromptInput } from './text-sanitizer.js';
@@ -192,7 +193,7 @@ async function callClaude(description: string, context?: NLRuleRequest['context'
       if (isRetryable && attempt < MAX_RETRIES - 1) {
         const delayMs = Math.min(8000, 400 * 2 ** attempt) + Math.floor(Math.random() * 200);
         await new Promise(resolve => setTimeout(resolve, delayMs));
-        console.warn(`[nl-compiler] Retry ${attempt + 1}/${MAX_RETRIES} after: ${lastError.message}`);
+        logger.warn(`NL compiler retry ${attempt + 1}/${MAX_RETRIES}`, { error: lastError });
         continue;
       }
 

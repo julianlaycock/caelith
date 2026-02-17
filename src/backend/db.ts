@@ -7,6 +7,7 @@
  */
 
 import { Pool, types } from 'pg';
+import { logger } from './lib/logger.js';
 
 export const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000099';
 
@@ -24,7 +25,7 @@ const pool = new Pool({
 });
 
 pool.on('error', (err) => {
-  console.error('[db] Unexpected pool error:', err.message);
+  logger.error('Unexpected pool error', { error: err });
 });
 
 /**

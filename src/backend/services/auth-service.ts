@@ -21,7 +21,7 @@ function getJwtSecret(): string {
 // Short-lived access token (30 minutes) + long-lived refresh token (7 days)
 const JWT_EXPIRES_IN = '30m';
 const REFRESH_TOKEN_EXPIRES_HOURS = 168; // 7 days
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 12;
 
 // Account lockout settings
 const MAX_LOGIN_ATTEMPTS = 5;

@@ -8,6 +8,7 @@ import { query } from '../db.js';
 import { findFundStructureById } from '../repositories/fund-structure-repository.js';
 import { runCoreEligibilityChecks } from './eligibility-check-helper.js';
 import { recordDecisionWithResult } from './decision-record-helper.js';
+import { ValidationError, NotFoundError } from '../errors.js';
 
 // ============================================================================
 // Types
@@ -70,16 +71,12 @@ export async function analyzeScenarioImpact(request: ScenarioRequest): Promise<S
   const { fund_structure_id, proposed_changes } = request;
 
   if (!fund_structure_id) {
-    const err = new Error('fund_structure_id is required') as Error & { status?: number };
-    err.status = 400;
-    throw err;
+    throw new ValidationError('fund_structure_id is required');
   }
 
   const fund = await findFundStructureById(fund_structure_id);
   if (!fund) {
-    const err = new Error(`Fund structure not found: ${fund_structure_id}`) as Error & { status?: number };
-    err.status = 404;
-    throw err;
+    throw new NotFoundError('FundStructure', fund_structure_id);
   }
 
   // Fetch all investors with holdings in this fund's assets

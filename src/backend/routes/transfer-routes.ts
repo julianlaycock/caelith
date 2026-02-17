@@ -18,7 +18,7 @@ import {
 
 const router = express.Router();
 
-router.post('/simulate', asyncHandler(async (req, res): Promise<void> => {
+router.post('/simulate', authorize('admin', 'compliance_officer'), asyncHandler(async (req, res): Promise<void> => {
   const { asset_id, from_investor_id, to_investor_id, units, execution_date } = req.body;
   requireFields(req.body, ['asset_id', 'from_investor_id', 'to_investor_id', 'units', 'execution_date']);
 
@@ -33,7 +33,7 @@ router.post('/simulate', asyncHandler(async (req, res): Promise<void> => {
   res.json(result);
 }));
 
-router.post('/', asyncHandler(async (req, res): Promise<void> => {
+router.post('/', authorize('admin', 'compliance_officer'), asyncHandler(async (req, res): Promise<void> => {
   const { asset_id, from_investor_id, to_investor_id, units, execution_date } = req.body;
   requireFields(req.body, ['asset_id', 'from_investor_id', 'to_investor_id', 'units', 'execution_date']);
 
