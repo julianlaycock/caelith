@@ -219,9 +219,9 @@ export function CopilotPanel({
               <p className="mb-3 text-xs text-ink-tertiary">
                 Ask questions about regulations, decisions, or draft rules using natural language.
               </p>
-              <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-                <p className="text-[11px] leading-relaxed text-amber-700">
-                  Compliance Copilot provides AI-generated informational assistance only. Responses do not constitute legal, regulatory, or compliance advice. All outputs require independent verification by a qualified professional. Caelith does not provide legal advice.
+              <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
+                <p className="text-xs leading-relaxed text-amber-700 font-medium">
+                  Compliance Copilot provides AI-generated informational assistance only. Responses do not constitute legal, regulatory, or compliance advice. All outputs require independent verification by a qualified professional before any reliance. Caelith does not provide legal advice and shall not be liable for decisions made using this tool.
                 </p>
               </div>
               <div className="w-full space-y-2">
@@ -298,8 +298,8 @@ export function CopilotPanel({
                 {msg.role === 'assistant' && (
                   <div className="mt-2 border-t border-edge-subtle pt-1.5">
                     <div className="flex items-center justify-between">
-                      <p className="text-[11px] text-ink-muted italic leading-tight">
-                        AI-generated — not legal or regulatory advice. Verify independently.
+                      <p className="text-xs font-medium leading-tight text-amber-600">
+                        AI-generated — not legal, regulatory, or compliance advice. Verify all content independently before reliance.
                       </p>
                       <div className="flex items-center gap-1">
                         <button
