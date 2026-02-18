@@ -5,6 +5,7 @@ const nextConfig = {
     return [
       { source: '/activity', destination: '/audit', permanent: true },
       { source: '/alerts', destination: '/audit', permanent: true },
+      { source: '/landing', destination: '/landing.html', permanent: false },
     ];
   },
   async rewrites() {
