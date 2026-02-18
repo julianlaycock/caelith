@@ -24,8 +24,9 @@ export function errorHandler(
   logger.error('Unhandled error', { requestId, method: req.method, path: req.path, statusCode: 500, error: err });
   res.status(500).json({
     error: 'INTERNAL_ERROR',
-    message: 'An unexpected error occurred',
-    debug: err.message,
-    stack: err.stack?.split('\n').slice(0, 5),
+    message: process.env.NODE_ENV === 'production'
+      ? 'An unexpected error occurred'
+      : err.message,
+    ...(process.env.NODE_ENV !== 'production' && { debug: err.message }),
   });
 }

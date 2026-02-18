@@ -41,10 +41,16 @@ interface Migration {
 async function runMigrations(): Promise<void> {
   console.log('🔄 Starting PostgreSQL migrations...\n');
 
+  // SSL config: Railway internal Postgres uses self-signed certs
+  const sslConfig = process.env.NODE_ENV === 'production'
+    ? { ssl: { rejectUnauthorized: false } }
+    : {};
+
   const pool = new Pool({
     connectionString:
       process.env.DATABASE_URL ||
       'postgresql://caelith:caelith@localhost:5432/caelith',
+    ...sslConfig,
   });
 
   const client = await pool.connect();

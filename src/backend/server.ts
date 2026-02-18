@@ -7,8 +7,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-console.log('[caelith] Server module loading...');
-
 import express from 'express';
 import cors from 'cors';
 import { closeDb, execute as dbExecute, DEFAULT_TENANT_ID, query as dbQuery } from './db.js';
