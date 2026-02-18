@@ -3,8 +3,6 @@ builder = "NIXPACKS"
 buildCommand = "npm run build:backend"
 
 [deploy]
-startCommand = "npx tsx scripts/migrate.ts && node dist/backend/backend/server.js"
-healthcheckPath = "/health"
-healthcheckTimeout = 600
+startCommand = "node dist/backend/backend/server.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
