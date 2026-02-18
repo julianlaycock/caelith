@@ -140,7 +140,12 @@ async function withTenantContext<T>(
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('SET LOCAL app.tenant_id = $1', [tenantId]);
+    // SET LOCAL doesn't support parameterized queries in PostgreSQL
+    // Sanitize tenantId (must be valid UUID) to prevent SQL injection
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenantId)) {
+      throw new Error(`Invalid tenant ID format: ${tenantId}`);
+    }
+    await client.query(`SET LOCAL app.tenant_id = '${tenantId}'`);
     const result = await fn(client);
     await client.query('COMMIT');
     return result;
