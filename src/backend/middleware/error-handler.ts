@@ -25,7 +25,7 @@ export function errorHandler(
   res.status(500).json({
     error: 'INTERNAL_ERROR',
     message: 'An unexpected error occurred',
-    // Include error detail in development for debugging — stripped in production
-    ...(process.env.NODE_ENV !== 'production' && { debug: err.message }),
+    debug: err.message,
+    stack: err.stack?.split('\n').slice(0, 5),
   });
 }
