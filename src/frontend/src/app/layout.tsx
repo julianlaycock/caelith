@@ -12,14 +12,14 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   other: {
-    'theme-color': '#D2CFBE',
+    'theme-color': '#2D3333',
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
   },
   openGraph: {
     title: 'Caelith - Compliance Engine',
-    description: 'AIFMD II compliance engine for EU alternative investment fund managers',
+    description: 'The compliance engine for EU fund managers. 247 rules. 6 frameworks. Every decision logged, verified, and cryptographically proven.',
     siteName: 'Caelith',
     type: 'website',
   },
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <meta name="theme-color" content="#D2CFBE" />
+        <meta name="theme-color" content="#2D3333" />
       </head>
       <body>
         <AuthLayout>{children}</AuthLayout>
