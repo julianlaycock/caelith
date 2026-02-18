@@ -20,9 +20,9 @@ export const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000099';
 types.setTypeParser(20, (val: string) => parseInt(val, 10));
 types.setTypeParser(1700, (val: string) => parseFloat(val));
 
-// Enforce SSL/TLS in production to prevent cleartext database traffic
+// SSL config: Railway internal Postgres uses self-signed certs
 const sslConfig = process.env.NODE_ENV === 'production'
-  ? { ssl: { rejectUnauthorized: process.env.PG_SSL_REJECT_UNAUTHORIZED !== 'false' } }
+  ? { ssl: { rejectUnauthorized: false } }
   : {};
 
 const pool = new Pool({
