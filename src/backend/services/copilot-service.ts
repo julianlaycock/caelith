@@ -1,11 +1,12 @@
 ﻿import { createEvent } from '../repositories/event-repository.js';
-import { DEFAULT_TENANT_ID, query } from '../db.js';
+import { DEFAULT_TENANT_ID, queryInTenantContext } from '../db.js';
 import { ragService, RagResult } from './rag-service.js';
 import { compileNaturalLanguageRule } from './nl-rule-compiler.js';
 import type { EntityType } from '../models/index.js';
 import { RateLimitError, ValidationError } from '../errors.js';
 import { logger } from '../lib/logger.js';
 import { callAnthropic, isAnthropicConfigured, ANTHROPIC_MODEL } from './anthropic-client.js';
+import { stripPII } from './pii-stripper.js';
 
 const VALID_ENTITY_TYPES: Set<EntityType> = new Set([
   'asset',
@@ -210,7 +211,7 @@ async function classifyIntent(message: string): Promise<CopilotIntent> {
           },
         },
       ],
-      messages: [{ role: 'user', content: message }],
+      messages: [{ role: 'user', content: stripPII(message) }],
     });
 
     const toolUse = response.content.find(block => block.type === 'tool_use');
@@ -252,7 +253,7 @@ async function summarizeRagAnswer(question: string, results: RagResult[]): Promi
     messages: [
       {
         role: 'user',
-        content: `Question: ${question}\n\nExcerpts:\n${context}`,
+        content: `Question: ${stripPII(question)}\n\nExcerpts:\n${stripPII(context)}`,
       },
     ],
   });
@@ -283,14 +284,15 @@ function parseEuroAmount(message: string): number | null {
   return value;
 }
 async function enforceRateLimit(tenantId: string, userId: string): Promise<void> {
-  const rows = await query<CountRow>(
+  const rows = await queryInTenantContext<CountRow>(
     `SELECT COUNT(*)::int AS count
      FROM events
      WHERE tenant_id = $1
        AND event_type = 'copilot.query'
        AND timestamp >= NOW() - INTERVAL '1 hour'
        AND payload->>'user_id' = $2`,
-    [tenantId, userId]
+    [tenantId, userId],
+    tenantId
   );
 
   if ((rows[0]?.count || 0) >= 20) {
@@ -301,20 +303,22 @@ async function enforceRateLimit(tenantId: string, userId: string): Promise<void>
 async function handleExplainDecision(message: string, tenantId: string): Promise<CopilotResponse> {
   const decisionId = extractUuid(message);
   const rows = decisionId
-    ? await query<DecisionRow>(
+    ? await queryInTenantContext<DecisionRow>(
       `SELECT id, decision_type, result, result_details, decided_at
        FROM decision_records
        WHERE id = $1 AND tenant_id = $2
        LIMIT 1`,
-      [decisionId, tenantId]
+      [decisionId, tenantId],
+      tenantId
     )
-    : await query<DecisionRow>(
+    : await queryInTenantContext<DecisionRow>(
       `SELECT id, decision_type, result, result_details, decided_at
        FROM decision_records
        WHERE tenant_id = $1
        ORDER BY decided_at DESC
        LIMIT 3`,
-      [tenantId]
+      [tenantId],
+      tenantId
     );
 
   if (rows.length === 0) {
@@ -388,7 +392,7 @@ Provide informational responses and cite specific articles, laws, or directives 
 If the question is outside the scope of these regulatory topics, say so honestly.
 
 Note: This response is generated from the AI model's training data, not from verified document sources. For document-grounded analysis, regulatory documents can be uploaded through the platform.`,
-        messages: [{ role: 'user', content: message }],
+        messages: [{ role: 'user', content: stripPII(message) }],
       });
 
       const textBlock = fallbackResponse.content.find(block => block.type === 'text');
@@ -445,9 +449,10 @@ async function resolveAssetIdFromContextOrTenant(
     return context.selectedEntityId;
   }
 
-  const rows = await query<{ id: string }>(
+  const rows = await queryInTenantContext<{ id: string }>(
     `SELECT id FROM assets WHERE tenant_id = $1 ORDER BY created_at ASC LIMIT 1`,
-    [tenantId]
+    [tenantId],
+    tenantId
   );
 
   return rows[0]?.id || null;
@@ -494,12 +499,13 @@ async function resolveFundForWhatIf(
   message: string
 ): Promise<FundLookupRow | null> {
   if (context?.selectedEntityType === 'fund_structure' && context.selectedEntityId) {
-    const byId = await query<FundLookupRow>(
+    const byId = await queryInTenantContext<FundLookupRow>(
       `SELECT id, name, legal_form, domicile
        FROM fund_structures
        WHERE id = $1 AND tenant_id = $2
        LIMIT 1`,
-      [context.selectedEntityId, tenantId]
+      [context.selectedEntityId, tenantId],
+      tenantId
     );
     if (byId[0]) {
       return byId[0];
@@ -509,26 +515,28 @@ async function resolveFundForWhatIf(
   const forMatch = message.match(/for\s+(.+)$/i);
   if (forMatch && forMatch[1]) {
     const candidate = forMatch[1].trim();
-    const byName = await query<FundLookupRow>(
+    const byName = await queryInTenantContext<FundLookupRow>(
       `SELECT id, name, legal_form, domicile
        FROM fund_structures
        WHERE tenant_id = $1 AND name ILIKE $2
        ORDER BY created_at DESC
        LIMIT 1`,
-      [tenantId, `%${candidate}%`]
+      [tenantId, `%${candidate}%`],
+      tenantId
     );
     if (byName[0]) {
       return byName[0];
     }
   }
 
-  const fallback = await query<FundLookupRow>(
+  const fallback = await queryInTenantContext<FundLookupRow>(
     `SELECT id, name, legal_form, domicile
      FROM fund_structures
      WHERE tenant_id = $1
      ORDER BY created_at ASC
      LIMIT 1`,
-    [tenantId]
+    [tenantId],
+    tenantId
   );
 
   return fallback[0] || null;
@@ -551,7 +559,7 @@ async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<
     };
   }
 
-  const impacted = await query<InvestorImpactRow>(
+  const impacted = await queryInTenantContext<InvestorImpactRow>(
     `SELECT i.id,
             i.name,
             COALESCE(SUM(h.units * COALESCE(a.unit_price, 0)), 0)::numeric AS invested_eur
@@ -562,7 +570,8 @@ async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<
      GROUP BY i.id, i.name
      HAVING COALESCE(SUM(h.units * COALESCE(a.unit_price, 0)), 0) < $3
      ORDER BY invested_eur ASC`,
-    [fund.id, tenantId, newMinimum]
+    [fund.id, tenantId, newMinimum],
+    tenantId
   );
 
   let blockedTransfers = 0;
@@ -574,14 +583,15 @@ async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<
       placeholders.push(`$${index + 3}`);
     }
 
-    const transferRows = await query<CountRow>(
+    const transferRows = await queryInTenantContext<CountRow>(
       `SELECT COUNT(*)::int AS count
        FROM transfers t
        JOIN assets a ON a.id = t.asset_id
        WHERE a.fund_structure_id = $1
          AND a.tenant_id = $2
          AND t.to_investor_id IN (${placeholders.join(', ')})`,
-      params
+      params,
+      tenantId
     );
 
     blockedTransfers = transferRows[0]?.count || 0;

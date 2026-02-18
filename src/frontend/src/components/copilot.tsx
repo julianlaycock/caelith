@@ -103,6 +103,8 @@ function getPromptsForPath(pathname: string): string[] {
   return DEFAULT_PROMPTS;
 }
 
+const COPILOT_ACK_KEY = 'caelith_copilot_acknowledged';
+
 export function CopilotPanel({
   open,
   onClose,
@@ -115,6 +117,11 @@ export function CopilotPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Record<string, 'up' | 'down'>>({});
+  const [acknowledged, setAcknowledged] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(COPILOT_ACK_KEY) === 'true';
+  });
+  const [ackChecked, setAckChecked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pathname = usePathname();
@@ -206,6 +213,43 @@ export function CopilotPanel({
             </svg>
           </button>
         </div>
+
+        {open && !acknowledged && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-bg-secondary/95 px-6">
+            <div className="w-full max-w-sm rounded-xl border border-edge bg-bg-primary p-6 shadow-lg">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 mx-auto">
+                <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+              </div>
+              <h3 className="mb-2 text-center text-sm font-semibold text-ink">Before you proceed</h3>
+              <p className="mb-4 text-xs leading-relaxed text-ink-secondary">
+                The Compliance Copilot provides AI-generated informational assistance only. It does not constitute legal, regulatory, or compliance advice. All outputs require independent verification by a qualified professional before any reliance. Caelith shall not be liable for any loss, regulatory penalty, or adverse outcome arising from use of AI-generated content.
+              </p>
+              <label className="mb-4 flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={ackChecked}
+                  onChange={(e) => setAckChecked(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-edge accent-[#24364A]"
+                />
+                <span className="text-xs leading-relaxed text-ink-secondary">
+                  I understand that Compliance Copilot outputs are informational only, do not constitute professional advice, and must be independently verified before reliance.
+                </span>
+              </label>
+              <button
+                disabled={!ackChecked}
+                onClick={() => {
+                  localStorage.setItem(COPILOT_ACK_KEY, 'true');
+                  setAcknowledged(true);
+                }}
+                className="w-full rounded-lg bg-[#24364A] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1F2F40] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                I Understand — Continue
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {messages.length === 0 && !loading && (

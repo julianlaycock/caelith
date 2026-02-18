@@ -10,7 +10,7 @@ import { ErrorBoundary } from './error-boundary';
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isPublicPage = pathname === '/login' || pathname.startsWith('/design-lab');
+  const isPublicPage = pathname === '/login' || pathname.startsWith('/design-lab') || pathname === '/terms' || pathname === '/privacy' || pathname === '/dpa' || pathname === '/landing';
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);

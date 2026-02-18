@@ -17,6 +17,7 @@ import { logger } from '../lib/logger.js';
 import { CompositeRule, RuleCondition } from '../../rules-engine/types.js';
 import { createEvent } from '../repositories/index.js';
 import { sanitizePromptInput } from './text-sanitizer.js';
+import { stripPII } from './pii-stripper.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -151,12 +152,12 @@ async function callClaude(description: string, context?: NLRuleRequest['context'
 
   const client = new Anthropic({ apiKey });
 
-  let userMessage = sanitizeInput(description);
+  let userMessage = stripPII(sanitizeInput(description));
   if (context) {
     const parts: string[] = [userMessage];
     if (context.fund_legal_form) parts.push(`Fund type: ${context.fund_legal_form}`);
     if (context.fund_domicile) parts.push(`Fund domicile: ${context.fund_domicile}`);
-    if (context.fund_name) parts.push(`Fund name: ${context.fund_name}`);
+    if (context.fund_name) parts.push(`Fund name: ${stripPII(context.fund_name)}`);
     userMessage = parts.join('\n');
   }
 

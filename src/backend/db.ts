@@ -4,9 +4,13 @@
  * Drop-in replacement for the SQLite db.ts.
  * Same API surface: query(), execute(), parseJSON(), stringifyJSON()
  * Repositories require zero changes.
+ *
+ * Tenant-scoped functions (queryWithTenant, executeWithTenant) set the
+ * PostgreSQL session variable `app.tenant_id` within a transaction so
+ * Row-Level Security policies enforce isolation at the database level.
  */
 
-import { Pool, types } from 'pg';
+import { Pool, PoolClient, types } from 'pg';
 import { logger } from './lib/logger.js';
 
 export const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000099';
@@ -79,7 +83,9 @@ export function withTenant(
 }
 
 /**
- * Execute a query and return results
+ * Execute a query and return results.
+ * Note: For tenant-scoped tables with FORCE ROW LEVEL SECURITY,
+ * use queryWithTenant() instead to set the RLS session variable.
  */
 export async function query<T = unknown>(
   sql: string,
@@ -123,33 +129,87 @@ export function stringifyJSON(
 }
 
 /**
- * Tenant-scoped query — automatically appends WHERE/AND tenant_id = ? filtering.
- * Use for SELECT/UPDATE/DELETE operations on tenant-scoped tables.
+ * Run a callback within a transaction with the RLS tenant context set.
+ * Uses SET LOCAL so the session variable is scoped to the transaction
+ * and automatically reset on COMMIT/ROLLBACK — safe for connection pools.
+ */
+async function withTenantContext<T>(
+  tenantId: string,
+  fn: (client: PoolClient) => Promise<T>
+): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SET LOCAL app.tenant_id = $1', [tenantId]);
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Tenant-scoped query — automatically appends WHERE/AND tenant_id = ? filtering
+ * AND sets the RLS session variable within a transaction for database-level isolation.
  */
 export async function queryWithTenant<T = unknown>(
   sql: string,
   params: (string | number | boolean | null)[] = [],
   tenantId?: string
 ): Promise<T[]> {
-  const { sql: scopedSql, params: tenantParams, insertAt } = withTenant(sql, tenantId);
+  const scopedTenantId = tenantId || DEFAULT_TENANT_ID;
+  const { sql: scopedSql, params: tenantParams, insertAt } = withTenant(sql, scopedTenantId);
   const allParams = [...params];
   allParams.splice(insertAt, 0, ...tenantParams);
-  return query<T>(scopedSql, allParams);
+  const converted = convertPlaceholders(scopedSql);
+
+  return withTenantContext(scopedTenantId, async (client) => {
+    const result = await client.query(converted, allParams);
+    return result.rows as T[];
+  });
 }
 
 /**
- * Tenant-scoped execute — automatically appends WHERE/AND tenant_id = ? filtering.
- * Use for UPDATE/DELETE operations on tenant-scoped tables.
+ * Tenant-scoped execute — automatically appends WHERE/AND tenant_id = ? filtering
+ * AND sets the RLS session variable within a transaction for database-level isolation.
  */
 export async function executeWithTenant(
   sql: string,
   params: (string | number | boolean | null)[] = [],
   tenantId?: string
 ): Promise<void> {
-  const { sql: scopedSql, params: tenantParams, insertAt } = withTenant(sql, tenantId);
+  const scopedTenantId = tenantId || DEFAULT_TENANT_ID;
+  const { sql: scopedSql, params: tenantParams, insertAt } = withTenant(sql, scopedTenantId);
   const allParams = [...params];
   allParams.splice(insertAt, 0, ...tenantParams);
-  return execute(scopedSql, allParams);
+  const converted = convertPlaceholders(scopedSql);
+
+  await withTenantContext(scopedTenantId, async (client) => {
+    await client.query(converted, allParams);
+  });
+}
+
+/**
+ * Execute a raw query within the RLS tenant context.
+ * Use this for queries that already include manual tenant_id filtering
+ * but need the session variable set for Row-Level Security enforcement.
+ */
+export async function queryInTenantContext<T = unknown>(
+  sql: string,
+  params: (string | number | boolean | null)[] = [],
+  tenantId?: string
+): Promise<T[]> {
+  const scopedTenantId = tenantId || DEFAULT_TENANT_ID;
+  const converted = convertPlaceholders(sql);
+
+  return withTenantContext(scopedTenantId, async (client) => {
+    const result = await client.query(converted, params);
+    return result.rows as T[];
+  });
 }
 
 /**

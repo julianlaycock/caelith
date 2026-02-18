@@ -440,8 +440,9 @@ export function LandingFooter({ scrollTo }: { scrollTo: (id: string) => void }) 
           <div>
             <h4 className="text-[11px] font-semibold text-accent-950 uppercase tracking-[0.15em] mb-4">Legal</h4>
             <ul className="space-y-2.5">
-              <li><span className="text-xs text-accent-950/25">Privacy Policy — Coming soon</span></li>
-              <li><span className="text-xs text-accent-950/25">Terms of Service — Coming soon</span></li>
+              <li><a href="/privacy" className="text-xs text-accent-950/40 hover:text-accent-950 transition-colors duration-150 min-h-[32px] flex items-center">Privacy Policy</a></li>
+              <li><a href="/terms" className="text-xs text-accent-950/40 hover:text-accent-950 transition-colors duration-150 min-h-[32px] flex items-center">Terms of Service</a></li>
+              <li><a href="/dpa" className="text-xs text-accent-950/40 hover:text-accent-950 transition-colors duration-150 min-h-[32px] flex items-center">Data Processing Agreement</a></li>
             </ul>
           </div>
         </div>
