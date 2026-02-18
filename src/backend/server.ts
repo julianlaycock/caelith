@@ -7,6 +7,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+console.log('[caelith] Server module loading...');
+
 import express from 'express';
 import cors from 'cors';
 import { closeDb, execute as dbExecute, DEFAULT_TENANT_ID, query as dbQuery } from './db.js';
@@ -212,16 +214,38 @@ app.use('/api', apiRateLimit);
 // Public routes (no auth required)
 app.use('/api/auth', authRateLimit, authRoutes);
 
+// Public integrity verification — allows anyone to verify the decision chain is untampered
+app.get('/api/public/integrity/verify', async (_req, res, next) => {
+  try {
+    const { verifyChain } = await import('./services/integrity-service.js');
+    const result = await verifyChain();
+    res.json({
+      valid: result.valid,
+      total_decisions_verified: result.total_verified,
+      message: result.message,
+      verification_algorithm: 'SHA-256',
+      chain_type: 'append-only hash chain',
+      verified_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // API Documentation — require auth in production to prevent information disclosure
-const openapiDoc = parse(readFileSync('./openapi.yml', 'utf-8'));
-const swaggerHandler = [swaggerUi.serve, swaggerUi.setup(openapiDoc, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Caelith API Documentation',
-})] as const;
-if (process.env.NODE_ENV === 'production') {
-  app.use('/api/docs', authenticate, ...swaggerHandler);
-} else {
-  app.use('/api/docs', ...swaggerHandler);
+try {
+  const openapiDoc = parse(readFileSync('./openapi.yml', 'utf-8'));
+  const swaggerHandler = [swaggerUi.serve, swaggerUi.setup(openapiDoc, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Caelith API Documentation',
+  })] as const;
+  if (process.env.NODE_ENV === 'production') {
+    app.use('/api/docs', authenticate, ...swaggerHandler);
+  } else {
+    app.use('/api/docs', ...swaggerHandler);
+  }
+} catch (err) {
+  logger.warn('OpenAPI docs unavailable (openapi.yml not found)');
 }
 
 // Protected routes (auth required)
