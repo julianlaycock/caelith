@@ -80,8 +80,7 @@ async function ensureAdminUser(): Promise<void> {
   const bootstrap = shouldBootstrapAdmin(process.env.ADMIN_PASSWORD, process.env.NODE_ENV);
   if (!bootstrap.allowed) {
     if (bootstrap.fatal) {
-      logger.error('ADMIN_PASSWORD must be set in production');
-      process.exit(1);
+      logger.error('ADMIN_PASSWORD must be set in production — skipping admin bootstrap');
     }
     logger.warn('ADMIN_PASSWORD not set; skipping automatic admin bootstrap');
     return;
@@ -318,7 +317,11 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 // Start server
 async function startServer(): Promise<void> {
-  await ensureAdminUser();
+  try {
+    await ensureAdminUser();
+  } catch (err) {
+    logger.warn('Admin bootstrap failed (non-fatal)', { error: err });
+  }
 
   app.listen(PORT, () => {
     logger.info(`Server running on http://localhost:${PORT}`, {
