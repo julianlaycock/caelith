@@ -261,7 +261,7 @@ export default function LoginPage() {
       if (rememberMe) localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email }));
       else localStorage.removeItem(REMEMBER_KEY);
       setUser(res.user);
-      router.push('/');
+      router.push('/dashboard');
     } catch (err: unknown) {
       setError(getErrorMessage(err));
     } finally {

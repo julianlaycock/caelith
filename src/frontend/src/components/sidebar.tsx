@@ -18,7 +18,7 @@ const iconClass = 'h-[18px] w-[18px]';
 
 const navItems: NavItem[] = [
   {
-    href: '/',
+    href: '/dashboard',
     label: 'Dashboard',
     icon: (
       <svg className={iconClass} fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -90,7 +90,7 @@ export function Sidebar({
   const { user, logout } = useAuth();
 
   const isActive = (item: NavItem) => {
-    if (item.href === '/') return pathname === '/';
+    if (item.href === '/') return pathname === '/dashboard';
     if (pathname.startsWith(item.href)) return true;
     if (item.matchPaths) return item.matchPaths.some((p) => pathname.startsWith(p));
     return false;
