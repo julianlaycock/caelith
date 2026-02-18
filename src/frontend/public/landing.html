@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caelith — AIFMD II Compliance Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Sora:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#F8F9FA;--bg-white:#FFFFFF;--bg-dark:#2D3333;
+--accent:#C5E0EE;--accent-dark:#2D3333;--accent-warm:#E8A87C;
+--text:#2D2D2D;--text-sec:rgba(45,45,45,0.55);--text-muted:rgba(45,45,45,0.40);
+--border:rgba(45,45,45,0.08);--border-dark:rgba(197,224,238,0.12);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Sora',sans-serif;color:var(--text);background:var(--bg);overflow-x:hidden;-webkit-font-smoothing:antialiased;font-weight:400;cursor:none}
+h1,h2,h3,h4,h5,h6{font-family:'Sora',sans-serif;letter-spacing:-0.02em}
+a{text-decoration:none;color:inherit}
+
+/* ─── CUSTOM CURSOR ─── */
+.cursor{position:fixed;width:16px;height:16px;border:1.5px solid var(--accent-dark);border-radius:50%;pointer-events:none;z-index:10000;transform:translate(-50%,-50%);transition:width .2s,height .2s,border-color .2s,background .2s}
+.cursor-dot{position:fixed;width:4px;height:4px;background:var(--accent-dark);border-radius:50%;pointer-events:none;z-index:10001;transform:translate(-50%,-50%)}
+.cursor.hover{width:48px;height:48px;border-color:var(--accent);background:rgba(197,224,238,0.08)}
+.cursor.dark{border-color:var(--accent)}
+.cursor-dot.dark{background:var(--accent)}
+@media(max-width:768px){.cursor,.cursor-dot{display:none}body{cursor:auto}}
+
+/* ─── SCROLL PROGRESS BAR ─── */
+.scroll-progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent-warm));z-index:10001;width:0%;transition:none}
+
+/* ─── NAV ─── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 48px;height:64px;display:flex;align-items:center;justify-content:space-between;transition:background .3s,backdrop-filter .3s,box-shadow .3s}
+.nav.scrolled{background:rgba(248,249,250,0.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 1px 0 var(--border)}
+.nav-left{display:flex;align-items:center;gap:32px}
+.nav-logo{font-family:'Sora',sans-serif;font-weight:600;font-size:20px;text-decoration:none;transition:color .3s}
+.nav:not(.scrolled) .nav-logo{color:#fff}
+.nav.scrolled .nav-logo{color:var(--text)}
+.nav-links{display:flex;gap:28px}
+.nav-links a{font-size:14px;font-weight:500;color:rgba(255,255,255,0.6);transition:color .2s;position:relative}
+.nav.scrolled .nav-links a{color:rgba(45,45,45,0.55)}
+.nav-links a:hover{color:#fff}
+.nav.scrolled .nav-links a:hover{color:var(--text)}
+/* Link hover underline effect */
+.nav-links a::after{content:'';position:absolute;bottom:-2px;left:0;width:0;height:1px;background:currentColor;transition:width .3s cubic-bezier(0.4,0,0.2,1)}
+.nav-links a:hover::after{width:100%}
+.nav-right{display:flex;align-items:center;gap:20px}
+.nav-countdown{font-family:'JetBrains Mono',monospace;font-size:12px;color:rgba(255,255,255,0.45);transition:color .3s;font-variant-numeric:tabular-nums}
+.nav.scrolled .nav-countdown{color:var(--text-muted)}
+.nav-cta{font-family:'Sora',sans-serif;font-size:13px;font-weight:600;padding:8px 20px;background:var(--accent);color:var(--accent-dark);border:none;border-radius:6px;cursor:none;transition:all .2s;display:flex;align-items:center;gap:6px;overflow:hidden;position:relative}
+.nav-cta .arrow{display:inline-block;transition:transform .3s cubic-bezier(0.4,0,0.2,1)}
+.nav-cta:hover .arrow{transform:translateX(4px)}
+.nav-cta:hover{background:#d4e9f3;transform:scale(1.02)}
+.nav.scrolled .nav-cta{background:var(--accent-dark);color:#fff}
+.nav.scrolled .nav-cta:hover{background:#3a4242}
+.nav-hamburger{display:none;background:none;border:none;cursor:none;padding:4px}
+.nav-hamburger span{display:block;width:20px;height:2px;background:#fff;margin:4px 0;transition:all .3s}
+.nav.scrolled .nav-hamburger span{background:var(--text)}
+.mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:rgba(248,249,250,0.98);backdrop-filter:blur(24px);padding:24px 20px;box-shadow:0 8px 32px rgba(0,0,0,0.08);flex-direction:column;gap:16px;z-index:999}
+.mobile-menu.open{display:flex}
+.mobile-menu a{font-size:16px;font-weight:500;color:var(--text);padding:8px 0}
+
+/* ─── HERO ─── */
+.hero{position:relative;min-height:100vh;background:var(--bg-dark);display:flex;align-items:center;padding:0 48px;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(197,224,238,0.06) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(197,224,238,0.04) 0%,transparent 50%)}
+/* Parallax grain texture */
+.hero::after{content:'';position:absolute;inset:0;opacity:0.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");pointer-events:none}
+.hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:55% 45%;gap:48px;max-width:1200px;margin:0 auto;width:100%;align-items:center}
+.hero-content{max-width:560px}
+.hero-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:3px;margin-bottom:32px;display:flex;align-items:center;gap:8px;opacity:0;animation:fadeUp .8s ease .2s forwards}
+.hero-label .pulse-dot{width:6px;height:6px;background:#6ee7b7;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+.hero h1{font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:56px;line-height:1.08;color:#fff;margin-bottom:24px;opacity:0;animation:fadeUp .8s ease .35s forwards}
+.hero h1 .highlight{background:linear-gradient(135deg,var(--accent),#a8d4e6 40%,var(--accent-warm));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:17px;color:rgba(255,255,255,0.55);max-width:480px;line-height:1.7;margin-bottom:40px;font-weight:400;opacity:0;animation:fadeUp .8s ease .5s forwards}
+.hero-ctas{display:flex;gap:16px;margin-bottom:48px;opacity:0;animation:fadeUp .8s ease .65s forwards}
+.btn-primary{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;padding:14px 32px;background:var(--accent);color:var(--accent-dark);border:none;border-radius:8px;cursor:none;transition:all .25s;display:inline-flex;align-items:center;gap:8px;text-align:center;position:relative;overflow:hidden}
+.btn-primary .arrow{display:inline-block;transition:transform .3s cubic-bezier(0.4,0,0.2,1)}
+.btn-primary:hover .arrow{transform:translateX(4px)}
+.btn-primary:hover{background:#d4e9f3;transform:translateY(-1px);box-shadow:0 4px 20px rgba(197,224,238,0.3)}
+/* Magnetic button ripple */
+.btn-primary::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,0.15),transparent 60%);opacity:0;transition:opacity .3s}
+.btn-primary:hover::before{opacity:1}
+.btn-ghost{font-family:'Sora',sans-serif;font-size:15px;font-weight:500;padding:14px 32px;background:transparent;color:rgba(255,255,255,0.55);border:1px solid rgba(197,224,238,0.2);border-radius:8px;cursor:none;transition:all .25s;display:inline-block;text-align:center}
+.btn-ghost:hover{border-color:rgba(197,224,238,0.5);color:#fff}
+.hero-proof{opacity:0;animation:fadeUp .8s ease .8s forwards;display:flex;gap:32px;font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,0.35)}
+.hero-proof .proof-item{display:flex;align-items:center;gap:6px}
+.hero-proof .proof-val{color:var(--accent);font-weight:500}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+/* Hero terminal — floating with perspective */
+.hero-preview{position:relative;opacity:0;animation:termFloat .8s ease .5s forwards;perspective:1000px}
+@keyframes termFloat{from{opacity:0;transform:translateY(32px) rotateY(-3deg)}to{opacity:1;transform:translateY(0) rotateY(-2deg)}}
+.hero-terminal{background:rgba(255,255,255,0.03);border:1px solid rgba(197,224,238,0.1);border-radius:12px;overflow:hidden;backdrop-filter:blur(8px);transform:rotateY(-2deg) rotateX(1deg);transition:transform .6s cubic-bezier(0.4,0,0.2,1);box-shadow:0 32px 80px rgba(0,0,0,0.3),0 0 0 1px rgba(197,224,238,0.05)}
+.hero-terminal:hover{transform:rotateY(0deg) rotateX(0deg)}
+.terminal-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:rgba(0,0,0,0.2);border-bottom:1px solid rgba(197,224,238,0.06)}
+.terminal-dot{width:8px;height:8px;border-radius:50%}
+.terminal-dot.r{background:#FF5F56}.terminal-dot.y{background:#FFBD2E}.terminal-dot.g{background:#27C93F}
+.terminal-title{flex:1;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,0.3)}
+.terminal-body{padding:20px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2.1;color:rgba(255,255,255,0.45)}
+.terminal-body .cmd{color:var(--accent);font-weight:500}
+.terminal-body .ok{color:#6ee7b7}
+.terminal-body .warn{color:var(--accent-warm)}
+.terminal-body .hash{color:rgba(255,255,255,0.25)}
+.terminal-body .dim{color:rgba(255,255,255,0.25)}
+.terminal-line{opacity:0;animation:termLine .4s ease forwards}
+@keyframes termLine{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+
+/* ─── SECTION REVEAL (clip-path) ─── */
+.reveal-section{clip-path:inset(8% 0 8% 0);opacity:0.3;transition:clip-path 1s cubic-bezier(0.16,1,0.3,1),opacity .8s ease;will-change:clip-path,opacity}
+.reveal-section.revealed{clip-path:inset(0 0 0 0);opacity:1}
+
+/* ─── TRUST BAR ─── */
+.trust-section{background:var(--bg);padding:48px 48px 40px;border-bottom:1px solid var(--border)}
+.trust-inner{max-width:900px;margin:0 auto;display:flex;justify-content:center;gap:40px;flex-wrap:wrap}
+.trust-item{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted)}
+.trust-item .trust-num{font-family:'Sora',sans-serif;font-weight:700;font-size:14px;color:var(--text)}
+
+/* ─── COMPARISON + STATS ─── */
+.comparison-section{background:var(--bg-white);padding:120px 48px}
+.comparison-inner{max-width:900px;margin:0 auto}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;margin-bottom:16px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.section-label::before{content:'';width:16px;height:1px;background:var(--accent)}
+.comparison-section h2{font-weight:800;font-size:44px;margin-bottom:20px;color:var(--text);line-height:1.1}
+.comparison-lead{font-size:16px;color:var(--text-sec);line-height:1.7;margin-bottom:56px;max-width:640px}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:56px}
+.stat-card{text-align:center;padding:28px 16px;border-radius:12px;background:var(--bg);border:1px solid var(--border);opacity:0;transform:translateY(20px);transition:all .6s ease}
+.stat-card.visible{opacity:1;transform:translateY(0)}
+/* Stat card hover lift */
+.stat-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(45,45,45,0.06);border-color:rgba(197,224,238,0.4)}
+.stat-card .stat-num{font-family:'Sora',sans-serif;font-weight:800;font-size:36px;color:var(--accent-dark);letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums}
+.stat-card .stat-desc{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.4}
+.comparison-table{width:100%;border-collapse:collapse;opacity:0;transform:translateY(20px);transition:all .8s ease}
+.comparison-table.visible{opacity:1;transform:translateY(0)}
+.comparison-table th{font-family:'Sora',sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:1px;padding:14px 20px;text-align:left;border-bottom:2px solid var(--border);color:var(--text-muted)}
+.comparison-table th.caelith-col{background:rgba(197,224,238,0.08);border-bottom:2px solid var(--accent);color:var(--accent-dark)}
+.comparison-table td{padding:16px 20px;border-bottom:1px solid var(--border);font-size:14px}
+.comparison-table td:first-child{font-weight:600;color:#2D3333}
+.comparison-table td.manual{color:rgba(45,45,45,0.35)}
+.comparison-table td.caelith{font-weight:500;color:#2D3333;background:rgba(197,224,238,0.04)}
+.comparison-table tbody tr{opacity:0;transform:translateX(-16px);transition:all .5s ease}
+.comparison-table tbody tr.visible{opacity:1;transform:translateX(0)}
+
+/* ─── HORIZONTAL SCROLL STATEMENT ─── */
+.statement-section{background:var(--bg-dark);padding:80px 0;overflow:hidden;position:relative}
+.statement-track{display:flex;gap:80px;white-space:nowrap;animation:marqueeStatement 30s linear infinite;font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:72px;color:rgba(197,224,238,0.06);text-transform:none;padding:20px 0}
+.statement-track .accent-word{color:rgba(197,224,238,0.15)}
+@keyframes marqueeStatement{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ─── PRODUCT + FEATURES ─── */
+.product-section{background:var(--bg);padding:120px 48px}
+.product-inner{max-width:1000px;margin:0 auto}
+.product-section h2{font-weight:800;font-size:44px;margin-bottom:16px;color:var(--text)}
+.product-sub{font-size:16px;color:var(--text-sec);line-height:1.7;margin-bottom:48px;max-width:600px}
+/* Breakout browser frame — wider than container */
+.browser-wrap{margin-left:-60px;margin-right:-60px}
+.browser-frame{border-radius:12px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.12),0 0 0 1px rgba(0,0,0,0.04);background:#fff;opacity:0;transform:translateY(32px) scale(0.98);transition:all .8s cubic-bezier(0.16,1,0.3,1)}
+.browser-frame.visible{opacity:1;transform:translateY(0) scale(1)}
+.browser-header{background:#2D3333;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.browser-dots{display:flex;gap:6px}
+.browser-dot{width:10px;height:10px;border-radius:50%}
+.browser-dot.red{background:#FF5F56}.browser-dot.yellow{background:#FFBD2E}.browser-dot.green{background:#27C93F}
+.browser-url{flex:1;margin-left:12px;background:rgba(255,255,255,0.1);border-radius:4px;padding:5px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,0.5)}
+.browser-body{display:flex;min-height:420px}
+.browser-sidebar{width:200px;background:#2D3333;padding:20px 0;flex-shrink:0}
+.sidebar-item{padding:8px 20px;font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,0.4);cursor:default;transition:all .3s}
+.sidebar-item.active{color:#fff;background:rgba(197,224,238,0.1);border-left:2px solid var(--accent)}
+.browser-main{flex:1;background:#F8F7F3;padding:24px;overflow:hidden;position:relative}
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.dash-stat-card{background:#fff;border-radius:8px;padding:14px;border:1px solid rgba(45,45,45,0.06)}
+.dash-stat-card .label{font-family:'Sora',sans-serif;font-size:10px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.dash-stat-card .value{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;color:#2D3333;font-variant-numeric:tabular-nums}
+.dash-section-title{font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px}
+.dash-table{background:#fff;border-radius:8px;border:1px solid rgba(45,45,45,0.06);overflow:hidden;margin-bottom:16px}
+.dash-table-header{display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr;padding:10px 16px;background:rgba(45,45,45,0.02);font-family:'Sora',sans-serif;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid rgba(45,45,45,0.06)}
+.dash-table-row{display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr;padding:10px 16px;border-bottom:1px solid rgba(45,45,45,0.04);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-sec);align-items:center;transition:all .4s ease;opacity:1}
+.dash-table-row.new-row{animation:slideInRow .5s ease forwards}
+@keyframes slideInRow{from{opacity:0;transform:translateY(-100%);background:rgba(197,224,238,0.1)}to{opacity:1;transform:translateY(0);background:transparent}}
+.badge-pass{background:rgba(39,201,63,0.1);color:#1a8f2d;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500;display:inline-block}
+.badge-fail{background:rgba(255,95,86,0.1);color:#d4342a;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500;display:inline-block}
+.dash-live{position:absolute;top:24px;right:24px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
+.dash-live .live-dot{width:5px;height:5px;background:#6ee7b7;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+.product-note{text-align:center;margin-top:24px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted)}
+.features-grid{margin-top:80px}
+.features-grid h3{font-weight:700;font-size:28px;margin-bottom:40px;color:var(--text)}
+.feature-card{border-bottom:1px solid var(--border);overflow:hidden;transition:background .2s}
+.feature-card:hover{background:rgba(45,45,45,0.01)}
+.feature-header{display:flex;align-items:center;justify-content:space-between;padding:24px 0;cursor:none}
+.feature-title{font-family:'Sora',sans-serif;font-weight:600;font-size:17px;color:var(--text)}
+.feature-toggle{font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--accent);transition:transform .3s;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+.feature-card.open .feature-toggle{transform:rotate(45deg)}
+.feature-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.feature-card.open .feature-body{max-height:400px}
+.feature-body-inner{padding:0 0 24px}
+.feature-desc{font-size:15px;color:var(--text-sec);line-height:1.7;margin-bottom:16px}
+.feature-code{background:var(--bg-white);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8;color:var(--text-sec);border:1px solid var(--border)}
+
+/* ─── SVG NETWORK (scroll-driven draw-on) ─── */
+.network-section{background:#2D3333;padding:100px 48px;text-align:center;position:relative;overflow:hidden}
+.network-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(197,224,238,0.04) 0%,transparent 70%)}
+.network-section svg{max-width:100%;height:auto;position:relative;z-index:1}
+.network-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,0.4);margin-top:32px;position:relative;z-index:1}
+@keyframes nodePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.svg-node{animation:nodePulse 4s ease-in-out infinite}
+.svg-outer-group{cursor:none}
+.svg-outer-group circle,.svg-outer-group text,.svg-outer-group line{transition:all .3s ease}
+.svg-outer-group:hover circle{stroke:#fff!important;fill:rgba(197,224,238,0.15)!important}
+.svg-outer-group:hover text{fill:#fff!important}
+.svg-outer-group:hover .node-line{stroke:rgba(255,255,255,0.4)!important}
+/* Draw-on lines */
+.draw-line{stroke-dasharray:200;stroke-dashoffset:200;transition:stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1)}
+.draw-line.drawn{stroke-dashoffset:0}
+@keyframes flowDash{to{stroke-dashoffset:-20}}
+.flow-line{stroke-dasharray:4 6;animation:flowDash 2s linear infinite}
+.flow-line.drawn{animation:flowDash 2s linear infinite}
+
+/* ─── PROCESS ─── */
+.process-section{background:var(--bg-white);padding:120px 48px}
+.process-inner{max-width:900px;margin:0 auto}
+.process-section h2{font-weight:800;font-size:40px;margin-bottom:56px;color:var(--text)}
+.process-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;position:relative}
+.process-steps::before{content:'';position:absolute;top:20px;left:20px;right:20px;height:2px;background:rgba(197,224,238,0.3)}
+/* Animated process line */
+.process-line{position:absolute;top:20px;left:20px;height:2px;background:var(--accent-dark);width:0;transition:width 1.5s cubic-bezier(0.4,0,0.2,1);z-index:1}
+.process-line.animate{width:calc(100% - 40px)}
+.process-step{text-align:center;opacity:0;transform:translateY(24px);transition:all .6s ease}
+.process-step.visible{opacity:1;transform:translateY(0)}
+.step-num{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent-dark);width:40px;height:40px;border:2px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:var(--bg-white);position:relative;z-index:2;transition:all .6s ease}
+.process-step.visible .step-num{background:var(--accent-dark);color:#fff;border-color:var(--accent-dark)}
+.step-title{font-family:'Sora',sans-serif;font-weight:600;font-size:15px;margin-bottom:8px}
+.step-desc{font-size:13px;color:var(--text-muted);line-height:1.6}
+
+/* ─── PRICING ─── */
+.pricing-section{background:var(--bg);padding:120px 48px}
+.pricing-inner{max-width:1000px;margin:0 auto;text-align:center}
+.pricing-section h2{font-weight:800;font-size:40px;margin-bottom:20px;color:var(--text)}
+.pricing-anchor{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-muted);margin-bottom:48px}
+.pricing-anchor strong{color:#2D3333;font-weight:700}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;perspective:1000px}
+.pricing-card{background:var(--bg-white);border:1px solid var(--border);border-radius:12px;padding:40px 32px;text-align:left;position:relative;opacity:0;transform:translateY(24px);transition:all .6s ease;transform-style:preserve-3d}
+.pricing-card.visible{opacity:1;transform:translateY(0)}
+/* 3D tilt on hover */
+.pricing-card:hover{box-shadow:0 20px 60px rgba(45,45,45,0.1);border-color:rgba(197,224,238,0.3)}
+.pricing-card.featured{border:2px solid var(--accent-dark)}
+.pricing-badge{position:absolute;top:-12px;left:32px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;background:var(--accent-dark);color:#fff;padding:4px 12px;border-radius:4px;text-transform:uppercase}
+.pricing-tier{font-family:'Sora',sans-serif;font-weight:600;font-size:18px;margin-bottom:8px}
+.pricing-price{font-family:'Sora',sans-serif;font-weight:800;font-size:40px;margin-bottom:4px;letter-spacing:-0.01em;font-variant-numeric:tabular-nums}
+.pricing-price span{font-size:16px;font-weight:400;color:var(--text-muted)}
+.pricing-desc{font-size:14px;color:var(--text-muted);margin-bottom:24px}
+.pricing-features{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+.pricing-features li{font-size:14px;color:var(--text-sec);padding-left:20px;position:relative}
+.pricing-features li::before{content:'✓';position:absolute;left:0;color:var(--accent-dark);font-weight:700;font-size:12px}
+.pricing-btn{width:100%;padding:12px;border-radius:8px;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:none;transition:all .25s;border:none;display:flex;align-items:center;justify-content:center;gap:6px;text-align:center}
+.pricing-btn .arrow{display:inline-block;transition:transform .3s cubic-bezier(0.4,0,0.2,1)}
+.pricing-btn:hover .arrow{transform:translateX(4px)}
+.pricing-btn:hover{transform:translateY(-1px)}
+.pricing-btn-primary{background:var(--accent-dark);color:#fff}
+.pricing-btn-primary:hover{background:#3a4242;box-shadow:0 4px 16px rgba(45,51,51,0.2)}
+.pricing-btn-outline{background:transparent;color:var(--text);border:1px solid rgba(45,45,45,0.12)}
+.pricing-btn-outline:hover{border-color:rgba(45,45,45,0.3)}
+
+/* ─── CTA + FAQ ─── */
+.cta-section{position:relative;background:var(--bg-dark);padding:120px 48px 80px;overflow:hidden}
+.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(197,224,238,0.06) 0%,transparent 60%)}
+.cta-inner{max-width:700px;margin:0 auto;text-align:center;position:relative;z-index:1}
+.cta-countdown{display:flex;justify-content:center;gap:24px;font-family:'JetBrains Mono',monospace;color:var(--accent);margin-bottom:16px;font-variant-numeric:tabular-nums}
+.cd-unit{text-align:center}
+.cd-val{font-size:36px;font-weight:500;display:block;font-variant-numeric:tabular-nums}
+.cd-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;opacity:0.6}
+.countdown-context{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(232,168,124,0.7);letter-spacing:1px;margin-bottom:48px;text-transform:uppercase}
+.cta-section h2{font-weight:800;font-size:40px;color:#fff;margin-bottom:16px;line-height:1.15}
+.cta-sub{font-size:17px;color:rgba(255,255,255,0.45);margin-bottom:40px;line-height:1.6}
+.cta-section .btn-primary{font-size:16px;padding:16px 40px;margin-bottom:16px}
+.cta-email{font-family:'JetBrains Mono',monospace;font-size:12px;color:rgba(255,255,255,0.25);margin-bottom:48px}
+.cta-email a{color:rgba(255,255,255,0.45);text-decoration:underline;text-underline-offset:3px}
+.cta-email a:hover{color:#fff}
+.faq-block{max-width:600px;margin:0 auto;text-align:left;border-top:1px solid rgba(197,224,238,0.08);padding-top:64px}
+.faq-block h3{font-weight:700;font-size:22px;color:#fff;margin-bottom:32px}
+.faq-item{border-bottom:1px solid rgba(197,224,238,0.08)}
+.faq-q{display:flex;justify-content:space-between;align-items:center;padding:20px 0;cursor:none;font-family:'Sora',sans-serif;font-weight:500;font-size:15px;color:rgba(255,255,255,0.65);transition:color .2s}
+.faq-q:hover{color:#fff}
+.faq-toggle{font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--accent);transition:transform .3s;flex-shrink:0;margin-left:16px}
+.faq-item.open .faq-toggle{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.faq-item.open .faq-a{max-height:300px}
+.faq-a-inner{padding:0 0 20px;font-size:14px;color:rgba(255,255,255,0.35);line-height:1.7}
+
+/* ─── FOOTER (with mini CTA) ─── */
+.footer{background:var(--bg-dark);border-top:1px solid rgba(197,224,238,0.05);padding:0 48px 32px}
+.footer-cta{text-align:center;padding:48px 0;border-bottom:1px solid rgba(197,224,238,0.05);margin-bottom:40px}
+.footer-cta p{font-family:'JetBrains Mono',monospace;font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:16px}
+.footer-cta-form{display:flex;justify-content:center;gap:8px;max-width:400px;margin:0 auto}
+.footer-cta-input{flex:1;padding:10px 16px;border-radius:6px;border:1px solid rgba(197,224,238,0.15);background:rgba(255,255,255,0.04);color:#fff;font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;transition:border-color .2s}
+.footer-cta-input::placeholder{color:rgba(255,255,255,0.2)}
+.footer-cta-input:focus{border-color:var(--accent)}
+.footer-cta-btn{padding:10px 20px;border-radius:6px;background:var(--accent);color:var(--accent-dark);border:none;font-family:'Sora',sans-serif;font-weight:600;font-size:13px;cursor:none;transition:all .2s;display:flex;align-items:center;gap:4px}
+.footer-cta-btn .arrow{transition:transform .3s}
+.footer-cta-btn:hover .arrow{transform:translateX(3px)}
+.footer-cta-btn:hover{background:#d4e9f3}
+.footer-badges{display:flex;justify-content:center;gap:32px;padding-bottom:40px;margin-bottom:40px;border-bottom:1px solid rgba(197,224,238,0.05);max-width:800px;margin-left:auto;margin-right:auto}
+.footer-badges .badge{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:0.5px}
+.footer-inner{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px}
+.footer-brand .footer-logo{font-family:'Sora',sans-serif;font-weight:600;font-size:18px;color:rgba(255,255,255,0.85)}
+.footer-brand p{font-size:13px;color:rgba(255,255,255,0.3);line-height:1.7;margin-top:12px;max-width:280px}
+.footer-col h4{font-family:'Sora',sans-serif;font-weight:600;font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:16px;letter-spacing:1px;text-transform:uppercase}
+.footer-col a{display:block;font-size:13px;color:rgba(255,255,255,0.3);margin-bottom:10px;transition:color .2s}
+.footer-col a:hover{color:#fff}
+.footer-bottom{max-width:1000px;margin:32px auto 0;padding-top:24px;border-top:1px solid rgba(197,224,238,0.05);display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.25)}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:1024px){
+  .hero h1{font-size:44px}
+  .hero-grid{grid-template-columns:1fr;gap:48px}
+  .hero-content{max-width:100%}
+  .hero-preview{max-width:500px}
+  .stat-row{grid-template-columns:repeat(2,1fr)}
+  .browser-wrap{margin-left:0;margin-right:0}
+  .statement-track{font-size:48px}
+}
+@media(max-width:768px){
+  .nav{padding:0 20px}
+  .nav-links{display:none}
+  .nav-hamburger{display:block}
+  .nav-countdown{display:none}
+  .hero{padding:100px 20px 60px}
+  .hero h1{font-size:36px}
+  .hero-sub{font-size:15px}
+  .hero-ctas{flex-direction:column;gap:12px}
+  .hero-preview{display:none}
+  .hero-proof{flex-direction:column;gap:12px}
+  .trust-inner{gap:20px}
+  .stat-row{grid-template-columns:1fr 1fr}
+  .comparison-section,.product-section,.process-section,.pricing-section,.cta-section{padding:80px 20px}
+  .comparison-section h2,.product-section h2,.pricing-section h2{font-size:32px}
+  .process-section h2{font-size:32px}
+  .comparison-table{display:block;overflow-x:auto}
+  .process-steps{grid-template-columns:repeat(2,1fr);gap:24px}
+  .process-steps::before{display:none}
+  .process-line{display:none}
+  .pricing-grid{grid-template-columns:1fr}
+  .browser-sidebar{display:none}
+  .browser-wrap{margin-left:0;margin-right:0}
+  .dash-stats{grid-template-columns:repeat(2,1fr)}
+  .footer-inner{grid-template-columns:1fr 1fr;gap:24px}
+  .footer-badges{flex-wrap:wrap;gap:12px}
+  .cta-section h2{font-size:28px}
+  .network-section{padding:60px 20px}
+  .statement-track{font-size:36px}
+  .reveal-section{clip-path:none;opacity:1}
+  .footer-cta-form{flex-direction:column}
+}
+@media(max-width:480px){
+  .stat-row{grid-template-columns:1fr}
+  .footer-inner{grid-template-columns:1fr}
+  .trust-inner{flex-direction:column;align-items:center}
+}
+</style>
+</head>
+<body>
+
+<!-- CUSTOM CURSOR -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+
+<!-- SCROLL PROGRESS BAR -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-left">
+    <a href="#" class="nav-logo">Caelith</a>
+    <div class="nav-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="/login">Sign in</a>
+    </div>
+  </div>
+  <div class="nav-right">
+    <span class="nav-countdown" id="navCountdown"></span>
+    <a href="mailto:hello@caelith.tech?subject=Demo%20Request" class="nav-cta" style="text-decoration:none">Book a demo <span class="arrow">→</span></a>
+    <button class="nav-hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#how-it-works">How it works</a>
+  <a href="#pricing">Pricing</a>
+  <a href="#faq">FAQ</a>
+  <a href="/login">Sign in</a>
+  <a href="mailto:hello@caelith.tech?subject=Demo%20Request">Book a demo</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" data-parallax>
+  <div class="hero-grid">
+    <div class="hero-content">
+      <div class="hero-label"><span class="pulse-dot"></span> AIFMD II COMPLIANCE ENGINE</div>
+      <h1>The compliance engine for <span class="highlight">EU fund managers.</span></h1>
+      <p class="hero-sub">247 rules. 6 frameworks. Every decision logged, verified, and cryptographically proven — before your regulator asks.</p>
+      <div class="hero-ctas">
+        <a href="mailto:hello@caelith.tech?subject=Demo%20Request" class="btn-primary">Book a demo <span class="arrow">→</span></a>
+        <a href="#how-it-works" class="btn-ghost">See how it works</a>
+      </div>
+      <div class="hero-proof">
+        <div class="proof-item"><span class="proof-val">247</span> rules</div>
+        <div class="proof-item"><span class="proof-val">6</span> frameworks</div>
+        <div class="proof-item"><span class="proof-val">&lt;23ms</span> evaluation</div>
+        <div class="proof-item"><span class="proof-val">SOC 2</span> certified</div>
+      </div>
+    </div>
+    <div class="hero-preview">
+      <div class="hero-terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <div class="terminal-title">caelith — investor onboarding</div>
+        </div>
+        <div class="terminal-body" id="terminalBody"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<section class="trust-section">
+  <div class="trust-inner">
+    <div class="trust-item"><span class="trust-num">247</span> pre-built compliance rules</div>
+    <div class="trust-item"><span class="trust-num">6</span> regulatory frameworks</div>
+    <div class="trust-item"><span class="trust-num">EU</span> hosted (Frankfurt)</div>
+    <div class="trust-item"><span class="trust-num">SOC 2</span> Type II</div>
+  </div>
+</section>
+
+<!-- COMPARISON + STATS -->
+<section class="comparison-section reveal-section" id="why-caelith">
+  <div class="comparison-inner">
+    <div class="section-label">Why Caelith</div>
+    <h2>€180,000/year in manual compliance.<br>Or €3,588 with Caelith.</h2>
+    <p class="comparison-lead">EU AIF managers hold €1.8 trillion in assets. 47% aren't ready for AIFMD II. The question isn't whether to automate — it's whether you can afford not to.</p>
+
+    <div class="stat-row" id="statRow">
+      <div class="stat-card" style="transition-delay:0s"><div class="stat-num" data-target="1.8" data-prefix="€" data-suffix="T">€0T</div><div class="stat-desc">EU AIF assets under management</div></div>
+      <div class="stat-card" style="transition-delay:.1s"><div class="stat-num" data-target="47" data-suffix="%">0%</div><div class="stat-desc">of fund managers unprepared</div></div>
+      <div class="stat-card" style="transition-delay:.2s"><div class="stat-num" data-target="23" data-prefix="<" data-suffix="ms">0ms</div><div class="stat-desc">average rule evaluation</div></div>
+      <div class="stat-card" style="transition-delay:.3s"><div class="stat-num" data-target="4" data-prefix="<" data-suffix=" min">0 min</div><div class="stat-desc">full Annex IV report</div></div>
+    </div>
+
+    <table class="comparison-table" id="compTable">
+      <thead><tr><th></th><th>Manual process</th><th class="caelith-col">With Caelith</th></tr></thead>
+      <tbody>
+        <tr><td>Time to audit</td><td class="manual">2–4 weeks</td><td class="caelith">&lt; 4 minutes</td></tr>
+        <tr><td>Error rate</td><td class="manual">Human-dependent</td><td class="caelith">Zero (deterministic)</td></tr>
+        <tr><td>Framework coverage</td><td class="manual">1–2 frameworks</td><td class="caelith">6 frameworks, 247 rules</td></tr>
+        <tr><td>Audit evidence</td><td class="manual">Screenshots &amp; emails</td><td class="caelith">Hash-chained cryptographic proof</td></tr>
+        <tr><td>Annual cost</td><td class="manual">~€180,000</td><td class="caelith">From €3,588/year</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- HORIZONTAL SCROLL STATEMENT -->
+<section class="statement-section">
+  <div class="statement-track" id="statementTrack">
+    <span>Compliance is not a feature —</span>
+    <span class="accent-word">it's the product.</span>
+    <span>247 rules.</span>
+    <span class="accent-word">Zero gaps.</span>
+    <span>Hash-chained proof.</span>
+    <span class="accent-word">Regulator-ready.</span>
+    <span>Compliance is not a feature —</span>
+    <span class="accent-word">it's the product.</span>
+    <span>247 rules.</span>
+    <span class="accent-word">Zero gaps.</span>
+    <span>Hash-chained proof.</span>
+    <span class="accent-word">Regulator-ready.</span>
+  </div>
+</section>
+
+<!-- PRODUCT + FEATURES -->
+<section class="product-section reveal-section">
+  <div class="product-inner">
+    <div class="section-label">The product</div>
+    <h2>See it in action.</h2>
+    <p class="product-sub">Real-time rule evaluation, hash-chained audit trails, and automated regulatory reporting — one dashboard.</p>
+    <div class="browser-wrap">
+    <div class="browser-frame" id="browserFrame">
+      <div class="browser-header">
+        <div class="browser-dots"><div class="browser-dot red"></div><div class="browser-dot yellow"></div><div class="browser-dot green"></div></div>
+        <div class="browser-url">app.caelith.tech/dashboard</div>
+      </div>
+      <div class="browser-body">
+        <div class="browser-sidebar">
+          <div class="sidebar-item active">◉ Dashboard</div>
+          <div class="sidebar-item">○ Investors</div>
+          <div class="sidebar-item">○ Rules Engine</div>
+          <div class="sidebar-item">○ Audit Trail</div>
+          <div class="sidebar-item">○ Reports</div>
+          <div class="sidebar-item">○ Settings</div>
+        </div>
+        <div class="browser-main">
+          <div class="dash-live"><span class="live-dot"></span> <span id="dashTime">Last evaluated: just now</span></div>
+          <div class="dash-stats">
+            <div class="dash-stat-card"><div class="label">Total Investors</div><div class="value" id="dashInvestors">0</div></div>
+            <div class="dash-stat-card"><div class="label">Rules Evaluated</div><div class="value" id="dashRules">0</div></div>
+            <div class="dash-stat-card"><div class="label">Compliance Rate</div><div class="value" id="dashRate">0%</div></div>
+            <div class="dash-stat-card"><div class="label">Avg. Response</div><div class="value" id="dashMs">0ms</div></div>
+          </div>
+          <div class="dash-section-title">Recent compliance decisions</div>
+          <div class="dash-table" id="dashTableBody">
+            <div class="dash-table-header"><span>Investor</span><span>Framework</span><span>Rule</span><span>Status</span></div>
+            <div class="dash-table-row"><span>INV-4891</span><span>AIFMD II</span><span>Classification</span><span><span class="badge-pass">PASS</span></span></div>
+            <div class="dash-table-row"><span>INV-4892</span><span>KAGB §225</span><span>Min. Investment</span><span><span class="badge-pass">PASS</span></span></div>
+            <div class="dash-table-row"><span>INV-4893</span><span>ELTIF 2.0</span><span>Eligibility</span><span><span class="badge-fail">FAIL</span></span></div>
+            <div class="dash-table-row"><span>INV-4894</span><span>AIFMD II</span><span>Knowledge Test</span><span><span class="badge-pass">PASS</span></span></div>
+            <div class="dash-table-row"><span>INV-4895</span><span>SIF Law</span><span>Qualified Check</span><span><span class="badge-pass">PASS</span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+    <p class="product-note">Complimentary 90-day evaluation for qualified AIFMs.</p>
+
+    <div class="features-grid">
+      <h3>Under the hood</h3>
+      <div class="feature-card open" data-feature>
+        <div class="feature-header"><span class="feature-title">Rules engine</span><span class="feature-toggle">+</span></div>
+        <div class="feature-body"><div class="feature-body-inner">
+          <p class="feature-desc">247 pre-built rules covering AIFMD II, KAGB, ELTIF 2.0, and more. Each rule evaluates investor eligibility, concentration limits, and transfer restrictions in under 23ms.</p>
+          <div class="feature-code">rule: investor_classification<br>framework: AIFMD_II<br>evaluate: eligibility → professional | semi_pro | retail<br>check: [min_investment, knowledge_test, aum_threshold]<br>result: PASS | FAIL | REVIEW → audit_log</div>
+        </div></div>
+      </div>
+      <div class="feature-card" data-feature>
+        <div class="feature-header"><span class="feature-title">Hash-chained audit trail</span><span class="feature-toggle">+</span></div>
+        <div class="feature-body"><div class="feature-body-inner">
+          <p class="feature-desc">Every compliance decision is cryptographically linked to the previous one. Immutable, verifiable, regulator-ready. No decision can be altered without detection.</p>
+          <div class="feature-code">block_4891:<br>  hash: "a3f7...c912"<br>  prev: "8b2d...e447"<br>  action: investor_onboarded<br>  result: COMPLIANT<br>  timestamp: 2026-02-18T09:14:22Z</div>
+        </div></div>
+      </div>
+      <div class="feature-card" data-feature>
+        <div class="feature-header"><span class="feature-title">Regulatory reporting</span><span class="feature-toggle">+</span></div>
+        <div class="feature-body"><div class="feature-body-inner">
+          <p class="feature-desc">Generate Annex IV reports, AIFMD II disclosures, and cross-border marketing notifications automatically. Export-ready for BaFin, CSSF, FMA, and AMF.</p>
+          <div class="feature-code">report: annex_iv_q4_2025<br>status: generated<br>entities: 14 funds, 2,847 investors<br>findings: 3 breaches (auto-resolved)<br>export: [PDF, XML, XBRL]</div>
+        </div></div>
+      </div>
+      <div class="feature-card" data-feature>
+        <div class="feature-header"><span class="feature-title">Scenario modeling</span><span class="feature-toggle">+</span></div>
+        <div class="feature-body"><div class="feature-body-inner">
+          <p class="feature-desc">Test regulatory changes before they take effect. Model AIFMD II impact on your investor base, simulate new concentration limits, preview compliance outcomes.</p>
+          <div class="feature-code">scenario: aifmd_ii_semi_pro_threshold<br>change: min_investment 125k → 100k<br>affected: 347 investors<br>new_eligible: +89 investors<br>compliance_impact: 12 rules re-evaluated → 0 breaches</div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SVG NETWORK -->
+<section class="network-section" id="networkSection">
+  <svg width="800" height="450" viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="30" r="2" fill="rgba(197,224,238,0.15)"><animate attributeName="opacity" values="0.1;0.4;0.1" dur="4s" repeatCount="indefinite"/></circle>
+    <circle cx="750" cy="50" r="2" fill="rgba(197,224,238,0.15)"><animate attributeName="opacity" values="0.1;0.4;0.1" dur="5s" repeatCount="indefinite"/></circle>
+    <circle cx="120" cy="420" r="2" fill="rgba(197,224,238,0.15)"><animate attributeName="opacity" values="0.1;0.4;0.1" dur="3.5s" repeatCount="indefinite"/></circle>
+    <circle cx="680" cy="400" r="2" fill="rgba(197,224,238,0.15)"><animate attributeName="opacity" values="0.1;0.4;0.1" dur="4.5s" repeatCount="indefinite"/></circle>
+    <circle cx="350" cy="30" r="2" fill="rgba(197,224,238,0.15)"><animate attributeName="opacity" values="0.1;0.4;0.1" dur="3s" repeatCount="indefinite"/></circle>
+    <circle cx="450" cy="430" r="2" fill="rgba(197,224,238,0.15)"><animate attributeName="opacity" values="0.1;0.4;0.1" dur="5.5s" repeatCount="indefinite"/></circle>
+    <!-- Draw-on lines (initially hidden) -->
+    <line class="draw-line" x1="400" y1="95" x2="570" y2="175" stroke="rgba(255,255,255,0.1)" stroke-width="1" data-delay="0"/>
+    <line class="draw-line" x1="570" y1="175" x2="570" y2="315" stroke="rgba(255,255,255,0.1)" stroke-width="1" data-delay="200"/>
+    <line class="draw-line" x1="570" y1="315" x2="400" y2="395" stroke="rgba(255,255,255,0.1)" stroke-width="1" data-delay="400"/>
+    <line class="draw-line" x1="400" y1="395" x2="230" y2="315" stroke="rgba(255,255,255,0.1)" stroke-width="1" data-delay="600"/>
+    <line class="draw-line" x1="230" y1="315" x2="230" y2="175" stroke="rgba(255,255,255,0.1)" stroke-width="1" data-delay="800"/>
+    <line class="draw-line" x1="230" y1="175" x2="400" y2="95" stroke="rgba(255,255,255,0.1)" stroke-width="1" data-delay="1000"/>
+    <g class="svg-outer-group"><line class="node-line flow-line draw-line" x1="400" y1="95" x2="400" y2="215" stroke="rgba(197,224,238,0.2)" stroke-width="1" data-delay="300"/><g class="svg-node" style="transform-origin:400px 75px"><circle cx="400" cy="75" r="30" stroke="#C5E0EE" stroke-width="1.5" fill="rgba(197,224,238,0.06)"/><text x="400" y="79" text-anchor="middle" fill="#C5E0EE" font-family="'JetBrains Mono',monospace" font-size="11">AIFMD II</text></g></g>
+    <g class="svg-outer-group"><line class="node-line flow-line draw-line" x1="570" y1="175" x2="430" y2="230" stroke="rgba(197,224,238,0.2)" stroke-width="1" data-delay="500"/><g class="svg-node" style="transform-origin:570px 155px;animation-delay:.67s"><circle cx="570" cy="155" r="30" stroke="#C5E0EE" stroke-width="1.5" fill="rgba(197,224,238,0.06)"/><text x="570" y="159" text-anchor="middle" fill="#C5E0EE" font-family="'JetBrains Mono',monospace" font-size="11">KAGB</text></g></g>
+    <g class="svg-outer-group"><line class="node-line flow-line draw-line" x1="570" y1="315" x2="430" y2="260" stroke="rgba(197,224,238,0.2)" stroke-width="1" data-delay="700"/><g class="svg-node" style="transform-origin:570px 335px;animation-delay:1.33s"><circle cx="570" cy="335" r="30" stroke="#C5E0EE" stroke-width="1.5" fill="rgba(197,224,238,0.06)"/><text x="570" y="339" text-anchor="middle" fill="#C5E0EE" font-family="'JetBrains Mono',monospace" font-size="11">ELTIF 2.0</text></g></g>
+    <g class="svg-outer-group"><line class="node-line flow-line draw-line" x1="400" y1="395" x2="400" y2="275" stroke="rgba(197,224,238,0.2)" stroke-width="1" data-delay="900"/><g class="svg-node" style="transform-origin:400px 395px;animation-delay:2s"><circle cx="400" cy="395" r="30" stroke="#C5E0EE" stroke-width="1.5" fill="rgba(197,224,238,0.06)"/><text x="400" y="399" text-anchor="middle" fill="#C5E0EE" font-family="'JetBrains Mono',monospace" font-size="11">ANNEX IV</text></g></g>
+    <g class="svg-outer-group"><line class="node-line flow-line draw-line" x1="230" y1="315" x2="370" y2="260" stroke="rgba(197,224,238,0.2)" stroke-width="1" data-delay="1100"/><g class="svg-node" style="transform-origin:230px 335px;animation-delay:2.67s"><circle cx="230" cy="335" r="30" stroke="#C5E0EE" stroke-width="1.5" fill="rgba(197,224,238,0.06)"/><text x="230" y="339" text-anchor="middle" fill="#C5E0EE" font-family="'JetBrains Mono',monospace" font-size="11">SIF LAW</text></g></g>
+    <g class="svg-outer-group"><line class="node-line flow-line draw-line" x1="230" y1="175" x2="370" y2="230" stroke="rgba(197,224,238,0.2)" stroke-width="1" data-delay="1300"/><g class="svg-node" style="transform-origin:230px 155px;animation-delay:3.33s"><circle cx="230" cy="155" r="30" stroke="#C5E0EE" stroke-width="1.5" fill="rgba(197,224,238,0.06)"/><text x="230" y="159" text-anchor="middle" fill="#C5E0EE" font-family="'JetBrains Mono',monospace" font-size="11">RAIF LAW</text></g></g>
+    <circle cx="400" cy="245" r="42" stroke="#C5E0EE" stroke-width="2" fill="rgba(197,224,238,0.1)"><animate attributeName="r" values="42;44;42" dur="3s" repeatCount="indefinite"/></circle>
+    <text x="400" y="241" text-anchor="middle" fill="white" font-family="'Sora',sans-serif" font-size="14" font-weight="600">CAELITH</text>
+    <text x="400" y="258" text-anchor="middle" fill="rgba(197,224,238,0.6)" font-family="'JetBrains Mono',monospace" font-size="9">247 RULES</text>
+  </svg>
+  <div class="network-label">Six regulatory frameworks. One engine. Zero gaps.</div>
+</section>
+
+<!-- PROCESS -->
+<section class="process-section reveal-section" id="how-it-works">
+  <div class="process-inner">
+    <div class="section-label">How it works</div>
+    <h2>Four steps to audit-ready.</h2>
+    <div class="process-steps">
+      <div class="process-line" id="processLine"></div>
+      <div class="process-step" style="transition-delay:0s"><div class="step-num">01</div><div class="step-title">Map</div><div class="step-desc">Upload your fund structure. Caelith auto-detects applicable frameworks across 6 jurisdictions.</div></div>
+      <div class="process-step" style="transition-delay:.15s"><div class="step-num">02</div><div class="step-title">Evaluate</div><div class="step-desc">Every investor is classified and validated against 247 rules. In real time. Under 23ms.</div></div>
+      <div class="process-step" style="transition-delay:.3s"><div class="step-num">03</div><div class="step-title">Prove</div><div class="step-desc">Each decision is hash-chained to the previous one. Tamper-proof by design. Regulator-ready by default.</div></div>
+      <div class="process-step" style="transition-delay:.45s"><div class="step-num">04</div><div class="step-title">Report</div><div class="step-desc">Annex IV, AIFMD II disclosures, cross-border filings. One click. Export as PDF, XML, or XBRL.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section reveal-section" id="pricing">
+  <div class="pricing-inner">
+    <div class="section-label">Pricing</div>
+    <h2>Simple, transparent pricing.</h2>
+    <p class="pricing-anchor">The average AIFM spends <strong>€180,000/year</strong> on manual compliance. Caelith starts at <strong>€3,588</strong>.</p>
+    <div class="pricing-grid">
+      <div class="pricing-card" style="transition-delay:0s">
+        <div class="pricing-tier">Starter</div>
+        <div class="pricing-price">€299<span>/mo</span></div>
+        <div class="pricing-desc">For emerging managers with a single fund.</div>
+        <ul class="pricing-features"><li>1 fund, up to 100 investors</li><li>Core rules engine</li><li>Basic audit trail</li><li>Email support</li></ul>
+        <a href="mailto:hello@caelith.tech?subject=Starter%20Plan" class="pricing-btn pricing-btn-outline">Get started <span class="arrow">→</span></a>
+      </div>
+      <div class="pricing-card featured" style="transition-delay:.12s">
+        <div class="pricing-badge">MOST POPULAR</div>
+        <div class="pricing-tier">Professional</div>
+        <div class="pricing-price">€799<span>/mo</span></div>
+        <div class="pricing-desc">For established managers with multiple funds.</div>
+        <ul class="pricing-features"><li>Up to 10 funds, unlimited investors</li><li>Full rules engine + scenario modeling</li><li>Hash-chained audit trail</li><li>Regulatory reporting (Annex IV)</li><li>Priority support</li></ul>
+        <a href="mailto:hello@caelith.tech?subject=Professional%20Plan" class="pricing-btn pricing-btn-primary">Get started <span class="arrow">→</span></a>
+      </div>
+      <div class="pricing-card" style="transition-delay:.24s">
+        <div class="pricing-tier">Enterprise</div>
+        <div class="pricing-price">Custom</div>
+        <div class="pricing-desc">For large AIFMs and service providers.</div>
+        <ul class="pricing-features"><li>Unlimited funds and investors</li><li>Custom rule development</li><li>On-premise deployment option</li><li>API access + integrations</li><li>Dedicated account manager</li></ul>
+        <a href="mailto:hello@caelith.tech?subject=Enterprise%20Inquiry" class="pricing-btn pricing-btn-outline">Contact sales <span class="arrow">→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA + FAQ -->
+<section class="cta-section" id="faq">
+  <div class="cta-inner">
+    <div class="cta-countdown" id="ctaCountdown">
+      <div class="cd-unit"><span class="cd-val" id="cdDays">--</span><span class="cd-label">Days</span></div>
+      <div class="cd-unit"><span class="cd-val" id="cdHours">--</span><span class="cd-label">Hours</span></div>
+      <div class="cd-unit"><span class="cd-val" id="cdMin">--</span><span class="cd-label">Minutes</span></div>
+      <div class="cd-unit"><span class="cd-val" id="cdSec">--</span><span class="cd-label">Seconds</span></div>
+    </div>
+    <div class="countdown-context">until AIFMD II enforcement</div>
+    <h2>After April 16, non-compliance isn't a risk. It's a fine.</h2>
+    <p class="cta-sub">Book before March 15 for complimentary onboarding and priority integration support.</p>
+    <a href="mailto:hello@caelith.tech?subject=Demo%20Request" class="btn-primary">Book a demo <span class="arrow">→</span></a>
+    <p class="cta-email">Or email <a href="mailto:hello@caelith.tech">hello@caelith.tech</a> — we respond within 4 hours.</p>
+
+    <div class="faq-block">
+      <h3>Frequently asked questions</h3>
+      <div class="faq-item"><div class="faq-q"><span>What regulatory frameworks does Caelith cover?</span><span class="faq-toggle">+</span></div><div class="faq-a"><div class="faq-a-inner">AIFMD II, KAGB (including §225), ELTIF 2.0, RAIF Law, SIF Law, and relevant provisions of MiFID II, DORA, and PRIIPs. 247 pre-built rules across 6 frameworks, with new regulations added quarterly.</div></div></div>
+      <div class="faq-item"><div class="faq-q"><span>How does the hash-chained audit trail work?</span><span class="faq-toggle">+</span></div><div class="faq-a"><div class="faq-a-inner">Every compliance decision is stored as a block containing the decision data, a SHA-256 hash, and the hash of the previous block. This creates a tamper-evident chain — any modification to historical records is immediately detectable.</div></div></div>
+      <div class="faq-item"><div class="faq-q"><span>Can I integrate Caelith with my existing systems?</span><span class="faq-toggle">+</span></div><div class="faq-a"><div class="faq-a-inner">Yes. Caelith provides a RESTful API for integration with transfer agents, fund administration platforms, and portfolio management systems. Enterprise plans include custom integration support.</div></div></div>
+      <div class="faq-item"><div class="faq-q"><span>When does AIFMD II take effect?</span><span class="faq-toggle">+</span></div><div class="faq-a"><div class="faq-a-inner">AIFMD II must be transposed into national law by April 16, 2026. Fund managers need to be fully compliant by this date. Caelith helps you assess readiness, model impact, and achieve compliance before the deadline.</div></div></div>
+      <div class="faq-item"><div class="faq-q"><span>Is my data secure?</span><span class="faq-toggle">+</span></div><div class="faq-a"><div class="faq-a-inner">Caelith is hosted on EU-based infrastructure (Frankfurt am Main), with end-to-end encryption, SOC 2 Type II compliance, and optional on-premise deployment for Enterprise customers. Data never leaves the EU.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <!-- Mini CTA with email input -->
+  <div class="footer-cta">
+    <p>Get early access before AIFMD II enforcement.</p>
+    <form class="footer-cta-form" onsubmit="event.preventDefault();window.location.href='mailto:hello@caelith.tech?subject=Early%20Access&body=Email:%20'+this.querySelector('input').value">
+      <input type="email" class="footer-cta-input" placeholder="you@fund.eu" required>
+      <button type="submit" class="footer-cta-btn">Request access <span class="arrow">→</span></button>
+    </form>
+  </div>
+  <div class="footer-badges">
+    <div class="badge">🇪🇺 EU Data Residency</div>
+    <div class="badge">🔒 SOC 2 Type II</div>
+    <div class="badge">✓ GDPR Compliant</div>
+    <div class="badge">🛡️ ISO 27001</div>
+  </div>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">Caelith</div>
+      <p>The compliance engine for European fund managers. Every decision logged, verified, and proven.</p>
+    </div>
+    <div class="footer-col"><h4>Product</h4><a href="#">Rules Engine</a><a href="#">Audit Trail</a><a href="#">Reporting</a><a href="#pricing">Pricing</a></div>
+    <div class="footer-col"><h4>Company</h4><a href="#">About</a><a href="#">Blog</a><a href="#">Careers</a><a href="mailto:hello@caelith.tech">Contact</a></div>
+    <div class="footer-col"><h4>Legal</h4><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a><a href="#">Imprint</a></div>
+  </div>
+  <div class="footer-bottom"><span>Made in Frankfurt am Main</span><span>© 2026 Caelith. All rights reserved.</span></div>
+</footer>
+
+<script>
+// ─── CUSTOM CURSOR with lerp lag ───
+const cursor = document.getElementById('cursor');
+const cursorDot = document.getElementById('cursorDot');
+let cx = 0, cy = 0, dx = 0, dy = 0;
+document.addEventListener('mousemove', e => { dx = e.clientX; dy = e.clientY; cursorDot.style.left = dx+'px'; cursorDot.style.top = dy+'px'; });
+function animCursor(){ cx+=(dx-cx)*0.12; cy+=(dy-cy)*0.12; cursor.style.left=cx+'px'; cursor.style.top=cy+'px'; requestAnimationFrame(animCursor); }
+animCursor();
+// Hover state for interactive elements
+document.querySelectorAll('a,button,.faq-q,.feature-header,.pricing-card,.nav-cta').forEach(el=>{
+  el.addEventListener('mouseenter',()=>cursor.classList.add('hover'));
+  el.addEventListener('mouseleave',()=>cursor.classList.remove('hover'));
+});
+// Dark bg cursor color swap
+const darkSections = document.querySelectorAll('.hero,.network-section,.cta-section,.footer,.statement-section');
+function checkCursorDark(){
+  let isDark = false;
+  darkSections.forEach(s=>{const r=s.getBoundingClientRect();if(dy>=r.top&&dy<=r.bottom)isDark=true;});
+  cursor.classList.toggle('dark',isDark);cursorDot.classList.toggle('dark',isDark);
+}
+document.addEventListener('mousemove',checkCursorDark);
+
+// Button magnetic ripple position
+document.querySelectorAll('.btn-primary').forEach(btn=>{
+  btn.addEventListener('mousemove',e=>{const r=btn.getBoundingClientRect();btn.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');btn.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');});
+});
+
+// ─── SCROLL PROGRESS ───
+window.addEventListener('scroll',()=>{
+  const p=window.scrollY/(document.documentElement.scrollHeight-window.innerHeight)*100;
+  document.getElementById('scrollProgress').style.width=p+'%';
+});
+
+// ─── TERMINAL ───
+const termLines = [
+  {text:'Onboarding investor INV-4891...', cls:'cmd'},
+  {text:'', cls:''},
+  {text:'Checking: Professional investor status', cls:'dim'},
+  {text:'  → Net assets > €500,000 ✓', cls:'ok'},
+  {text:'Checking: KAGB §225 minimum investment', cls:'dim'},
+  {text:'  → Investment ≥ €200,000 ✓', cls:'ok'},
+  {text:'Checking: Knowledge & experience test', cls:'dim'},
+  {text:'  → Assessment score: 87/100 ✓', cls:'ok'},
+  {text:'Checking: AIFMD II concentration limit', cls:'dim'},
+  {text:'  → Fund exposure 4.2% (limit: 10%) ✓', cls:'ok'},
+  {text:'', cls:''},
+  {text:'Result: COMPLIANT — 4/4 rules passed', cls:'ok'},
+  {text:'Audit hash: a3f7c912...8b2de447', cls:'hash'},
+  {text:'Chained to block #4,890 ✓', cls:'hash'},
+];
+const termBody = document.getElementById('terminalBody');
+termLines.forEach((line, i) => {
+  const div = document.createElement('div');
+  div.className = 'terminal-line';
+  div.style.animationDelay = (0.8 + i * 0.15) + 's';
+  if (line.cls) div.innerHTML = `<span class="${line.cls}">${line.text}</span>`;
+  else div.textContent = line.text || '\u00A0';
+  termBody.appendChild(div);
+});
+
+// ─── COUNTDOWN (tabular-nums) ───
+const deadline = new Date('2026-04-16T00:00:00+02:00');
+function updateCountdown(){
+  const diff = deadline - new Date();
+  if(diff<=0) return;
+  const d=Math.floor(diff/864e5), h=Math.floor(diff%864e5/36e5), m=Math.floor(diff%36e5/6e4), s=Math.floor(diff%6e4/1e3);
+  document.getElementById('cdDays').textContent=d;
+  document.getElementById('cdHours').textContent=String(h).padStart(2,'0');
+  document.getElementById('cdMin').textContent=String(m).padStart(2,'0');
+  document.getElementById('cdSec').textContent=String(s).padStart(2,'0');
+  document.getElementById('navCountdown').textContent=d+'d '+String(h).padStart(2,'0')+'h';
+}
+updateCountdown();
+setInterval(updateCountdown,1000);
+
+// ─── NAV SCROLL ───
+window.addEventListener('scroll',()=>{
+  document.getElementById('nav').classList.toggle('scrolled',window.scrollY>50);
+});
+
+// ─── HAMBURGER ───
+document.getElementById('hamburger').addEventListener('click',()=>{
+  document.getElementById('mobileMenu').classList.toggle('open');
+});
+document.querySelectorAll('#mobileMenu a').forEach(a=>{
+  a.addEventListener('click',()=>document.getElementById('mobileMenu').classList.remove('open'));
+});
+
+// ─── PARALLAX on hero ───
+const hero = document.querySelector('.hero');
+const heroTerminal = document.querySelector('.hero-preview');
+const heroContent = document.querySelector('.hero-content');
+window.addEventListener('scroll',()=>{
+  if(window.scrollY < window.innerHeight){
+    const p = window.scrollY / window.innerHeight;
+    if(heroTerminal) heroTerminal.style.transform = `translateY(${p*-40}px)`;
+    if(heroContent) heroContent.style.transform = `translateY(${p*-20}px)`;
+  }
+});
+
+// ─── CLIP-PATH SECTION REVEALS ───
+const revealObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting){e.target.classList.add('revealed');revealObs.unobserve(e.target);} });
+},{threshold:0.08});
+document.querySelectorAll('.reveal-section').forEach(el=>revealObs.observe(el));
+
+// ─── INTERSECTION OBSERVERS ───
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:0.15});
+document.querySelectorAll('.stat-card,.comparison-table,.browser-frame,.pricing-card,.process-step').forEach(el=>obs.observe(el));
+
+// Table rows stagger
+const tableObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('tbody tr').forEach((row,i)=>{
+        setTimeout(()=>row.classList.add('visible'), i*120);
+      });
+      tableObs.unobserve(e.target);
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('.comparison-table').forEach(el=>tableObs.observe(el));
+
+// ─── COUNTER ANIMATION ───
+function animateCounter(el){
+  const target=parseFloat(el.dataset.target), prefix=el.dataset.prefix||'', suffix=el.dataset.suffix||'';
+  const isFloat=target%1!==0, duration=1200, start=performance.now();
+  function tick(now){
+    const p=Math.min((now-start)/duration,1), e=1-Math.pow(1-p,3);
+    el.textContent=prefix+(isFloat?(target*e).toFixed(1):Math.round(target*e))+suffix;
+    if(p<1)requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+const counterObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.querySelectorAll('.stat-num').forEach(animateCounter); counterObs.unobserve(e.target); }
+  });
+},{threshold:0.3});
+document.querySelectorAll('.stat-row').forEach(el=>counterObs.observe(el));
+
+// ─── DASHBOARD ANIMATION ───
+let dashAnimated = false;
+const dashObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting && !dashAnimated){
+      dashAnimated = true;
+      animateDashCounters();
+      setTimeout(injectNewRow, 3000);
+      let sec = 0;
+      setInterval(()=>{sec++;document.getElementById('dashTime').textContent='Last evaluated: '+sec+'s ago';},1000);
+      dashObs.unobserve(e.target);
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('.browser-frame').forEach(el=>dashObs.observe(el));
+
+function animateDashCounters(){
+  const targets=[
+    {el:document.getElementById('dashInvestors'),end:2847,fmt:v=>v.toLocaleString()},
+    {el:document.getElementById('dashRules'),end:14200,fmt:v=>(v/1000).toFixed(1)+'K'},
+    {el:document.getElementById('dashRate'),end:99.7,fmt:v=>v.toFixed(1)+'%'},
+    {el:document.getElementById('dashMs'),end:18,fmt:v=>Math.round(v)+'ms'},
+  ];
+  const duration=1400,start=performance.now();
+  function tick(now){
+    const p=Math.min((now-start)/duration,1),e=1-Math.pow(1-p,3);
+    targets.forEach(t=>{ t.el.textContent=t.fmt(t.end*e); });
+    if(p<1)requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function injectNewRow(){
+  const table = document.getElementById('dashTableBody');
+  const header = table.querySelector('.dash-table-header');
+  const row = document.createElement('div');
+  row.className = 'dash-table-row new-row';
+  row.innerHTML = '<span>INV-4896</span><span>AIFMD II</span><span>Concentration</span><span><span class="badge-pass">PASS</span></span>';
+  header.insertAdjacentElement('afterend', row);
+  document.getElementById('dashTime').textContent = 'Last evaluated: just now';
+  const rows = table.querySelectorAll('.dash-table-row');
+  if(rows.length > 5) rows[rows.length-1].remove();
+}
+
+// ─── SVG DRAW-ON (scroll-triggered) ───
+const networkObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      document.querySelectorAll('.draw-line').forEach(line=>{
+        const delay = parseInt(line.dataset.delay||0);
+        setTimeout(()=>line.classList.add('drawn'),delay);
+      });
+      networkObs.unobserve(e.target);
+    }
+  });
+},{threshold:0.25});
+document.querySelectorAll('.network-section').forEach(el=>networkObs.observe(el));
+
+// ─── PROCESS LINE ANIMATION ───
+const processObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      document.getElementById('processLine').classList.add('animate');
+      processObs.unobserve(e.target);
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('.process-section').forEach(el=>processObs.observe(el));
+
+// ─── PRICING 3D TILT ───
+document.querySelectorAll('.pricing-card').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-.5;
+    const y=(e.clientY-r.top)/r.height-.5;
+    card.style.transform=`perspective(600px) rotateY(${x*6}deg) rotateX(${y*-6}deg) translateY(-4px)`;
+  });
+  card.addEventListener('mouseleave',()=>{
+    card.style.transform='';
+  });
+});
+
+// ─── FEATURE TOGGLE ───
+document.querySelectorAll('.feature-header').forEach(h=>{
+  h.addEventListener('click',()=>{
+    const c=h.parentElement, wasOpen=c.classList.contains('open');
+    document.querySelectorAll('.feature-card').forEach(x=>x.classList.remove('open'));
+    if(!wasOpen)c.classList.add('open');
+  });
+});
+
+// ─── FAQ TOGGLE ───
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click',()=>q.parentElement.classList.toggle('open'));
+});
+</script>
+</body>
+</html>
