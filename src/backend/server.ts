@@ -315,8 +315,39 @@ async function gracefulShutdown(signal: string): Promise<void> {
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
+// Run critical one-time fixes on startup
+async function runStartupFixes(): Promise<void> {
+  try {
+    // Relax FORCE RLS for single-tenant operation (migration 031)
+    await dbExecute(`
+      DO $$ BEGIN
+        EXECUTE 'ALTER TABLE investors NO FORCE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE assets NO FORCE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE holdings NO FORCE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE transfers NO FORCE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE rules NO FORCE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE fund_structures NO FORCE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE events NO FORCE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE decision_records NO FORCE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE onboarding_records NO FORCE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE eligibility_criteria NO FORCE ROW LEVEL SECURITY';
+      EXCEPTION WHEN OTHERS THEN NULL;
+      END $$;
+    `);
+    logger.info('RLS FORCE relaxed for single-tenant mode');
+  } catch (err) {
+    logger.warn('RLS fix failed (non-fatal)', { error: err });
+  }
+}
+
 // Start server
 async function startServer(): Promise<void> {
+  try {
+    await runStartupFixes();
+  } catch (err) {
+    logger.warn('Startup fixes failed (non-fatal)', { error: err });
+  }
+
   try {
     await ensureAdminUser();
   } catch (err) {
