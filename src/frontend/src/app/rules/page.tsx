@@ -20,6 +20,7 @@ import {
 import { formatDate, formatDateTime } from '../../lib/utils';
 import { ALL_JURISDICTIONS } from '../../lib/constants';
 import type { RuleSet, CompositeRule, ApiError, Investor, NLRuleResponse } from '../../lib/types';
+import { useI18n } from '../../lib/i18n';
 
 const RULE_TEMPLATES = [
   { label: 'Block retail investors', prompt: 'Block all transfers to retail investors' },
@@ -52,6 +53,7 @@ const CONDITION_OPERATORS = [
 
 export default function RulesPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [showForm, setShowForm] = useState(false);
   const [showCompositeForm, setShowCompositeForm] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
@@ -276,8 +278,8 @@ export default function RulesPage() {
   return (
     <div>
       <PageHeader
-        title="Rules"
-        description="Configure built-in and custom compliance rules per asset"
+        title={t('rules.title')}
+        description={t('rules.description')}
         action={
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => router.push('/rules/builder')}>Visual Builder</Button>

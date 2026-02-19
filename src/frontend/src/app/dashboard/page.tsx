@@ -11,7 +11,7 @@ import {
   ViolationAnalysisBar,
   ConcentrationRiskGrid,
 } from '../../components/charts';
-import { formatDateTime, classNames, getErrorMessage } from '../../lib/utils';
+import { formatDateTime, getErrorMessage } from '../../lib/utils';
 import { SetupWizard } from '../../components/setup-wizard';
 import { DashboardMetrics } from '../../components/dashboard-metrics';
 import { ActionQueue } from '../../components/action-queue';
@@ -26,20 +26,12 @@ import {
   aggregateViolations,
   computeConcentration,
   calculateEventTrend,
-  formatTrend,
 } from '../../lib/dashboard-utils';
 import type { FundReportPair, RiskFlag, ActionQueueItem } from '../../lib/dashboard-utils';
-import type { FundStructure, ComplianceReport, CapTableEntry, DecisionRecord, Investor, Event } from '../../lib/types';
+import type { CapTableEntry, DecisionRecord, Investor, Event } from '../../lib/types';
+import { useI18n, useLocaleDate } from '../../lib/i18n';
 
-function SkeletonCard() {
-  return (
-    <div className="rounded-xl border border-edge bg-bg-secondary px-4 py-3 animate-pulse">
-      <div className="h-2.5 w-20 rounded bg-bg-tertiary mb-2" />
-      <div className="h-5 w-14 rounded bg-bg-tertiary mb-1" />
-      <div className="h-2.5 w-28 rounded bg-bg-tertiary" />
-    </div>
-  );
-}
+// Skeleton components for loading states
 
 function SkeletonRow() {
   return (
@@ -65,6 +57,8 @@ function SkeletonChart() {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useI18n();
+  const localeDateFormat = useLocaleDate();
   const [fundReports, setFundReports] = useState<FundReportPair[]>([]);
   const [allInvestors, setAllInvestors] = useState<Investor[]>([]);
   const [capTables, setCapTables] = useState<Map<string, CapTableEntry[]>>(new Map());
@@ -119,7 +113,7 @@ export default function DashboardPage() {
       }
       setCapTables(capTableMap);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Dashboard-Daten konnten nicht geladen werden'));
+      setError(getErrorMessage(err, t('dashboard.errorLoading')));
     } finally {
       setLoading(false);
     }
@@ -189,8 +183,8 @@ export default function DashboardPage() {
       items.push({
         id: 'kyc-expiring',
         severity: 'high',
-        title: 'KYC-Erneuerungen fällig',
-        detail: `${expiringSoon} Investor${expiringSoon !== 1 ? 'en' : ''} laufen innerhalb von 30 Tagen ab`,
+        title: t('dashboard.kycRenewals'),
+        detail: `${expiringSoon} ${expiringSoon !== 1 ? t('common.investors') : t('common.investor')}`,
         href: '/investors?kyc=expiring_soon',
       });
     }
@@ -200,8 +194,8 @@ export default function DashboardPage() {
       items.push({
         id: 'high-risk-flags',
         severity: 'high',
-        title: 'Risikoflaggen mit hohem Schweregrad',
-        detail: `${highFlags} hohe Flagge${highFlags !== 1 ? 'n' : ''} erfordern sofortige Überprüfung`,
+        title: t('dashboard.highRiskFlags'),
+        detail: `${highFlags} ${t('common.high').toLowerCase()}`,
         href: '/#risk-flags',
       });
     }
@@ -211,8 +205,8 @@ export default function DashboardPage() {
       items.push({
         id: 'rejected-decisions',
         severity: 'medium',
-        title: 'Abgelehnte Entscheidungen im letzten Lauf',
-        detail: `${rejectedRecent} Ablehnung${rejectedRecent !== 1 ? 'en' : ''} in den letzten Compliance-Ergebnissen`,
+        title: t('dashboard.rejectedDecisions'),
+        detail: `${rejectedRecent}`,
         href: '/decisions?result=rejected',
       });
     }
@@ -227,8 +221,8 @@ export default function DashboardPage() {
       items.push({
         id: 'pending-onboarding',
         severity: 'medium',
-        title: 'Onboarding-Warteschlange wartet',
-        detail: `${pendingOnboarding} Antrag${pendingOnboarding !== 1 ? 'äge' : ''} warten auf Prüfung oder Genehmigung`,
+        title: t('dashboard.onboardingQueue'),
+        detail: `${pendingOnboarding}`,
         href: '/onboarding',
       });
     }
@@ -238,8 +232,8 @@ export default function DashboardPage() {
       items.push({
         id: 'medium-risk-flags',
         severity: 'low',
-        title: 'Risikoflaggen mittlerer Priorität',
-        detail: `${mediumFlags} mittlere Flagge${mediumFlags !== 1 ? 'n' : ''} diese Woche sichten`,
+        title: t('dashboard.mediumFlags'),
+        detail: `${mediumFlags}`,
         href: '/#risk-flags',
       });
     }
@@ -254,7 +248,7 @@ export default function DashboardPage() {
   const violationData = useMemo(() => aggregateViolations(reports, assetNameMap), [reports, assetNameMap]);
   const concentrationData = useMemo(() => computeConcentration(fundReports, capTables), [fundReports, capTables]);
 
-  const today = new Date().toLocaleDateString('de-DE', {
+  const today = new Date().toLocaleDateString(localeDateFormat, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -264,8 +258,8 @@ export default function DashboardPage() {
     return (
       <div>
         <div className="mb-6">
-          <h1 className="text-xl font-semibold tracking-tight text-ink">Übersicht</h1>
-          <p className="mt-0.5 text-sm text-ink-secondary">Compliance-Engine auf einen Blick</p>
+          <h1 className="text-xl font-semibold tracking-tight text-ink">{t('dashboard.title')}</h1>
+          <p className="mt-0.5 text-sm text-ink-secondary">{t('dashboard.subtitle')}</p>
         </div>
         <ErrorMessage message={error} onRetry={fetchData} />
       </div>
@@ -277,8 +271,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="mb-4 md:mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">Übersicht</h1>
-          <p className="mt-0.5 text-sm text-ink-secondary">Compliance-Engine auf einen Blick</p>
+          <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">{t('dashboard.title')}</h1>
+          <p className="mt-0.5 text-sm text-ink-secondary">{t('dashboard.subtitle')}</p>
         </div>
         <span className="hidden sm:inline-block rounded-lg bg-bg-tertiary text-ink-secondary border border-edge px-3 py-1.5 text-xs font-medium">{today}</span>
       </div>
@@ -330,7 +324,7 @@ export default function DashboardPage() {
         </div>
       ) : fundReports.length > 0 ? (
         <div className="mb-6">
-          <SectionHeader title="Analyse" description="Portfoliozusammensetzung und Compliance-Kennzahlen" />
+          <SectionHeader title={t('dashboard.analytics')} description={t('dashboard.analyticsDesc')} />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <InvestorTypeDonut data={typeData} onTypeClick={(type) => router.push(`/investors?type=${type}`)} />
             <JurisdictionExposureBar data={jurisdictionData} onBarClick={(j) => router.push(`/jurisdiction/${j}`)} />
@@ -346,7 +340,7 @@ export default function DashboardPage() {
       {/* Risk Flags */}
       {!loading && allRiskFlags.length > 0 && (
         <div id="risk-flags" className="mb-6 scroll-mt-4">
-          <SectionHeader title="Risikoflaggen" description={`${allRiskFlags.length} Flagge${allRiskFlags.length !== 1 ? 'n' : ''} über alle Fonds`} />
+          <SectionHeader title={t('dashboard.riskFlags')} description={`${allRiskFlags.length} ${t('common.flagsAcross')}`} />
           <div className="space-y-2">
             {allRiskFlags.map((flag, i) => (
               <div key={i} className="cursor-pointer transition-transform hover:scale-[1.005]" onClick={() => setSelectedRisk(flag)}>
@@ -362,9 +356,9 @@ export default function DashboardPage() {
           <div className="rounded-xl border border-accent-500/20 bg-accent-500/10 p-4">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-accent-500" />
-              <p className="text-sm font-medium text-ink">Alles in Ordnung</p>
+              <p className="text-sm font-medium text-ink">{t('dashboard.allClear')}</p>
             </div>
-            <p className="mt-1 text-sm text-ink-secondary">Keine Risikoflaggen erkannt.</p>
+            <p className="mt-1 text-sm text-ink-secondary">{t('dashboard.noRiskFlags')}</p>
           </div>
         </div>
       )}
@@ -372,7 +366,7 @@ export default function DashboardPage() {
       {/* Fund Structure Cards */}
       {!loading && fundReports.length > 0 && (
         <div className="mb-6">
-          <SectionHeader title="Fonds" />
+          <SectionHeader title={t('dashboard.funds')} />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {fundReports.map(({ fund, report }) => (
               <FundCard key={fund.id} fund={fund} report={report} />
@@ -410,17 +404,17 @@ export default function DashboardPage() {
       {/* Recent Decisions Table */}
       {!loading && allDecisions.length > 0 && (
         <div>
-          <SectionHeader title="Letzte Entscheidungen" description="Aktuelle Compliance-Entscheidungen über alle Fonds" />
+          <SectionHeader title={t('dashboard.recentDecisions')} description={t('dashboard.recentDecisionsDesc')} />
           <Card padding={false}>
             <div className="overflow-x-auto">
               <table className="w-full text-left min-w-[600px]">
                 <thead className="sticky top-0 z-10 bg-surface">
                   <tr className="border-b border-edge">
-                    <th className="px-4 md:px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Zeit</th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Typ</th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Ergebnis</th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Vermögenswert</th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Prüfungen</th>
+                    <th className="px-4 md:px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.time')}</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.type')}</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.result')}</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.asset')}</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.checks')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-edge-subtle">
@@ -445,7 +439,7 @@ export default function DashboardPage() {
                           {assetNameMap[d.asset_id] || d.asset_id.slice(0, 8)}
                         </td>
                         <td className="px-6 py-3 text-sm tabular-nums text-ink-secondary">
-                          {d.violation_count === 0 ? 'Alle bestanden' : `${d.violation_count} Verstoß${d.violation_count !== 1 ? 'e' : ''}`}
+                          {d.violation_count === 0 ? t('decisions.allPassed') : `${d.violation_count} ${t('decisions.violations')}`}
                         </td>
                       </tr>
                     );

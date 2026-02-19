@@ -5,6 +5,7 @@ import { MetricCard } from './ui';
 import { formatNumber } from '../lib/utils';
 import type { TrendMetric } from '../lib/dashboard-utils';
 import { formatTrend } from '../lib/dashboard-utils';
+import { useI18n } from '../lib/i18n';
 
 function SkeletonCard() {
   return (
@@ -41,6 +42,7 @@ export function DashboardMetrics({
   rejectionTrend,
   onActionClick,
 }: DashboardMetricsProps) {
+  const { t } = useI18n();
   if (loading) {
     return (
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -55,30 +57,30 @@ export function DashboardMetrics({
   return (
     <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
       <MetricCard
-        label="Aktive Fonds"
+        label={t('dashboard.activeFunds')}
         value={totalFunds}
-        sub={`${totalFunds} Fonds · ${formatTrend(fundTrend)}`}
+        sub={`${totalFunds} ${t('common.fund')} · ${formatTrend(fundTrend)}`}
         accent="default"
         compact
       />
       <MetricCard
-        label="Verifizierte Investoren"
+        label={t('dashboard.verifiedInvestors')}
         value={totalInvestors}
-        sub={`Über alle Fonds · ${formatTrend(investorTrend)}`}
+        sub={`${t('dashboard.acrossAllFunds')} · ${formatTrend(investorTrend)}`}
         accent="default"
         compact
       />
       <MetricCard
-        label="Zugewiesene Anteile"
+        label={t('dashboard.unitsAllocated')}
         value={formatNumber(totalAllocated)}
-        sub={`Gesamt zugewiesen · ${formatTrend(transferTrend)}`}
+        sub={`${t('dashboard.totalAllocated')} · ${formatTrend(transferTrend)}`}
         accent="success"
         compact
       />
       <MetricCard
-        label="Handlungsbedarf"
+        label={t('dashboard.actionsRequired')}
         value={actionRequired}
-        sub={actionRequired === 0 ? 'Alles in Ordnung' : `Hoch + Mittel Flaggen · ${formatTrend(rejectionTrend)}`}
+        sub={actionRequired === 0 ? t('dashboard.allGood') : `${t('dashboard.highMediumFlags')} · ${formatTrend(rejectionTrend)}`}
         accent={actionRequired > 0 ? 'danger' : 'success'}
         compact
         onClick={onActionClick}

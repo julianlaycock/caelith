@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { AuthProvider } from './auth-provider';
+import { I18nProvider } from '../lib/i18n';
 import { Sidebar } from './sidebar';
 import { CopilotPanel, CopilotToggleButton } from './copilot';
 import { CommandPalette } from './command-palette';
@@ -39,6 +40,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthProvider>
+      <I18nProvider>
       {isPublicPage ? (
         children
       ) : (
@@ -76,6 +78,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           <CommandPalette open={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
         </div>
       )}
+    </I18nProvider>
     </AuthProvider>
   );
 }

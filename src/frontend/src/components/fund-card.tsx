@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, Badge, UtilizationBar } from './ui';
 import type { FundReportPair } from '../lib/dashboard-utils';
+import { useI18n } from '../lib/i18n';
 
 interface FundCardProps {
   fund: FundReportPair['fund'];
@@ -11,6 +12,7 @@ interface FundCardProps {
 }
 
 export function FundCard({ fund, report }: FundCardProps) {
+  const { t } = useI18n();
   const expiredKyc = report.investor_breakdown.by_kyc_status.find(s => s.status === 'expired')?.count ?? 0;
   const expiringKyc = report.investor_breakdown.kyc_expiring_within_90_days.length;
   const highFlags = report.risk_flags.filter(f => f.severity === 'high').length;
@@ -22,16 +24,16 @@ export function FundCard({ fund, report }: FundCardProps) {
 
   if (!isSetup) {
     scoreStatus = 'setup';
-    scoreLabel = 'Einrichtung nötig';
+    scoreLabel = t('fundCard.setupNeeded');
   } else if (highFlags > 0 || expiredKyc > 0) {
     scoreStatus = 'critical';
-    scoreLabel = `${highFlags + expiredKyc} Problem${(highFlags + expiredKyc) !== 1 ? 'e' : ''}`;
+    scoreLabel = `${highFlags + expiredKyc} ${t('fundCard.problems')}`;
   } else if (expiringKyc > 0 || mediumFlags > 0) {
     scoreStatus = 'warning';
-    scoreLabel = 'Überprüfung nötig';
+    scoreLabel = t('fundCard.reviewNeeded');
   } else {
     scoreStatus = 'compliant';
-    scoreLabel = 'Konform';
+    scoreLabel = t('fundCard.compliant');
   }
 
   const scoreDot = {
@@ -67,7 +69,7 @@ export function FundCard({ fund, report }: FundCardProps) {
         </div>
       </div>
       <div className="mb-3">
-        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Auslastung</p>
+        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('funds.utilization')}</p>
         <UtilizationBar allocated={report.fund.total_allocated_units} total={report.fund.total_aum_units} />
       </div>
       <div className="flex items-center justify-between">
@@ -80,7 +82,7 @@ export function FundCard({ fund, report }: FundCardProps) {
           href={`/funds/${fund.id}`}
           className="text-xs font-medium text-accent-400 hover:text-accent-300 transition-colors"
         >
-          Compliance-Bericht →
+          {t('fundCard.complianceReport')} →
         </Link>
       </div>
     </Card>

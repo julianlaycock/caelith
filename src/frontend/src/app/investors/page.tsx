@@ -27,6 +27,7 @@ import { JURISDICTIONS } from '../../lib/constants';
 import type { Investor, InvestorType, KycStatus } from '../../lib/types';
 import { BackLink } from '../../components/back-link';
 import { CsvUploadWizard } from '../../components/csv-upload-wizard';
+import { useI18n } from '../../lib/i18n';
 
 function daysUntilExpiry(expiryDate: string | null | undefined) {
   if (!expiryDate) return null;
@@ -76,6 +77,7 @@ function parseSort(searchParams: URLSearchParams): InvestorSortState {
 
 function InvestorsContent() {
   const router = useRouter();
+  const { t } = useI18n(); // eslint-disable-line @typescript-eslint/no-unused-vars
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const typeFilter = searchParams.get('type');
@@ -255,8 +257,8 @@ function InvestorsContent() {
   return (
     <div>
       <PageHeader
-        title="Investors"
-        description="Manage investor registry"
+        title={t('investors.title')}
+        description={t('investors.description')}
         action={
           <div className="flex items-center gap-2">
             <ExportMenu
@@ -272,8 +274,8 @@ function InvestorsContent() {
                 );
               }}
             />
-            <Button variant="secondary" onClick={() => setShowCsvImport(true)}>Import CSV</Button>
-            <Button onClick={() => setShowForm(true)}>+ New Investor</Button>
+            <Button variant="secondary" onClick={() => setShowCsvImport(true)}>{t('investors.importCsv')}</Button>
+            <Button onClick={() => setShowForm(true)}>+ {t('investors.addInvestor')}</Button>
           </div>
         }
       />

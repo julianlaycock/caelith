@@ -22,6 +22,7 @@ import { useAuth } from '../../components/auth-provider';
 import { exportCSV } from '../../lib/export-csv';
 import { formatNumber, formatDateTime, classNames } from '../../lib/utils';
 import type { DetailedValidationResult, ApiError, TransferHistoryEntry } from '../../lib/types';
+import { useI18n } from '../../lib/i18n';
 
 type TransferSortKey = 'executed_at' | 'from_name' | 'to_name' | 'units';
 type TransferSortDirection = 'asc' | 'desc' | null;
@@ -74,6 +75,7 @@ const TRANSFER_KANBAN_COLUMNS: TransferKanbanColumn[] = [
 
 export default function TransfersPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -570,8 +572,8 @@ export default function TransfersPage() {
   return (
     <div>
       <PageHeader
-        title="Transfers"
-        description="Simulate, execute, and review unit transfers"
+        title={t('transfers.title')}
+        description={t('transfers.description')}
         action={
           <div className="flex items-center gap-2">
             <ExportMenu

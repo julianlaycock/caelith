@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, SectionHeader } from './ui';
 import { classNames } from '../lib/utils';
 import type { ActionQueueItem } from '../lib/dashboard-utils';
+import { useI18n } from '../lib/i18n';
 
 interface ActionQueueProps {
   items: ActionQueueItem[];
@@ -12,12 +13,13 @@ interface ActionQueueProps {
 
 export function ActionQueue({ items }: ActionQueueProps) {
   const router = useRouter();
+  const { t } = useI18n();
 
   if (items.length === 0) return null;
 
   return (
     <div className="mb-6">
-      <SectionHeader title="Aktionswarteschlange" description="Priorisierte Aktionen aus dem Portfoliostatus" />
+      <SectionHeader title={t('dashboard.actionQueue')} description={t('dashboard.actionQueueDesc')} />
       <Card padding={false}>
         <div className="divide-y divide-edge-subtle">
           {items.map((item) => {
@@ -54,7 +56,7 @@ export function ActionQueue({ items }: ActionQueueProps) {
                     buttonClass
                   )}
                 >
-                  Öffnen
+                  {t('common.open')}
                 </button>
               </div>
             );

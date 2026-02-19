@@ -20,6 +20,7 @@ import {
 import { exportCSV } from '../../lib/export-csv';
 import { formatDateTime, classNames } from '../../lib/utils';
 import type { DecisionRecord } from '../../lib/types';
+import { useI18n } from '../../lib/i18n';
 
 const DECISION_TYPE_OPTIONS = [
   { value: '', label: 'All Types' },
@@ -43,6 +44,7 @@ function resultBadgeVariant(result: string): 'green' | 'red' | 'gray' | 'yellow'
 }
 
 export default function DecisionsPage() {
+  const { t } = useI18n();
   const [filterType, setFilterType] = useState('');
   const [filterResult, setFilterResult] = useState('');
   const [selectedDecision, setSelectedDecision] = useState<DecisionRecord | null>(null);
@@ -104,8 +106,8 @@ export default function DecisionsPage() {
   return (
     <div>
       <PageHeader
-        title="Decision Provenance"
-        description="Review tamper-evident compliance decisions with full rule provenance"
+        title={t('decisions.decisionProvenance')}
+        description={t('decisions.provenanceDesc')}
         action={
           <div className="flex items-center gap-2">
             <Button

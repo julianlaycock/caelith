@@ -18,6 +18,7 @@ import {
 } from '../../components/ui';
 import { exportCSV } from '../../lib/export-csv';
 import { formatDateTime } from '../../lib/utils';
+import { useI18n } from '../../lib/i18n';
 
 const EVENT_TYPE_OPTIONS = [
   { value: '', label: 'All event types' },
@@ -53,6 +54,7 @@ const EVENT_BADGE_COLORS: Record<string, 'green' | 'blue' | 'yellow' | 'red' | '
 };
 
 export default function AuditPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -104,8 +106,8 @@ export default function AuditPage() {
   return (
     <div>
       <PageHeader
-        title="Activity"
-        description="Review the immutable event log of all operations"
+        title={t('audit.title')}
+        description={t('audit.description')}
         action={
           <ExportMenu
             onExportCSV={() => {

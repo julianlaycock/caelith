@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from './ui';
 import { classNames } from '../lib/utils';
+import { useI18n } from '../lib/i18n';
 
 interface OnboardingChecklistProps {
   hasFunds: boolean;
@@ -14,12 +15,13 @@ interface OnboardingChecklistProps {
 
 export function OnboardingChecklist({ hasFunds, hasInvestors, hasRules, hasDecisions }: OnboardingChecklistProps) {
   const router = useRouter();
+  const { t } = useI18n();
 
   const steps = [
-    { label: 'Fondsstruktur erstellen', done: hasFunds, href: '/funds' },
-    { label: 'Investoren hinzufügen', done: hasInvestors, href: '/investors' },
-    { label: 'Eignungsregeln konfigurieren', done: hasRules, href: '/rules' },
-    { label: 'Compliance-Prüfung durchführen', done: hasDecisions, href: '/onboarding' },
+    { label: t('checklist.createFund'), done: hasFunds, href: '/funds' },
+    { label: t('checklist.addInvestors'), done: hasInvestors, href: '/investors' },
+    { label: t('checklist.configureRules'), done: hasRules, href: '/rules' },
+    { label: t('checklist.runCompliance'), done: hasDecisions, href: '/onboarding' },
   ];
   const completed = steps.filter((s) => s.done).length;
 
@@ -31,7 +33,7 @@ export function OnboardingChecklist({ hasFunds, hasInvestors, hasRules, hasDecis
             <svg className="h-5 w-5 text-semantic-success" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm font-medium text-semantic-success">Einrichtung abgeschlossen — Ihre Compliance-Engine ist bereit</p>
+            <p className="text-sm font-medium text-semantic-success">{t('dashboard.setupComplete')}</p>
           </div>
         </div>
       </div>
@@ -45,8 +47,8 @@ export function OnboardingChecklist({ hasFunds, hasInvestors, hasRules, hasDecis
       <Card>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-sm font-semibold text-ink">Erste Schritte</p>
-            <p className="text-xs text-ink-secondary">{completed} von {steps.length} Schritten abgeschlossen</p>
+            <p className="text-sm font-semibold text-ink">{t('dashboard.gettingStarted')}</p>
+            <p className="text-xs text-ink-secondary">{completed} {t('checklist.stepsOf')} {steps.length} {t('checklist.stepsComplete')}</p>
           </div>
           <div className="h-2 w-24 rounded-full bg-bg-tertiary overflow-hidden">
             <div

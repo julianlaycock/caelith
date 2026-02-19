@@ -23,6 +23,7 @@ import { formatDate } from '../../lib/utils';
 import { LEGAL_FORMS, DOMICILES, FRAMEWORKS, STATUSES } from '../../lib/constants';
 import type { ApiError, FundStructure, CreateFundStructureRequest, LegalForm, RegulatoryFramework, FundStatus } from '../../lib/types';
 import { CsvUploadWizard } from '../../components/csv-upload-wizard';
+import { useI18n } from '../../lib/i18n';
 
 const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'gray' | 'red'> = {
   active: 'green',
@@ -105,6 +106,7 @@ function ComplianceScore({ checklist }: { checklist: FundChecklist }) {
 }
 
 export default function FundsPage() {
+  const { t } = useI18n();
   const [showForm, setShowForm] = useState(false);
   const [showCsvImport, setShowCsvImport] = useState(false);
   const [editFund, setEditFund] = useState<FundStructure | null>(null);
@@ -247,8 +249,8 @@ export default function FundsPage() {
   return (
     <div>
       <PageHeader
-        title="Funds"
-        description="Manage funds and view compliance reports"
+        title={t('funds.title')}
+        description={t('funds.description')}
         action={
           <div className="flex items-center gap-2">
             <ExportMenu
@@ -264,8 +266,8 @@ export default function FundsPage() {
                 );
               }}
             />
-            <Button variant="secondary" onClick={() => setShowCsvImport(true)}>Import CSV</Button>
-            <Button onClick={() => setShowForm(true)}>+ New Fund</Button>
+            <Button variant="secondary" onClick={() => setShowCsvImport(true)}>{t('funds.importCsv')}</Button>
+            <Button onClick={() => setShowForm(true)}>+ {t('funds.addFund')}</Button>
           </div>
         }
       />
@@ -277,7 +279,7 @@ export default function FundsPage() {
       )}
 
       {/* Create Modal */}
-      <Modal open={showForm} onClose={() => { setShowForm(false); setFormError(null); setFieldErrors({}); }} title="Create Fund Structure">
+      <Modal open={showForm} onClose={() => { setShowForm(false); setFormError(null); setFieldErrors({}); }} title={t('funds.createFundStructure')}>
         <form onSubmit={handleCreate} noValidate className="space-y-4">
           {formError && <Alert variant="error">{formError}</Alert>}
           <Input label="Fund Name" name="name" placeholder="e.g., European Growth Fund I" error={fieldErrors.name} />
@@ -293,7 +295,7 @@ export default function FundsPage() {
       </Modal>
 
       {/* Edit Modal */}
-      <Modal open={editFund !== null} onClose={() => { setEditFund(null); setFormError(null); }} title="Edit Fund Structure">
+      <Modal open={editFund !== null} onClose={() => { setEditFund(null); setFormError(null); }} title={t('funds.editFundStructure')}>
         {editFund && (
           <form onSubmit={handleEdit} className="space-y-4">
             {formError && <Alert variant="error">{formError}</Alert>}
@@ -312,7 +314,7 @@ export default function FundsPage() {
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal open={deleteFund !== null} onClose={() => { setDeleteFund(null); setFormError(null); }} title="Delete Fund Structure">
+      <Modal open={deleteFund !== null} onClose={() => { setDeleteFund(null); setFormError(null); }} title={t('funds.deleteFundStructure')}>
         {deleteFund && (
           <div className="space-y-4">
             {formError && <Alert variant="error">{formError}</Alert>}
@@ -330,7 +332,7 @@ export default function FundsPage() {
       </Modal>
 
       {/* CSV Import Modal */}
-      <Modal open={showCsvImport} onClose={() => setShowCsvImport(false)} title="Import Fund Structures from CSV" size="lg">
+      <Modal open={showCsvImport} onClose={() => setShowCsvImport(false)} title={t('funds.importTitle')} size="lg">
         <CsvUploadWizard
           entityType="fund_structures"
           onComplete={() => { setShowCsvImport(false); funds.refetch(); }}

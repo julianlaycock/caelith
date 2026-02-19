@@ -3,22 +3,25 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
-const labelMap: Record<string, string> = {
-  dashboard: 'Übersicht',
-  funds: 'Fonds',
-  investors: 'Investoren',
-  transfers: 'Transfers',
-  rules: 'Regelwerk',
-  decisions: 'Entscheidungen',
-  audit: 'Audit',
-  onboarding: 'Onboarding',
-  holdings: 'Bestände',
-  assets: 'Vermögenswerte',
-};
+import { useI18n } from '../lib/i18n';
 
 export function Breadcrumb() {
   const pathname = usePathname();
+  const { t } = useI18n();
+
+  const labelMap: Record<string, string> = {
+    dashboard: t('breadcrumb.dashboard'),
+    funds: t('breadcrumb.funds'),
+    investors: t('breadcrumb.investors'),
+    transfers: t('breadcrumb.transfers'),
+    rules: t('breadcrumb.rules'),
+    decisions: t('breadcrumb.decisions'),
+    audit: t('breadcrumb.audit'),
+    onboarding: t('breadcrumb.onboarding'),
+    holdings: t('breadcrumb.holdings'),
+    assets: t('breadcrumb.assets'),
+    builder: t('breadcrumb.builder'),
+  };
   const segments = pathname.split('/').filter(Boolean);
 
   if (segments.length <= 1) return null;

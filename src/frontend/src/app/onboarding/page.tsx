@@ -19,6 +19,7 @@ import {
 import { exportCSV } from '../../lib/export-csv';
 import { formatNumber, formatDate, formatDateTime, classNames, getErrorMessage, toAssetOptions, toInvestorOptions } from '../../lib/utils';
 import type { ApiError, OnboardingRecord } from '../../lib/types';
+import { useI18n } from '../../lib/i18n';
 
 // ── Column definitions ───────────────────────────────────
 
@@ -49,6 +50,7 @@ const STATUS_BADGE: Record<string, 'green' | 'yellow' | 'red' | 'gray' | 'blue'>
 };
 
 export default function OnboardingPage() {
+  const { t } = useI18n();
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [showBulkApply, setShowBulkApply] = useState(false);
   const [bulkAssetId, setBulkAssetId] = useState('');
@@ -417,8 +419,8 @@ export default function OnboardingPage() {
   return (
     <div>
       <PageHeader
-        title="Onboarding"
-        description="Manage investor onboarding and eligibility checks"
+        title={t('onboarding.title')}
+        description={t('onboarding.description')}
         action={
           <div className="flex items-center gap-2">
             <ExportMenu
