@@ -45,6 +45,9 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await api.login(email, password);
+      // Persist auth so the auth-provider can restore it across navigations
+      localStorage.setItem('caelith_token', res.token);
+      localStorage.setItem('caelith_user', JSON.stringify(res.user));
       if (rememberMe) localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email }));
       else localStorage.removeItem(REMEMBER_KEY);
       setUser(res.user);
