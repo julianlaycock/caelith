@@ -32,7 +32,7 @@ Geschaetzter Zeitraum bis zum ersten Umsatz: 3 Monate (April -- Juni 2026)
 | Position | Monatlich (EUR) | 3 Monate (EUR) | Erlaeuterung |
 |----------|----------------:|----------------:|--------------|
 | Cloud-Hosting (Hetzner/AWS) | 150,00 | 450,00 | PostgreSQL-Datenbank + API-Server |
-| API-Kosten (Anthropic Claude) | 80,00 | 240,00 | KI-Compliance-Copilot |
+| API-Kosten (Anthropic Claude) | 200,00 | 600,00 | KI-Compliance-Copilot |
 | Software-Abonnements | 65,00 | 195,00 | GitHub, Monitoring, E-Mail |
 | Domain + E-Mail | 15,00 | 45,00 | Geschaeftliche E-Mail-Adresse |
 | Berufshaftpflichtversicherung | 45,00 | 135,00 | IT-Haftpflicht fuer B2B-SaaS |
