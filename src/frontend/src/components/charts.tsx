@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { formatCompactNumber, formatInvestorType, classNames } from '../lib/utils';
+import { useI18n } from '../lib/i18n';
 
 // ── Brand Palette (theme-safe) ───────────────────────────
 
@@ -49,15 +50,16 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({
   data: TypeAllocationEntry[];
   onTypeClick?: (rawType: string) => void;
 }) {
+  const { t } = useI18n();
   if (!data || data.length === 0) {
-    return <EmptyChart label="No investor type data" />;
+    return <EmptyChart label={t('charts.noInvestorTypeData')} />;
   }
 
   const sorted = [...data].sort((a, b) => b.total_units - a.total_units);
   const total = sorted.reduce((s, d) => s + d.total_units, 0);
 
   return (
-    <ChartCard title="Investor Type Allocation" subtitle="Units by investor classification">
+    <ChartCard title={t('charts.investorTypeTitle')} subtitle={t('charts.investorTypeSubtitle')}>
       {/* Treemap blocks */}
       <div className="flex gap-[3px] overflow-hidden rounded-lg" style={{ height: 140 }}>
         {sorted.length > 0 && (
@@ -154,15 +156,16 @@ export const JurisdictionExposureBar = React.memo(function JurisdictionExposureB
   data: JurisdictionEntry[];
   onBarClick?: (jurisdiction: string) => void;
 }) {
+  const { t } = useI18n();
   if (!data || data.length === 0) {
-    return <EmptyChart label="No jurisdiction data" />;
+    return <EmptyChart label={t('charts.noJurisdictionData')} />;
   }
 
   const sorted = [...data].sort((a, b) => b.total_units - a.total_units).slice(0, 12);
   const total = sorted.reduce((s, d) => s + d.total_units, 0);
 
   return (
-    <ChartCard title="Jurisdiction Exposure" subtitle="Geographic exposure by allocated units">
+    <ChartCard title={t('charts.jurisdictionTitle')} subtitle={t('charts.jurisdictionSubtitle')}>
       {/* Stacked strip */}
       <div className="flex h-8 rounded-lg overflow-hidden mb-4">
         {sorted.map((d) => {
@@ -261,11 +264,12 @@ export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({
   data: KycSegmentData;
   onStatusClick?: (status: string) => void;
 }) {
+  const { t } = useI18n();
   const total = data.verified + data.pending + data.expired + data.expiring_soon;
   const [hoveredDot, setHoveredDot] = useState<number | null>(null);
 
   if (total === 0) {
-    return <EmptyChart label="No KYC data available" />;
+    return <EmptyChart label={t('charts.noKycData')} />;
   }
 
   // Build dot array
@@ -281,14 +285,14 @@ export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({
   const segments = KYC_SEGMENTS.map(s => ({ ...s, value: data[s.key as keyof KycSegmentData] })).filter(s => s.value > 0);
 
   return (
-    <ChartCard title="KYC Status Overview" subtitle="Investor KYC verification status">
+    <ChartCard title={t('charts.kycTitle')} subtitle={t('charts.kycSubtitle')}>
       {/* Big number */}
       <div className="text-center my-3">
         <div className="font-mono text-5xl font-extrabold leading-none tracking-tight">
           <span style={{ color: 'var(--success)' }}>{data.verified}</span>
           <span className="text-ink-muted text-2xl"> / {total}</span>
         </div>
-        <div className="text-[11px] text-ink-muted mt-1.5">verified investors</div>
+        <div className="text-[11px] text-ink-muted mt-1.5">{t('charts.verifiedInvestors')}</div>
       </div>
 
       {/* Dot matrix */}
@@ -361,9 +365,10 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({
   data: ViolationEntry[];
   onBarClick?: (assetName: string) => void;
 }) {
+  const { t } = useI18n();
   if (!data || data.length === 0) {
     return (
-      <ChartCard title="Rule Violations" subtitle="Top assets by compliance violations">
+      <ChartCard title={t('charts.violationsTitle')} subtitle={t('charts.violationsSubtitle')}>
         <div className="flex h-[200px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-bg-tertiary">
@@ -371,7 +376,7 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-xs text-ink-tertiary">No violations detected</p>
+            <p className="text-xs text-ink-tertiary">{t('charts.noViolationsDetected')}</p>
           </div>
         </div>
       </ChartCard>
@@ -395,7 +400,7 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({
   }
 
   return (
-    <ChartCard title="Rule Violations" subtitle="Top assets by compliance violations">
+    <ChartCard title={t('charts.violationsTitle')} subtitle={t('charts.violationsSubtitle')}>
       <div>
         {sorted.map((d) => {
           const barColor = getSeverityColor(d.violation_count);
@@ -426,7 +431,7 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({
 
       {/* Total */}
       <div className="mt-3 pt-2.5 border-t border-edge-subtle flex justify-between text-[11px]">
-        <span className="text-ink-muted">Total violations / decisions</span>
+        <span className="text-ink-muted">{t('charts.totalViolationsDecisions')}</span>
         <span className="font-mono font-bold text-ink">
           <span style={{ color: totalViolations > 0 ? 'var(--danger)' : undefined }}>{totalViolations}</span> / {totalDecisions}
         </span>
@@ -449,14 +454,15 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
 }: {
   data: ConcentrationEntry[];
 }) {
+  const { t } = useI18n();
   if (!data || data.length === 0) {
-    return <EmptyChart label="No concentration data" />;
+    return <EmptyChart label={t('charts.noConcentrationData')} />;
   }
 
   function getRisk(fund: ConcentrationEntry) {
-    if (fund.top_investor_pct >= 50) return { label: 'HOCH', color: 'var(--danger)', bg: 'rgba(248,113,113,0.15)' };
-    if (fund.top_investor_pct >= 25) return { label: 'MITTEL', color: WARM, bg: 'rgba(232,168,124,0.15)' };
-    return { label: 'NIEDRIG', color: 'var(--success)', bg: 'rgba(110,231,183,0.15)' };
+    if (fund.top_investor_pct >= 50) return { label: t('charts.high'), color: 'var(--danger)', bg: 'rgba(248,113,113,0.15)' };
+    if (fund.top_investor_pct >= 25) return { label: t('charts.medium'), color: WARM, bg: 'rgba(232,168,124,0.15)' };
+    return { label: t('charts.low'), color: 'var(--success)', bg: 'rgba(110,231,183,0.15)' };
   }
 
   function getBarGradient(fund: ConcentrationEntry, type: 'top1' | 'top3'): string {
@@ -473,7 +479,7 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
   }
 
   return (
-    <ChartCard title="Concentration Risk" subtitle="Investor concentration by fund">
+    <ChartCard title={t('charts.concentrationTitle')} subtitle={t('charts.concentrationSubtitle')}>
       <div>
         {data.map((fund, fi) => {
           const risk = getRisk(fund);

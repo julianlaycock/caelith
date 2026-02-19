@@ -38,20 +38,26 @@ function daysUntilExpiry(expiryDate: string | null | undefined) {
   return { days, label: `${days}d`, urgency: 'ok' as const };
 }
 
-const INVESTOR_TYPE_OPTIONS: Array<{ value: InvestorType; label: string }> = [
-  { value: 'institutional', label: 'Institutional' },
-  { value: 'professional', label: 'Professional' },
-  { value: 'semi_professional', label: 'Semi-Professional' },
-  { value: 'well_informed', label: 'Well-Informed' },
-  { value: 'retail', label: 'Retail' },
-];
+function useInvestorTypeOptions() {
+  const { t } = useI18n();
+  return [
+    { value: 'institutional' as InvestorType, label: t('investors.type.institutional') },
+    { value: 'professional' as InvestorType, label: t('investors.type.professional') },
+    { value: 'semi_professional' as InvestorType, label: t('investors.type.semiProfessional') },
+    { value: 'well_informed' as InvestorType, label: t('investors.type.wellInformed') },
+    { value: 'retail' as InvestorType, label: t('investors.type.retail') },
+  ];
+}
 
-const KYC_STATUS_OPTIONS: Array<{ value: KycStatus; label: string }> = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'verified', label: 'Verified' },
-  { value: 'expired', label: 'Expired' },
-  { value: 'rejected', label: 'Rejected' },
-];
+function useKycStatusOptions() {
+  const { t } = useI18n();
+  return [
+    { value: 'pending' as KycStatus, label: t('investors.pending') },
+    { value: 'verified' as KycStatus, label: t('investors.verified') },
+    { value: 'expired' as KycStatus, label: t('investors.expired') },
+    { value: 'rejected' as KycStatus, label: t('investors.rejected') },
+  ];
+}
 
 const INVESTOR_SORT_KEYS = new Set<keyof Investor>([
   'name',
@@ -78,6 +84,8 @@ function parseSort(searchParams: URLSearchParams): InvestorSortState {
 function InvestorsContent() {
   const router = useRouter();
   const { t } = useI18n();
+  const INVESTOR_TYPE_OPTIONS = useInvestorTypeOptions();
+  const KYC_STATUS_OPTIONS = useKycStatusOptions();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const typeFilter = searchParams.get('type');
@@ -282,7 +290,7 @@ function InvestorsContent() {
 
       {activeFilter && (
         <div className="mb-4">
-          <BackLink href="/" label="Back to Dashboard" />
+          <BackLink href="/" label={t('investors.backToDashboard')} />
         </div>
       )}
 
@@ -294,7 +302,7 @@ function InvestorsContent() {
 
       {activeFilter && (
         <div className="mb-4 flex items-center gap-2">
-          <span className="text-xs text-ink-tertiary">Filtered by:</span>
+          <span className="text-xs text-ink-tertiary">{t('investors.filteredBy')}:</span>
           <span className="inline-flex items-center gap-1.5 rounded-md bg-accent-500/10 px-2.5 py-1 text-xs font-medium text-accent-700 ring-1 ring-accent-500/20">
             {activeFilter}
             <button onClick={clearFilters} className="ml-0.5 text-accent-600 hover:text-accent-700">
@@ -304,7 +312,7 @@ function InvestorsContent() {
             </button>
           </span>
           <span className="text-xs text-ink-tertiary">
-            {filteredInvestors.length} of {investors.data?.length ?? 0} investors
+            {filteredInvestors.length} {t('investors.of')} {investors.data?.length ?? 0} {t('investors.investors')}
           </span>
         </div>
       )}
@@ -325,7 +333,7 @@ function InvestorsContent() {
               label={t('investors.col.jurisdiction')}
               value={filterJurisdiction}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterJurisdiction(e.target.value)}
-              options={[{ value: '', label: 'All' }, ...JURISDICTIONS]}
+              options={[{ value: '', label: t('investors.all') }, ...JURISDICTIONS]}
             />
           </div>
           <div className="w-[180px]">
@@ -333,7 +341,7 @@ function InvestorsContent() {
               label={t('investors.investorType')}
               value={filterType}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterType(e.target.value)}
-              options={[{ value: '', label: 'All' }, ...INVESTOR_TYPE_OPTIONS]}
+              options={[{ value: '', label: t('investors.all') }, ...INVESTOR_TYPE_OPTIONS]}
             />
           </div>
           <div className="w-[140px]">
@@ -341,11 +349,11 @@ function InvestorsContent() {
               label={t('investors.kycStatus')}
               value={filterKyc}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterKyc(e.target.value)}
-              options={[{ value: '', label: 'All' }, ...KYC_STATUS_OPTIONS]}
+              options={[{ value: '', label: t('investors.all') }, ...KYC_STATUS_OPTIONS]}
             />
           </div>
           {hasLocalFilters && (
-            <Button variant="secondary" size="sm" onClick={clearLocalFilters}>Clear</Button>
+            <Button variant="secondary" size="sm" onClick={clearLocalFilters}>{t('common.clear')}</Button>
           )}
         </div>
         <p className="mt-2 text-xs text-ink-tertiary">
@@ -355,62 +363,62 @@ function InvestorsContent() {
 
       <div className="h-4" />
 
-      <Modal open={showForm} onClose={() => { setShowForm(false); formAction.setError(null); }} title="Add Investor">
+      <Modal open={showForm} onClose={() => { setShowForm(false); formAction.setError(null); }} title={t('investors.newInvestor')}>
         <form onSubmit={handleCreate} className="space-y-4">
           {formAction.error && <Alert variant="error">{formAction.error}</Alert>}
-          <Input label="Name" name="name" required placeholder="e.g., Jane Smith" />
-          <Input label="Email" name="email" type="email" placeholder="e.g., jane@firm.com" />
-          <Select label="Jurisdiction" name="jurisdiction" options={JURISDICTIONS} required />
-          <Select label="Investor Type" name="investor_type" options={INVESTOR_TYPE_OPTIONS} defaultValue="professional" required />
-          <Select label="KYC Status" name="kyc_status" options={KYC_STATUS_OPTIONS} defaultValue="pending" required />
-          <Input label="KYC Expiry" name="kyc_expiry" type="date" />
+          <Input label={t('form.name')} name="name" required placeholder={t('form.namePlaceholder')} />
+          <Input label={t('form.email')} name="email" type="email" placeholder={t('form.emailPlaceholder')} />
+          <Select label={t('investors.col.jurisdiction')} name="jurisdiction" options={JURISDICTIONS} required />
+          <Select label={t('investors.investorType')} name="investor_type" options={INVESTOR_TYPE_OPTIONS} defaultValue="professional" required />
+          <Select label={t('investors.kycStatus')} name="kyc_status" options={KYC_STATUS_OPTIONS} defaultValue="pending" required />
+          <Input label={t('investors.col.kycExpiry')} name="kyc_expiry" type="date" />
           <Select
-            label="Status"
+            label={t('investors.col.status')}
             name="status"
             options={[
-              { value: 'accredited', label: 'Accredited' },
-              { value: 'non_accredited', label: 'Non-Accredited' },
+              { value: 'accredited', label: t('investors.accredited') },
+              { value: 'non_accredited', label: t('investors.nonAccredited') },
             ]}
             defaultValue="accredited"
             required
           />
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
-            <Button type="submit">Create</Button>
+            <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>{t('common.cancel')}</Button>
+            <Button type="submit">{t('common.create')}</Button>
           </div>
         </form>
       </Modal>
 
-      <Modal open={editInvestor !== null} onClose={() => { setEditInvestor(null); formAction.setError(null); }} title="Edit Investor">
+      <Modal open={editInvestor !== null} onClose={() => { setEditInvestor(null); formAction.setError(null); }} title={t('investors.editInvestor')}>
         {editInvestor && (
           <form onSubmit={handleUpdate} className="space-y-4">
             {formAction.error && <Alert variant="error">{formAction.error}</Alert>}
-            <Input label="Name" name="name" required defaultValue={editInvestor.name} />
-            <Input label="Email" name="email" type="email" defaultValue={editInvestor.email || ''} />
-            <Select label="Jurisdiction" name="jurisdiction" options={JURISDICTIONS} defaultValue={editInvestor.jurisdiction} required />
-            <Select label="Investor Type" name="investor_type" options={INVESTOR_TYPE_OPTIONS} defaultValue={editInvestor.investor_type} required />
-            <Select label="KYC Status" name="kyc_status" options={KYC_STATUS_OPTIONS} defaultValue={editInvestor.kyc_status} required />
-            <Input label="KYC Expiry" name="kyc_expiry" type="date" defaultValue={editInvestor.kyc_expiry ? editInvestor.kyc_expiry.substring(0, 10) : ''} />
+            <Input label={t('form.name')} name="name" required defaultValue={editInvestor.name} />
+            <Input label={t('form.email')} name="email" type="email" defaultValue={editInvestor.email || ''} />
+            <Select label={t('investors.col.jurisdiction')} name="jurisdiction" options={JURISDICTIONS} defaultValue={editInvestor.jurisdiction} required />
+            <Select label={t('investors.investorType')} name="investor_type" options={INVESTOR_TYPE_OPTIONS} defaultValue={editInvestor.investor_type} required />
+            <Select label={t('investors.kycStatus')} name="kyc_status" options={KYC_STATUS_OPTIONS} defaultValue={editInvestor.kyc_status} required />
+            <Input label={t('investors.col.kycExpiry')} name="kyc_expiry" type="date" defaultValue={editInvestor.kyc_expiry ? editInvestor.kyc_expiry.substring(0, 10) : ''} />
             <Select
-              label="Status"
+              label={t('investors.col.status')}
               name="status"
               options={[
-                { value: 'accredited', label: 'Accredited' },
-                { value: 'non_accredited', label: 'Non-Accredited' },
+                { value: 'accredited', label: t('investors.accredited') },
+                { value: 'non_accredited', label: t('investors.nonAccredited') },
               ]}
               defaultValue={editInvestor.accredited ? 'accredited' : 'non_accredited'}
               required
             />
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="secondary" type="button" onClick={() => setEditInvestor(null)}>Cancel</Button>
-              <Button type="submit">Update</Button>
+              <Button variant="secondary" type="button" onClick={() => setEditInvestor(null)}>{t('common.cancel')}</Button>
+              <Button type="submit">{t('common.update')}</Button>
             </div>
           </form>
         )}
       </Modal>
 
       {/* CSV Import Modal */}
-      <Modal open={showCsvImport} onClose={() => setShowCsvImport(false)} title="Import Investors from CSV" size="lg">
+      <Modal open={showCsvImport} onClose={() => setShowCsvImport(false)} title={t('investors.importTitle')} size="lg">
         <CsvUploadWizard
           entityType="investors"
           onComplete={() => { setShowCsvImport(false); investors.refetch(); }}
@@ -483,7 +491,7 @@ function InvestorsContent() {
                   </td>
                   <td className="px-5 py-3 text-ink-secondary">{formatDate(inv.created_at)}</td>
                   <td className="px-5 py-3 text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setEditInvestor(inv)}>Edit</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setEditInvestor(inv)}>{t('common.edit')}</Button>
                   </td>
                 </tr>
               ))}
@@ -494,18 +502,18 @@ function InvestorsContent() {
       ) : investors.data && investors.data.length > 0 && activeFilter ? (
         <Card>
           <div className="py-8 text-center">
-            <p className="text-sm font-medium text-ink">No investors match this filter</p>
-            <p className="mt-1 text-sm text-ink-secondary">Try clearing the filter to see all investors.</p>
+            <p className="text-sm font-medium text-ink">{t('investors.noMatchFilter')}</p>
+            <p className="mt-1 text-sm text-ink-secondary">{t('investors.clearFilterHint')}</p>
             <div className="mt-4">
-              <Button variant="secondary" onClick={clearFilters}>Clear Filter</Button>
+              <Button variant="secondary" onClick={clearFilters}>{t('common.clear')}</Button>
             </div>
           </div>
         </Card>
       ) : (
         <EmptyState
-          title="No investors yet"
-          description="Add your first investor to get started."
-          action={<Button onClick={() => setShowForm(true)}>+ New Investor</Button>}
+          title={t('investors.noInvestors')}
+          description={t('investors.noInvestorsDesc')}
+          action={<Button onClick={() => setShowForm(true)}>+ {t('investors.addInvestor')}</Button>}
         />
       )}
     </div>

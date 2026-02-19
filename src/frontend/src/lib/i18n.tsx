@@ -603,6 +603,41 @@ const translations: Record<Locale, Record<string, string>> = {
     'kycDocs.subscriptionAgreement': 'Zeichnungsvereinbarung',
     'kycDocs.other': 'Sonstiges',
 
+    // ── Form labels ──
+    'form.name': 'Name',
+    'form.email': 'E-Mail',
+    'form.namePlaceholder': 'z.B. Max Mustermann',
+    'form.emailPlaceholder': 'z.B. max@firma.de',
+
+    // ── Investor types ──
+    'investors.type.institutional': 'Institutionell',
+    'investors.type.professional': 'Professionell',
+    'investors.type.semiProfessional': 'Semi-Professionell',
+    'investors.type.wellInformed': 'Gut informiert',
+    'investors.type.retail': 'Privatanleger',
+
+    // ── Charts (detailed) ──
+    'charts.investorTypeTitle': 'Investorentyp-Verteilung',
+    'charts.investorTypeSubtitle': 'Anteile nach Investorenklassifizierung',
+    'charts.jurisdictionTitle': 'Jurisdiktions-Exposure',
+    'charts.jurisdictionSubtitle': 'Geografische Verteilung nach zugewiesenen Anteilen',
+    'charts.kycTitle': 'KYC-Status',
+    'charts.kycSubtitle': 'Verifizierungsstatus der Investoren',
+    'charts.violationsTitle': 'Regelverstöße',
+    'charts.violationsSubtitle': 'Vermögenswerte nach Compliance-Verstößen',
+    'charts.concentrationTitle': 'Konzentrationsrisiko',
+    'charts.concentrationSubtitle': 'Investorenkonzentration nach Fonds',
+    'charts.verifiedInvestors': 'verifizierte Investoren',
+    'charts.noViolationsDetected': 'Keine Verstöße erkannt',
+    'charts.total': 'Gesamt',
+    'charts.totalViolationsDecisions': 'Gesamtverstöße / Entscheidungen',
+
+    // ── Concentration Risk labels ──
+    'charts.high': 'HOCH',
+    'charts.medium': 'MITTEL',
+    'charts.low': 'NIEDRIG',
+    'charts.topInvestor': 'Top-Investor',
+
     // ── Language ──
     'lang.toggle': 'Sprache wechseln',
   },
@@ -1191,6 +1226,41 @@ const translations: Record<Locale, Record<string, string>> = {
     'kycDocs.financialStatement': 'Financial Statement',
     'kycDocs.subscriptionAgreement': 'Subscription Agreement',
     'kycDocs.other': 'Other',
+
+    // ── Form labels ──
+    'form.name': 'Name',
+    'form.email': 'Email',
+    'form.namePlaceholder': 'e.g., Jane Smith',
+    'form.emailPlaceholder': 'e.g., jane@firm.com',
+
+    // ── Investor types ──
+    'investors.type.institutional': 'Institutional',
+    'investors.type.professional': 'Professional',
+    'investors.type.semiProfessional': 'Semi-Professional',
+    'investors.type.wellInformed': 'Well-Informed',
+    'investors.type.retail': 'Retail',
+
+    // ── Charts (detailed) ──
+    'charts.investorTypeTitle': 'Investor Type Allocation',
+    'charts.investorTypeSubtitle': 'Units by investor classification',
+    'charts.jurisdictionTitle': 'Jurisdiction Exposure',
+    'charts.jurisdictionSubtitle': 'Geographic exposure by allocated units',
+    'charts.kycTitle': 'KYC Status Overview',
+    'charts.kycSubtitle': 'Investor KYC verification status',
+    'charts.violationsTitle': 'Rule Violations',
+    'charts.violationsSubtitle': 'Top assets by compliance violations',
+    'charts.concentrationTitle': 'Concentration Risk',
+    'charts.concentrationSubtitle': 'Investor concentration by fund',
+    'charts.verifiedInvestors': 'verified investors',
+    'charts.noViolationsDetected': 'No violations detected',
+    'charts.total': 'Total',
+    'charts.totalViolationsDecisions': 'Total violations / decisions',
+
+    // ── Concentration Risk labels ──
+    'charts.high': 'HIGH',
+    'charts.medium': 'MEDIUM',
+    'charts.low': 'LOW',
+    'charts.topInvestor': 'Top Investor',
 
     // ── Language ──
     'lang.toggle': 'Switch language',
