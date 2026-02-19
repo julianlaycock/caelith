@@ -292,7 +292,9 @@ export async function generateAnnexIVReport(
   // Concentration risk
   if (top5Pct > 50) totalRiskFlags++;
 
-  // Determine reporting obligation based on AUM
+  // TODO: Reporting obligation thresholds should use real AUM (assets under management),
+  // not totalUnits (unit count). AIFMD Annex IV thresholds are AUM-based.
+  // Currently using totalUnits as a placeholder — replace with actual AUM data.
   const reportingObligation: AnnexIVReport['aif_identification']['reporting_obligation'] =
     totalUnits > 500000000 ? 'Article 24(2)' :
     totalUnits > 100000000 ? 'Article 24(1)' : 'Article 24(4)';

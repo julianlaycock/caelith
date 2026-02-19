@@ -66,11 +66,11 @@ const RULE_EXPLANATIONS: Record<string, { explanation: string; basis: string }> 
   },
   'kyc_valid': {
     explanation: 'The investor must have completed KYC verification with status "verified".',
-    basis: 'AMLD 4/5/6, AIFMD Art 12(1)(e) — due diligence obligations',
+    basis: 'AMLD4/5, AIFMD Art 12(1)(e) — due diligence obligations',
   },
   'kyc_not_expired': {
     explanation: 'KYC verification must be current (not expired). Periodic re-verification is required.',
-    basis: 'AMLD Art 14(5) — ongoing monitoring and periodic review',
+    basis: '4AMLD Art 14(5) — ongoing monitoring and periodic review',
   },
   'classification_evidence': {
     explanation: 'Classification evidence documents the basis for the investor\'s regulatory categorization.',
@@ -110,7 +110,7 @@ const RULE_EXPLANATIONS: Record<string, { explanation: string; basis: string }> 
   },
   'kyc_required': {
     explanation: 'The recipient must have valid, non-expired KYC verification.',
-    basis: 'AMLD 4/5/6, AIFMD Art 12(1)(e)',
+    basis: 'AMLD4/5, AIFMD Art 12(1)(e)',
   },
   'maximum_investors': {
     explanation: 'The maximum number of distinct investors for this asset has been reached.',

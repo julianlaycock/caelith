@@ -122,19 +122,19 @@ async function seed() {
   const eligCriteria = [
     // Immobilien Spezial-AIF
     { fs: FUND_IMMO, type: 'institutional',      jur: 'DE', min: 20000000, suit: false, src: '§ 1 Abs. 6 KAGB — Institutioneller Anleger' },
-    { fs: FUND_IMMO, type: 'semi_professional',   jur: 'DE', min: 20000000, suit: true,  src: '§ 1 Abs. 19 Nr. 33 KAGB — Semiprofessioneller Anleger (mind. €200.000)' },
+    { fs: FUND_IMMO, type: 'semi_professional',   jur: 'DE', min: 200000, suit: true,  src: '§ 1 Abs. 19 Nr. 33 KAGB — Semiprofessioneller Anleger (mind. €200.000)' },
     { fs: FUND_IMMO, type: 'professional',         jur: '*',  min: 0,        suit: false, src: '§ 1 Abs. 19 Nr. 32 KAGB — Professioneller Anleger' },
     { fs: FUND_IMMO, type: 'institutional',        jur: 'AT', min: 20000000, suit: false, src: '§ 1 Abs. 6 KAGB i.V.m. AIFMD Passport' },
     { fs: FUND_IMMO, type: 'institutional',        jur: 'LU', min: 20000000, suit: false, src: '§ 1 Abs. 6 KAGB i.V.m. AIFMD Passport' },
 
     // Wertpapier Spezial-AIF
     { fs: FUND_WP, type: 'institutional',          jur: 'DE', min: 20000000, suit: false, src: '§ 1 Abs. 6 KAGB — Institutioneller Anleger' },
-    { fs: FUND_WP, type: 'semi_professional',      jur: 'DE', min: 20000000, suit: true,  src: '§ 1 Abs. 19 Nr. 33 KAGB — Semiprofessioneller Anleger' },
+    { fs: FUND_WP, type: 'semi_professional',      jur: 'DE', min: 200000, suit: true,  src: '§ 1 Abs. 19 Nr. 33 KAGB — Semiprofessioneller Anleger' },
     { fs: FUND_WP, type: 'professional',           jur: '*',  min: 0,        suit: false, src: '§ 1 Abs. 19 Nr. 32 KAGB — Professioneller Anleger' },
 
     // Multi-Asset Spezial-AIF
     { fs: FUND_MULTI, type: 'institutional',       jur: 'DE', min: 20000000, suit: false, src: '§ 1 Abs. 6 KAGB — Institutioneller Anleger' },
-    { fs: FUND_MULTI, type: 'semi_professional',   jur: 'DE', min: 20000000, suit: true,  src: '§ 1 Abs. 19 Nr. 33 KAGB — Semiprofessioneller Anleger' },
+    { fs: FUND_MULTI, type: 'semi_professional',   jur: 'DE', min: 200000, suit: true,  src: '§ 1 Abs. 19 Nr. 33 KAGB — Semiprofessioneller Anleger' },
     { fs: FUND_MULTI, type: 'professional',        jur: 'CH', min: 0,        suit: false, src: '§ 1 Abs. 19 Nr. 32 KAGB — Professioneller Anleger (CH Drittstaatenvertrieb)' },
   ];
 
