@@ -14,3 +14,6 @@ export * from './eligibility-service.js';
 export * from './webhook-service.js';
 export * from './cap-table-pdf.js';
 export * from './nl-rule-compiler.js';
+export * from './rule-pack-service.js';
+export * from './evidence-bundle-service.js';
+export * from './investor-document-service.js';

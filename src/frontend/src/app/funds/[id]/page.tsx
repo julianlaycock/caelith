@@ -4,13 +4,16 @@ import React, { useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useAsync } from '../../../lib/hooks';
-import type { ScenarioResult } from '../../../lib/types';
+import type { ScenarioResult, RulePackInfo } from '../../../lib/types';
 import { BackLink } from '../../../components/back-link';
 import {
   Card,
   MetricCard,
   Badge,
   Button,
+  Alert,
+  Modal,
+  Select,
   RiskFlagCard,
   UtilizationBar,
   SectionHeader,
@@ -26,6 +29,40 @@ export default function FundDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const isValidFundId = UUID_RE.test(id);
+
+  // Rule Pack state
+  const [rulePackOpen, setRulePackOpen] = useState(false);
+  const [rulePackLoading, setRulePackLoading] = useState(false);
+  const [rulePackMsg, setRulePackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [rulePacks, setRulePacks] = useState<RulePackInfo[]>([]);
+  const [selectedPack, setSelectedPack] = useState('');
+  const [rulePackApplied, setRulePackApplied] = useState(0);
+
+  const openRulePackModal = useCallback(async () => {
+    setRulePackOpen(true);
+    setRulePackMsg(null);
+    try {
+      const packs = await api.getRulePacks();
+      setRulePacks(packs);
+    } catch {
+      // silently fail — user can still see the modal
+    }
+  }, []);
+
+  const handleApplyRulePack = useCallback(async () => {
+    setRulePackLoading(true);
+    setRulePackMsg(null);
+    try {
+      const result = await api.applyRulePack(id, selectedPack || undefined);
+      setRulePackMsg({ type: 'success', text: `Applied "${result.rule_pack}" — ${result.criteria_created} criteria created for ${result.legal_form}.` });
+      setRulePackApplied(prev => prev + 1);
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message || 'Failed to apply rule pack';
+      setRulePackMsg({ type: 'error', text: msg });
+    } finally {
+      setRulePackLoading(false);
+    }
+  }, [id, selectedPack]);
 
   // Scenario modeling state
   const [scenarioOpen, setScenarioOpen] = useState(false);
@@ -56,7 +93,7 @@ export default function FundDetailPage() {
   );
   const report = useAsync(
     () => (isValidFundId ? api.getComplianceReport(id) : Promise.resolve(null)),
-    [id, isValidFundId]
+    [id, isValidFundId, rulePackApplied]
   );
 
   const fundNotFound =
@@ -133,20 +170,34 @@ export default function FundDetailPage() {
               <Badge variant={f.status === 'active' ? 'green' : 'gray'}>{f.status}</Badge>
             </div>
           </div>
-          {r && (
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-ink-tertiary">
-                Report generated {formatDateTime(r.generated_at)}
-              </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={openRulePackModal}>
+              Apply Rule Pack
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={async () => {
+                try { await api.downloadAnnexIVXml(id); } catch { /* silent */ }
+              }}
+            >
+              Annex IV XML
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={async () => {
+                try { await api.downloadEvidenceBundle(id); } catch { /* silent */ }
+              }}
+            >
+              Evidence Bundle
+            </Button>
+            {r && (
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={async () => {
-                  try {
-                    await api.downloadComplianceReportPdf(id);
-                  } catch {
-                    // PDF download failed silently
-                  }
+                  try { await api.downloadComplianceReportPdf(id); } catch { /* silent */ }
                 }}
               >
                 <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -154,8 +205,8 @@ export default function FundDetailPage() {
                 </svg>
                 Export PDF
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -519,6 +570,37 @@ export default function FundDetailPage() {
           </Card>
         </>
       )}
+
+      {/* Rule Pack Modal */}
+      <Modal open={rulePackOpen} onClose={() => { setRulePackOpen(false); setRulePackMsg(null); }} title="Apply AIFMD II Rule Pack">
+        <div className="space-y-4">
+          <p className="text-sm text-ink-secondary">
+            Select a pre-configured regulatory rule pack to apply to <span className="font-medium text-ink">{f.name}</span>.
+            This will replace existing eligibility criteria and update rules for all assets.
+          </p>
+
+          <Select
+            label="Rule Pack"
+            value={selectedPack}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setSelectedPack(e.target.value); setRulePackMsg(null); }}
+            options={[
+              { value: '', label: `Auto-detect from legal form (${f.legal_form})` },
+              ...rulePacks.map(p => ({ value: p.legal_form, label: `${p.name} — ${p.description}` })),
+            ]}
+          />
+
+          {rulePackMsg && (
+            <Alert variant={rulePackMsg.type === 'success' ? 'success' : 'error'}>{rulePackMsg.text}</Alert>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => { setRulePackOpen(false); setRulePackMsg(null); }}>Cancel</Button>
+            <Button onClick={handleApplyRulePack} disabled={rulePackLoading}>
+              {rulePackLoading ? 'Applying...' : 'Apply Rule Pack'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

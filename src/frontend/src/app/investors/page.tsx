@@ -77,7 +77,7 @@ function parseSort(searchParams: URLSearchParams): InvestorSortState {
 
 function InvestorsContent() {
   const router = useRouter();
-  const { t } = useI18n(); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const { t } = useI18n();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const typeFilter = searchParams.get('type');
@@ -314,15 +314,15 @@ function InvestorsContent() {
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-0 sm:min-w-[200px]">
             <Input
-              label="Search"
-              placeholder="Search by name..."
+              label={t('investors.search')}
+              placeholder={t('investors.searchPlaceholder')}
               value={searchQuery}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="w-[160px]">
             <Select
-              label="Jurisdiction"
+              label={t('investors.col.jurisdiction')}
               value={filterJurisdiction}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterJurisdiction(e.target.value)}
               options={[{ value: '', label: 'All' }, ...JURISDICTIONS]}
@@ -330,7 +330,7 @@ function InvestorsContent() {
           </div>
           <div className="w-[180px]">
             <Select
-              label="Investor Type"
+              label={t('investors.investorType')}
               value={filterType}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterType(e.target.value)}
               options={[{ value: '', label: 'All' }, ...INVESTOR_TYPE_OPTIONS]}
@@ -338,7 +338,7 @@ function InvestorsContent() {
           </div>
           <div className="w-[140px]">
             <Select
-              label="KYC Status"
+              label={t('investors.kycStatus')}
               value={filterKyc}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterKyc(e.target.value)}
               options={[{ value: '', label: 'All' }, ...KYC_STATUS_OPTIONS]}
@@ -349,7 +349,7 @@ function InvestorsContent() {
           )}
         </div>
         <p className="mt-2 text-xs text-ink-tertiary">
-          Showing {sortedInvestors.length} of {investors.data?.length ?? 0} investors
+          {t('investors.showing')} {sortedInvestors.length} {t('investors.of')} {investors.data?.length ?? 0} {t('investors.investors')}
         </p>
       </Card>
 
@@ -428,22 +428,22 @@ function InvestorsContent() {
           <table className="w-full text-left text-sm min-w-[900px]">
             <thead className="border-b border-edge">
               <tr>
-                <SortableHeader<Investor> label="Name" sortKey="name" sort={sort} onToggle={toggle} />
-                <SortableHeader<Investor> label="Jurisdiction" sortKey="jurisdiction" sort={sort} onToggle={toggle} />
-                <SortableHeader<Investor> label="Type" sortKey="investor_type" sort={sort} onToggle={toggle} />
-                <SortableHeader<Investor> label="KYC" sortKey="kyc_status" sort={sort} onToggle={toggle} />
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">KYC Expiry</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Days Left</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Status</th>
-                <SortableHeader<Investor> label="Created" sortKey="created_at" sort={sort} onToggle={toggle} />
-                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Actions</th>
+                <SortableHeader<Investor> label={t('investors.col.name')} sortKey="name" sort={sort} onToggle={toggle} />
+                <SortableHeader<Investor> label={t('investors.col.jurisdiction')} sortKey="jurisdiction" sort={sort} onToggle={toggle} />
+                <SortableHeader<Investor> label={t('investors.col.type')} sortKey="investor_type" sort={sort} onToggle={toggle} />
+                <SortableHeader<Investor> label={t('investors.col.kyc')} sortKey="kyc_status" sort={sort} onToggle={toggle} />
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">{t('investors.col.kycExpiry')}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">{t('investors.col.daysLeft')}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">{t('investors.col.status')}</th>
+                <SortableHeader<Investor> label={t('investors.col.created')} sortKey="created_at" sort={sort} onToggle={toggle} />
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">{t('investors.col.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-edge-subtle">
               {sortedInvestors.map((inv) => (
                 <tr key={inv.id} className="transition-colors hover:bg-bg-tertiary">
-                  <td className="px-5 py-3 font-medium text-ink">
-                    <Link href={`/investors/${inv.id}`} className="text-accent-600 hover:text-accent-700 transition-colors">
+                  <td className="px-5 py-3 font-medium">
+                    <Link href={`/investors/${inv.id}`} className="text-ink hover:text-brand-accent transition-colors">
                       {inv.name}
                     </Link>
                   </td>
@@ -464,10 +464,10 @@ function InvestorsContent() {
                       const expiry = daysUntilExpiry(inv.kyc_expiry);
                       if (!expiry) return <span className="text-xs text-ink-tertiary">-</span>;
                       const colors = {
-                        expired: 'text-red-700 bg-red-500/10',
-                        critical: 'text-red-700 bg-red-500/10',
-                        warning: 'text-amber-700 bg-amber-500/10',
-                        ok: 'text-accent-700 bg-accent-500/10',
+                        expired: 'text-[var(--danger)] bg-[var(--danger-bg)]',
+                        critical: 'text-[var(--danger)] bg-[var(--danger-bg)]',
+                        warning: 'text-[var(--warning)] bg-[var(--warning-bg)]',
+                        ok: 'text-[var(--success)] bg-[var(--success-bg)]',
                       };
                       return (
                         <span className={classNames('inline-flex rounded-md px-2 py-0.5 text-xs font-medium', colors[expiry.urgency])}>
@@ -478,7 +478,7 @@ function InvestorsContent() {
                   </td>
                   <td className="px-5 py-3">
                     <Badge variant={inv.accredited ? 'green' : 'yellow'}>
-                      {inv.accredited ? 'Accredited' : 'Non-Accredited'}
+                      {inv.accredited ? t('investors.accredited') : t('investors.nonAccredited')}
                     </Badge>
                   </td>
                   <td className="px-5 py-3 text-ink-secondary">{formatDate(inv.created_at)}</td>

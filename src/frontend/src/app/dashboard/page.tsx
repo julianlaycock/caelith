@@ -316,7 +316,7 @@ export default function DashboardPage() {
       {loading ? (
         <div className="mb-6">
           <div className="h-4 w-40 rounded bg-bg-tertiary mb-4 animate-pulse" />
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             <SkeletonChart />
             <SkeletonChart />
             <SkeletonChart />
@@ -325,12 +325,12 @@ export default function DashboardPage() {
       ) : fundReports.length > 0 ? (
         <div className="mb-6">
           <SectionHeader title={t('dashboard.analytics')} description={t('dashboard.analyticsDesc')} />
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             <InvestorTypeDonut data={typeData} onTypeClick={(type) => router.push(`/investors?type=${type}`)} />
             <JurisdictionExposureBar data={jurisdictionData} onBarClick={(j) => router.push(`/jurisdiction/${j}`)} />
             <KycExpiryHorizon data={kycData} onStatusClick={(status) => router.push(`/investors?kyc=${status}`)} />
           </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
             <ViolationAnalysisBar data={violationData} onBarClick={(name) => setViolationAsset(name)} />
             <ConcentrationRiskGrid data={concentrationData} />
           </div>
@@ -367,7 +367,7 @@ export default function DashboardPage() {
       {!loading && fundReports.length > 0 && (
         <div className="mb-6">
           <SectionHeader title={t('dashboard.funds')} />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             {fundReports.map(({ fund, report }) => (
               <FundCard key={fund.id} fund={fund} report={report} />
             ))}
@@ -378,7 +378,7 @@ export default function DashboardPage() {
       {loading && (
         <div className="mb-6">
           <div className="h-4 w-32 rounded bg-bg-tertiary mb-4 animate-pulse" />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <div className="rounded-xl border border-edge bg-bg-secondary p-6 animate-pulse">
               <div className="h-4 w-40 rounded bg-bg-tertiary mb-3" />
               <div className="flex gap-2 mb-4">

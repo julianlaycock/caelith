@@ -34,3 +34,6 @@ export * from './decision-record-repository.js';
 
 // Onboarding Repository
 export * from './onboarding-repository.js';
+
+// Investor Document Repository
+export * from './investor-document-repository.js';

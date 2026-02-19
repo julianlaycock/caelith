@@ -666,6 +666,70 @@ export interface BulkEligibilityCriteria {
   effective_date: string;
 }
 
+// ── Rule Packs ──────────────────────────────────────
+export interface RulePackInfo {
+  legal_form: string;
+  name: string;
+  description: string;
+}
+
+export interface ApplyRulePackResult {
+  criteria_created: number;
+  rules_updated: boolean;
+  rule_pack: string;
+  legal_form: string;
+}
+
+// ── Annex IV Report ─────────────────────────────────
+export interface AnnexIVReport {
+  aif_identification: {
+    reporting_period: { start: string; end: string };
+    aif_name: string;
+    aif_national_code: string;
+    aif_type: string;
+    domicile: string;
+    inception_date: string | null;
+    aifm_name: string | null;
+    aifm_lei: string | null;
+    reporting_obligation: string;
+    base_currency: string;
+  };
+  generated_at: string;
+  report_version: string;
+}
+
+// ── Evidence Bundle ─────────────────────────────────
+export interface EvidenceBundle {
+  fund_name: string;
+  fund_id: string;
+  generated_at: string;
+  reporting_period: { start: string; end: string };
+  summary: {
+    total_decisions: number;
+    total_investors: number;
+    total_rules: number;
+    total_eligibility_criteria: number;
+  };
+}
+
+// ── Investor Documents (KYC) ────────────────────────
+export interface InvestorDocument {
+  id: string;
+  investor_id: string;
+  document_type: string;
+  filename: string;
+  mime_type: string;
+  file_size: number;
+  status: 'uploaded' | 'verified' | 'rejected' | 'expired';
+  expiry_date: string | null;
+  notes: string | null;
+  uploaded_by: string | null;
+  verified_by: string | null;
+  verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface BulkImportEntityResult {
   id: string;
   ref?: string;

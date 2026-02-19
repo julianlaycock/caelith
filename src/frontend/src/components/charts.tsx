@@ -292,16 +292,16 @@ export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({
       </div>
 
       {/* Dot matrix */}
-      <div className="grid grid-cols-12 gap-1 max-w-[220px] mx-auto mb-4">
+      <div className="grid grid-cols-6 gap-2.5 max-w-[260px] mx-auto mb-5">
         {dots.map((dot) => (
           <div
             key={dot.index}
             className={classNames(
-              'rounded transition-transform relative',
+              'rounded-sm transition-transform relative',
               onStatusClick && 'cursor-pointer',
-              hoveredDot === dot.index && 'scale-130 z-10'
+              hoveredDot === dot.index && 'scale-125 z-10'
             )}
-            style={{ background: dot.color, height: 22, aspectRatio: '1' }}
+            style={{ background: dot.color, height: 28, aspectRatio: '1' }}
             onClick={onStatusClick ? () => onStatusClick(dot.status) : undefined}
             onMouseEnter={() => setHoveredDot(dot.index)}
             onMouseLeave={() => setHoveredDot(null)}
@@ -537,8 +537,8 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-edge bg-bg-secondary p-5">
-      <div className="mb-4">
+    <div className="rounded-xl border border-edge bg-bg-secondary p-6">
+      <div className="mb-5">
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
         {subtitle && <p className="mt-0.5 text-xs text-ink-tertiary">{subtitle}</p>}
       </div>

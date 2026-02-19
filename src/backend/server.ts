@@ -40,6 +40,10 @@ import { createRegulatoryRoutes } from './routes/regulatory-routes.js';
 import { createCopilotRoutes } from './routes/copilot-routes.js';
 import scenarioRoutes from './routes/scenario-routes.js';
 import importRoutes from './routes/import-routes.js';
+import rulePackRoutes from './routes/rule-pack-routes.js';
+import annexIVRoutes from './routes/annex-iv-routes.js';
+import evidenceBundleRoutes from './routes/evidence-bundle-routes.js';
+import investorDocumentRoutes from './routes/investor-document-routes.js';
 import { isResetEndpointEnabled, shouldBootstrapAdmin } from './config/security-config.js';
 import { logger } from './lib/logger.js';
 
@@ -267,6 +271,10 @@ app.use('/api/regulatory', authenticate, authorizeWrite('admin', 'compliance_off
 app.use('/api/copilot', authenticate, createCopilotRoutes());
 app.use('/api/scenarios', authenticate, authorizeWrite('admin', 'compliance_officer'), scenarioRoutes);
 app.use('/api/import', authenticate, authorize('admin'), importRoutes);
+app.use('/api/rule-packs', authenticate, authorizeWrite('admin', 'compliance_officer'), rulePackRoutes);
+app.use('/api/reports/annex-iv', authenticate, authorizeWrite('admin'), annexIVRoutes);
+app.use('/api/reports/evidence-bundle', authenticate, authorizeWrite('admin'), evidenceBundleRoutes);
+app.use('/api/investor-documents', authenticate, authorizeWrite('admin', 'compliance_officer'), investorDocumentRoutes);
 
 // Test-only: reset database
 app.post('/api/reset', authenticate, authorize('admin'), async (_req, res): Promise<void> => {

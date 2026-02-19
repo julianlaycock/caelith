@@ -20,7 +20,7 @@ import {
   EmptyState,
 } from '../../../components/ui';
 import { formatNumber, formatDate, formatDateTime, classNames } from '../../../lib/utils';
-import type { Holding, Asset, DecisionRecord, OnboardingRecord, FundStructure, EligibilityResult } from '../../../lib/types';
+import type { Holding, Asset, DecisionRecord, OnboardingRecord, FundStructure, EligibilityResult, InvestorDocument } from '../../../lib/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -62,6 +62,64 @@ export default function InvestorDetailPage() {
     () => (isValid ? api.getOnboardingRecords({ investor_id: id }) : Promise.resolve([] as OnboardingRecord[])),
     [id, isValid]
   );
+
+  // KYC Documents
+  const documents = useAsync(
+    () => (isValid ? api.getInvestorDocuments(id) : Promise.resolve([] as InvestorDocument[])),
+    [id, isValid]
+  );
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadDocType, setUploadDocType] = useState('passport');
+  const [uploadExpiry, setUploadExpiry] = useState('');
+  const [uploadNotes, setUploadNotes] = useState('');
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [docMsg, setDocMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleUploadDocument = async () => {
+    if (!uploadFile) return;
+    setUploadLoading(true);
+    setDocMsg(null);
+    try {
+      await api.uploadInvestorDocument(id, uploadFile, uploadDocType, {
+        expiry_date: uploadExpiry || undefined,
+        notes: uploadNotes || undefined,
+      });
+      setDocMsg({ type: 'success', text: 'Document uploaded successfully.' });
+      setShowUpload(false);
+      setUploadFile(null);
+      setUploadDocType('passport');
+      setUploadExpiry('');
+      setUploadNotes('');
+      documents.refetch();
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message || 'Upload failed';
+      setDocMsg({ type: 'error', text: msg });
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleVerifyDocument = async (docId: string) => {
+    try {
+      await api.verifyInvestorDocument(docId);
+      documents.refetch();
+    } catch { /* silent */ }
+  };
+
+  const handleRejectDocument = async (docId: string) => {
+    try {
+      await api.rejectInvestorDocument(docId);
+      documents.refetch();
+    } catch { /* silent */ }
+  };
+
+  const handleDeleteDocument = async (docId: string) => {
+    try {
+      await api.deleteInvestorDocument(docId);
+      documents.refetch();
+    } catch { /* silent */ }
+  };
 
   // Eligibility check state
   const [showEligibility, setShowEligibility] = useState(false);
@@ -439,6 +497,142 @@ export default function InvestorDetailPage() {
           </Card>
         )}
       </div>
+
+      {/* KYC Documents */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <SectionHeader title="KYC Documents" description={documents.data ? `${documents.data.length} document${documents.data.length !== 1 ? 's' : ''}` : undefined} />
+          <Button size="sm" onClick={() => { setShowUpload(true); setDocMsg(null); }}>Upload Document</Button>
+        </div>
+
+        {docMsg && (
+          <div className="mb-3">
+            <Alert variant={docMsg.type === 'success' ? 'success' : 'error'}>{docMsg.text}</Alert>
+          </div>
+        )}
+
+        {documents.loading ? (
+          <LoadingSpinner />
+        ) : documents.error ? (
+          <ErrorMessage message={documents.error} onRetry={documents.refetch} />
+        ) : documents.data && documents.data.length > 0 ? (
+          <Card padding={false}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-edge">
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Document</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Type</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Status</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Expiry</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Uploaded</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-edge-subtle">
+                  {documents.data.map((doc) => {
+                    const statusVariant = doc.status === 'verified' ? 'green' : doc.status === 'rejected' || doc.status === 'expired' ? 'red' : 'yellow';
+                    return (
+                      <tr key={doc.id} className="hover:bg-bg-tertiary transition-colors">
+                        <td className="px-6 py-3 text-sm font-medium text-ink">
+                          <button
+                            className="text-accent-600 hover:text-accent-700 hover:underline text-left"
+                            onClick={async () => { try { await api.downloadInvestorDocument(doc.id, doc.filename); } catch { /* silent */ } }}
+                          >
+                            {doc.filename}
+                          </button>
+                        </td>
+                        <td className="px-6 py-3"><Badge variant="gray">{doc.document_type.replace(/_/g, ' ')}</Badge></td>
+                        <td className="px-6 py-3"><Badge variant={statusVariant}>{doc.status}</Badge></td>
+                        <td className="px-6 py-3 text-sm text-ink-secondary">{doc.expiry_date ? formatDate(doc.expiry_date) : '-'}</td>
+                        <td className="px-6 py-3 text-sm text-ink-secondary">{formatDate(doc.created_at)}</td>
+                        <td className="px-6 py-3">
+                          <div className="flex items-center gap-1.5">
+                            {doc.status === 'uploaded' && (
+                              <>
+                                <button onClick={() => handleVerifyDocument(doc.id)} className="text-xs font-medium text-emerald-600 hover:text-emerald-700">Verify</button>
+                                <span className="text-ink-muted">|</span>
+                                <button onClick={() => handleRejectDocument(doc.id)} className="text-xs font-medium text-red-500 hover:text-red-600">Reject</button>
+                              </>
+                            )}
+                            <button onClick={() => handleDeleteDocument(doc.id)} className="text-xs font-medium text-ink-tertiary hover:text-red-500 ml-1">Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : (
+          <Card>
+            <EmptyState title="No KYC documents" description="Upload identity documents to complete KYC verification." />
+          </Card>
+        )}
+      </div>
+
+      {/* Upload Document Modal */}
+      <Modal open={showUpload} onClose={() => setShowUpload(false)} title="Upload KYC Document">
+        <div className="space-y-4">
+          <Select
+            label="Document Type"
+            value={uploadDocType}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setUploadDocType(e.target.value)}
+            options={[
+              { value: 'passport', label: 'Passport' },
+              { value: 'national_id', label: 'National ID' },
+              { value: 'proof_of_address', label: 'Proof of Address' },
+              { value: 'certificate_of_incorporation', label: 'Certificate of Incorporation' },
+              { value: 'beneficial_ownership', label: 'Beneficial Ownership Declaration' },
+              { value: 'tax_certificate', label: 'Tax Certificate' },
+              { value: 'bank_reference', label: 'Bank Reference' },
+              { value: 'accreditation_letter', label: 'Accreditation Letter' },
+              { value: 'aml_declaration', label: 'AML Declaration' },
+              { value: 'source_of_funds', label: 'Source of Funds' },
+              { value: 'power_of_attorney', label: 'Power of Attorney' },
+              { value: 'board_resolution', label: 'Board Resolution' },
+              { value: 'financial_statement', label: 'Financial Statement' },
+              { value: 'subscription_agreement', label: 'Subscription Agreement' },
+              { value: 'other', label: 'Other' },
+            ]}
+          />
+          <div>
+            <label className="block text-xs font-medium text-ink-secondary mb-1">File (PDF, JPEG, PNG, max 10MB)</label>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.tiff,.tif,.doc,.docx"
+              onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+              className="w-full text-sm text-ink file:mr-3 file:rounded-lg file:border-0 file:bg-bg-tertiary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ink-secondary hover:file:bg-bg-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-secondary mb-1">Expiry Date (optional)</label>
+            <input
+              type="date"
+              value={uploadExpiry}
+              onChange={(e) => setUploadExpiry(e.target.value)}
+              className="w-full rounded-lg border border-edge bg-bg-primary px-3 py-2 text-sm text-ink focus:border-accent-500 focus:outline-none focus:ring-1 focus:ring-accent-500/30"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-secondary mb-1">Notes (optional)</label>
+            <input
+              type="text"
+              value={uploadNotes}
+              onChange={(e) => setUploadNotes(e.target.value)}
+              placeholder="Additional notes..."
+              className="w-full rounded-lg border border-edge bg-bg-primary px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-accent-500 focus:outline-none focus:ring-1 focus:ring-accent-500/30"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setShowUpload(false)}>Cancel</Button>
+            <Button onClick={handleUploadDocument} disabled={!uploadFile || uploadLoading}>
+              {uploadLoading ? 'Uploading...' : 'Upload'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Onboarding Records */}
       <div className="mb-6">

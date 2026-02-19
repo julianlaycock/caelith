@@ -131,7 +131,7 @@ export function Sidebar({
 } = {}) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
 
   const isActive = (item: NavItem) => {
     if (item.href === '/') return pathname === '/dashboard';
@@ -239,14 +239,6 @@ export function Sidebar({
               <p className="truncate text-[12px] font-medium text-ink-secondary">{user.name}</p>
               <p className="truncate text-[10px] text-ink-muted">{user.role === 'admin' ? 'Administrator' : user.role === 'compliance_officer' ? 'Compliance Officer' : 'Viewer'}</p>
             </div>
-            <button
-              onClick={() => setLocale(locale === 'de' ? 'en' : 'de')}
-              className="rounded-lg border border-edge bg-surface px-1.5 py-0.5 text-[10px] font-bold text-ink-tertiary transition-all hover:border-edge-strong hover:text-ink-secondary"
-              title={t('lang.toggle')}
-            >
-              {locale === 'de' ? 'EN' : 'DE'}
-            </button>
-            <ThemeToggle />
             <button
               onClick={logout}
               className="rounded-md p-1 text-ink-muted transition-colors hover:text-ink-secondary"

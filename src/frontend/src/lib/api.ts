@@ -36,6 +36,10 @@ import type {
   BulkImportPayload,
   BulkImportResult,
   CsvParseResult,
+  RulePackInfo,
+  ApplyRulePackResult,
+  AnnexIVReport,
+  InvestorDocument,
 } from './types';
 
 const resolveBaseUrl = (): string => {
@@ -594,6 +598,93 @@ class ApiClient {
       throw err as ApiError;
     }
     return res.json() as Promise<BulkImportResult>;
+  }
+
+  // ── Rule Packs ──────────────────────────────────────
+  async getRulePacks(): Promise<RulePackInfo[]> {
+    return this.request<RulePackInfo[]>('/rule-packs');
+  }
+
+  async applyRulePack(fundStructureId: string, legalForm?: string): Promise<ApplyRulePackResult> {
+    return this.request<ApplyRulePackResult>('/rule-packs/apply', {
+      method: 'POST',
+      body: JSON.stringify({ fund_structure_id: fundStructureId, legal_form: legalForm }),
+    });
+  }
+
+  // ── Annex IV Reporting ─────────────────────────────
+  async getAnnexIVReport(fundStructureId: string): Promise<AnnexIVReport> {
+    return this.request<AnnexIVReport>(`/reports/annex-iv/${fundStructureId}`);
+  }
+
+  async downloadAnnexIVXml(fundStructureId: string): Promise<void> {
+    return this.downloadFile(
+      `/reports/annex-iv/${fundStructureId}/xml`,
+      `annex-iv-${fundStructureId.substring(0, 8)}.xml`,
+      'Annex IV XML download failed'
+    );
+  }
+
+  // ── Evidence Bundle ────────────────────────────────
+  async downloadEvidenceBundle(fundStructureId: string): Promise<void> {
+    return this.downloadFile(
+      `/reports/evidence-bundle/${fundStructureId}`,
+      `evidence-bundle-${fundStructureId.substring(0, 8)}.json`,
+      'Evidence bundle download failed'
+    );
+  }
+
+  // ── Investor Documents (KYC) ──────────────────────
+  async getInvestorDocuments(investorId: string): Promise<InvestorDocument[]> {
+    return this.request<InvestorDocument[]>(`/investor-documents/${investorId}`);
+  }
+
+  async uploadInvestorDocument(
+    investorId: string,
+    file: File,
+    documentType: string,
+    options?: { expiry_date?: string; notes?: string }
+  ): Promise<InvestorDocument> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('document_type', documentType);
+    if (options?.expiry_date) formData.append('expiry_date', options.expiry_date);
+    if (options?.notes) formData.append('notes', options.notes);
+
+    const url = `${BASE_URL}/investor-documents/${investorId}/upload`;
+    const headers: Record<string, string> = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+
+    const res = await fetch(url, { method: 'POST', headers, body: formData });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'UNKNOWN', message: 'Upload failed' }));
+      throw err as ApiError;
+    }
+    return res.json() as Promise<InvestorDocument>;
+  }
+
+  async downloadInvestorDocument(documentId: string, filename: string): Promise<void> {
+    return this.downloadFile(
+      `/investor-documents/file/${documentId}`,
+      filename,
+      'Document download failed'
+    );
+  }
+
+  async verifyInvestorDocument(documentId: string): Promise<InvestorDocument> {
+    return this.request<InvestorDocument>(`/investor-documents/file/${documentId}/verify`, {
+      method: 'PATCH',
+    });
+  }
+
+  async rejectInvestorDocument(documentId: string): Promise<InvestorDocument> {
+    return this.request<InvestorDocument>(`/investor-documents/file/${documentId}/reject`, {
+      method: 'PATCH',
+    });
+  }
+
+  async deleteInvestorDocument(documentId: string): Promise<void> {
+    await this.request(`/investor-documents/file/${documentId}`, { method: 'DELETE' });
   }
 
   /** @deprecated Use downloadTemplate() for authenticated downloads */

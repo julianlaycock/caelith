@@ -3,12 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { AuthProvider } from './auth-provider';
-import { I18nProvider } from '../lib/i18n';
-import { Sidebar } from './sidebar';
+import { I18nProvider, useI18n } from '../lib/i18n';
+import { Sidebar, ThemeToggle } from './sidebar';
 import { CopilotPanel, CopilotToggleButton } from './copilot';
 import { CommandPalette } from './command-palette';
 import { ErrorBoundary } from './error-boundary';
 import { Breadcrumb } from './breadcrumb';
+
+function TopRightControls() {
+  const { locale, setLocale, t } = useI18n();
+  return (
+    <div className="fixed right-6 top-4 z-30 flex items-center gap-2 md:right-8">
+      <button
+        onClick={() => setLocale(locale === 'de' ? 'en' : 'de')}
+        className="rounded-lg border border-edge bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink-tertiary transition-all hover:border-edge-strong hover:text-ink-secondary"
+        title={t('lang.toggle')}
+      >
+        {locale === 'de' ? 'EN' : 'DE'}
+      </button>
+      <ThemeToggle />
+    </div>
+  );
+}
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -68,7 +84,8 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             onMobileClose={() => setSidebarOpen(false)}
           />
 
-          <main className="flex-1 overflow-y-auto p-4 pb-20 pt-14 md:p-6 md:pt-6 lg:p-8 text-ink">
+          <main className="relative flex-1 overflow-y-auto p-4 pb-20 pt-14 md:p-6 md:pt-6 lg:p-8 text-ink">
+            <TopRightControls />
             <Breadcrumb />
             <ErrorBoundary>{children}</ErrorBoundary>
           </main>
