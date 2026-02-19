@@ -15,9 +15,9 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-end justify-between animate-fade-in">
+    <div className="mb-4 md:mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between animate-fade-in">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
+        <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">{title}</h1>
         {description && (
           <p className="mt-0.5 text-sm text-ink-secondary">{description}</p>
         )}
@@ -375,7 +375,7 @@ export function SectionHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center justify-between mb-3 md:mb-4">
       <div>
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
         {description && <p className="text-xs text-ink-secondary">{description}</p>}
@@ -504,7 +504,7 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] animate-fade-in">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative z-10 w-full ${maxW} rounded-xl border border-edge-subtle bg-bg-secondary p-6 shadow-2xl shadow-black/20 border-t-accent-400/20 max-h-[80vh] overflow-y-auto`}>
+      <div className={`relative z-10 w-full ${maxW} mx-4 md:mx-auto rounded-xl border border-edge-subtle bg-bg-secondary p-4 md:p-6 shadow-2xl shadow-black/20 border-t-accent-400/20 max-h-[80vh] overflow-y-auto`}>
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-base font-semibold text-ink">{title}</h2>
           <button onClick={onClose} className="rounded-lg p-1 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink transition-colors">

@@ -34,7 +34,7 @@ export function ActionQueue({ items }: ActionQueueProps) {
               : 'border-edge text-ink-secondary hover:border-edge-strong hover:text-ink';
 
             return (
-              <div key={item.id} className="flex items-center justify-between px-5 py-3">
+              <div key={item.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className={classNames(
@@ -50,7 +50,7 @@ export function ActionQueue({ items }: ActionQueueProps) {
                 <button
                   onClick={() => router.push(item.href)}
                   className={classNames(
-                    'ml-3 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
+                    'self-start sm:self-auto sm:ml-3 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
                     buttonClass
                   )}
                 >

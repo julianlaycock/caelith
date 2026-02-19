@@ -66,7 +66,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             onMobileClose={() => setSidebarOpen(false)}
           />
 
-          <main className="flex-1 overflow-y-auto p-8 pb-20 pt-16 md:pt-8 text-ink">
+          <main className="flex-1 overflow-y-auto p-4 pb-20 pt-14 md:p-6 md:pt-6 lg:p-8 text-ink">
             <Breadcrumb />
             <ErrorBoundary>{children}</ErrorBoundary>
           </main>

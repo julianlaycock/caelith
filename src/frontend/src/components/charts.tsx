@@ -73,8 +73,8 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({ data, o
 
   return (
     <ChartCard title="Investor Type Allocation" subtitle="Units by investor classification">
-      <div className="flex items-center gap-4">
-        <div className="h-[200px] w-[200px] flex-shrink-0">
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+        <div className="h-[180px] w-[180px] sm:h-[200px] sm:w-[200px] flex-shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

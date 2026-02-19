@@ -275,12 +275,12 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-4 md:mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-ink">Übersicht</h1>
+          <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">Übersicht</h1>
           <p className="mt-0.5 text-sm text-ink-secondary">Compliance-Engine auf einen Blick</p>
         </div>
-        <span className="rounded-lg bg-bg-tertiary text-ink-secondary border border-edge px-3 py-1.5 text-xs font-medium">{today}</span>
+        <span className="hidden sm:inline-block rounded-lg bg-bg-tertiary text-ink-secondary border border-edge px-3 py-1.5 text-xs font-medium">{today}</span>
       </div>
 
       {/* Setup Wizard */}
@@ -322,7 +322,7 @@ export default function DashboardPage() {
       {loading ? (
         <div className="mb-6">
           <div className="h-4 w-40 rounded bg-bg-tertiary mb-4 animate-pulse" />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <SkeletonChart />
             <SkeletonChart />
             <SkeletonChart />
@@ -331,7 +331,7 @@ export default function DashboardPage() {
       ) : fundReports.length > 0 ? (
         <div className="mb-6">
           <SectionHeader title="Analyse" description="Portfoliozusammensetzung und Compliance-Kennzahlen" />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <InvestorTypeDonut data={typeData} onTypeClick={(type) => router.push(`/investors?type=${type}`)} />
             <JurisdictionExposureBar data={jurisdictionData} onBarClick={(j) => router.push(`/jurisdiction/${j}`)} />
             <KycExpiryHorizon data={kycData} onStatusClick={(status) => router.push(`/investors?kyc=${status}`)} />
@@ -413,10 +413,10 @@ export default function DashboardPage() {
           <SectionHeader title="Letzte Entscheidungen" description="Aktuelle Compliance-Entscheidungen über alle Fonds" />
           <Card padding={false}>
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full text-left min-w-[600px]">
                 <thead className="sticky top-0 z-10 bg-surface">
                   <tr className="border-b border-edge">
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Zeit</th>
+                    <th className="px-4 md:px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Zeit</th>
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Typ</th>
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Ergebnis</th>
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Vermögenswert</th>

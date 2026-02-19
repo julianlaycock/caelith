@@ -180,7 +180,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center pt-[15vh] animate-fade-in" onKeyDown={handleKeyDown}>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={close} />
-      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl border border-edge bg-bg-secondary shadow-2xl shadow-black/30">
+      <div className="relative z-10 w-full max-w-lg mx-4 md:mx-auto overflow-hidden rounded-xl border border-edge bg-bg-secondary shadow-2xl shadow-black/30">
         <div className="flex items-center gap-3 border-b border-edge-subtle px-4 py-3">
           <svg className="h-5 w-5 flex-shrink-0 text-ink-tertiary" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />

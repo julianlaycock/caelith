@@ -15,7 +15,7 @@ export function RiskDetailPanel({ risk, today, onClose }: RiskDetailPanelProps) 
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="ml-auto relative z-10 w-full max-w-md h-full bg-surface shadow-xl border-l border-edge overflow-y-auto">
+      <div className="ml-auto relative z-10 w-full md:max-w-md h-full bg-surface shadow-xl border-l border-edge overflow-y-auto">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-edge bg-surface px-6 py-4">
           <h2 className="text-base font-semibold text-ink">Risikoflagge Detail</h2>
           <button
