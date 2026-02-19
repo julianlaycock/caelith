@@ -14,7 +14,7 @@ import {
 } from '../../components/charts';
 import { formatNumber, formatDateTime, classNames, getErrorMessage } from '../../lib/utils';
 import { SetupWizard } from '../../components/setup-wizard';
-import type { FundStructure, ComplianceReport, CapTableEntry, DecisionRecord, Investor, Event } from '../../lib/types';
+import type { FundStructure, ComplianceReport, CapTableEntry, DecisionRecord, Investor, Event, RiskFlagDetail } from '../../lib/types';
 
 interface FundReportPair {
   fund: FundStructure;
@@ -202,6 +202,7 @@ interface RiskFlag {
   severity: 'high' | 'medium' | 'low';
   category: string;
   message: string;
+  details?: RiskFlagDetail[];
 }
 
 interface ActionQueueItem {
@@ -900,43 +901,90 @@ export default function DashboardPage() {
                 <p className="text-sm text-ink leading-relaxed">{selectedRisk.message}</p>
               </div>
 
-              {/* Recommended Actions */}
+              {/* Affected Entities / Recommended Actions */}
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Recommended Actions</p>
-                <div className={classNames(
-                  'rounded-lg border p-4 space-y-2',
-                  selectedRisk.severity === 'high' ? 'border-red-500/20 bg-red-500/10' : selectedRisk.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/10' : 'border-accent-500/20 bg-accent-500/10',
-                )}>
-                  {selectedRisk.severity === 'high' && (
-                    <>
-                      <p className="text-sm text-red-300 font-medium">Immediate attention required</p>
-                      <ul className="space-y-1 text-sm text-red-400">
-                        <li>&bull; Review and remediate the flagged condition</li>
-                        <li>&bull; Escalate to compliance officer if unresolved</li>
-                        <li>&bull; Document remediation steps taken</li>
-                      </ul>
-                    </>
-                  )}
-                  {selectedRisk.severity === 'medium' && (
-                    <>
-                      <p className="text-sm text-amber-300 font-medium">Review within 7 days</p>
-                      <ul className="space-y-1 text-sm text-amber-400">
-                        <li>&bull; Investigate the flagged condition</li>
-                        <li>&bull; Schedule follow-up action if needed</li>
-                        <li>&bull; Monitor for escalation</li>
-                      </ul>
-                    </>
-                  )}
-                  {selectedRisk.severity === 'low' && (
-                    <>
-                      <p className="text-sm text-accent-200 font-medium">Monitor and review</p>
-                      <ul className="space-y-1 text-sm text-accent-300">
-                        <li>&bull; Note for next periodic review</li>
-                        <li>&bull; No immediate action required</li>
-                      </ul>
-                    </>
-                  )}
-                </div>
+                {selectedRisk.details && selectedRisk.details.length > 0 ? (
+                  <>
+                    <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Affected Entities</p>
+                    <div className="space-y-2">
+                      {selectedRisk.details.map((detail, di) => (
+                        <div key={di} className="rounded-lg border border-edge bg-bg-tertiary p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-ink truncate">{detail.label}</p>
+                              <p className="text-xs text-ink-secondary mt-0.5">{detail.info}</p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {detail.href && (
+                                <Link
+                                  href={detail.href}
+                                  className="text-xs font-medium text-accent-400 hover:text-accent-300 transition-colors whitespace-nowrap"
+                                  onClick={() => setSelectedRisk(null)}
+                                >
+                                  View →
+                                </Link>
+                              )}
+                              {detail.actionLabel && detail.actionHref && (
+                                <Link
+                                  href={detail.actionHref}
+                                  className={classNames(
+                                    'rounded-md px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap',
+                                    selectedRisk.severity === 'high'
+                                      ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25'
+                                      : selectedRisk.severity === 'medium'
+                                      ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25'
+                                      : 'bg-accent-500/15 text-accent-300 hover:bg-accent-500/25',
+                                  )}
+                                  onClick={() => setSelectedRisk(null)}
+                                >
+                                  {detail.actionLabel} →
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-2">Recommended Actions</p>
+                    <div className={classNames(
+                      'rounded-lg border p-4 space-y-2',
+                      selectedRisk.severity === 'high' ? 'border-red-500/20 bg-red-500/10' : selectedRisk.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/10' : 'border-accent-500/20 bg-accent-500/10',
+                    )}>
+                      {selectedRisk.severity === 'high' && (
+                        <>
+                          <p className="text-sm text-red-300 font-medium">Immediate attention required</p>
+                          <ul className="space-y-1 text-sm text-red-400">
+                            <li>&bull; Review and remediate the flagged condition</li>
+                            <li>&bull; Escalate to compliance officer if unresolved</li>
+                            <li>&bull; Document remediation steps taken</li>
+                          </ul>
+                        </>
+                      )}
+                      {selectedRisk.severity === 'medium' && (
+                        <>
+                          <p className="text-sm text-amber-300 font-medium">Review within 7 days</p>
+                          <ul className="space-y-1 text-sm text-amber-400">
+                            <li>&bull; Investigate the flagged condition</li>
+                            <li>&bull; Schedule follow-up action if needed</li>
+                            <li>&bull; Monitor for escalation</li>
+                          </ul>
+                        </>
+                      )}
+                      {selectedRisk.severity === 'low' && (
+                        <>
+                          <p className="text-sm text-accent-200 font-medium">Monitor and review</p>
+                          <ul className="space-y-1 text-sm text-accent-300">
+                            <li>&bull; Note for next periodic review</li>
+                            <li>&bull; No immediate action required</li>
+                          </ul>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Timestamp */}

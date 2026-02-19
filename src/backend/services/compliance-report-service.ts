@@ -1,5 +1,5 @@
 /**
- * Compliance Report Service — Slice 6
+ * Compliance Report Service - Slice 6
  *
  * Generates a fund-level compliance status snapshot:
  *   - Fund structure details
@@ -90,10 +90,19 @@ interface DecisionSummary {
   violation_count: number;
 }
 
+export interface RiskFlagDetail {
+  label: string;
+  info: string;
+  href?: string;
+  actionLabel?: string;
+  actionHref?: string;
+}
+
 interface RiskFlag {
   severity: 'high' | 'medium' | 'low';
   category: string;
   message: string;
+  details?: RiskFlagDetail[];
 }
 
 // ── DB Row Types ────────────────────────────────────────────
@@ -161,7 +170,7 @@ export async function generateComplianceReport(
 ): Promise<ComplianceReport> {
   const now = new Date().toISOString();
 
-  // 1. Fund structure (must resolve first — abort if missing)
+  // 1. Fund structure (must resolve first - abort if missing)
   const funds = await query<FundRow>(
     'SELECT * FROM fund_structures WHERE id = $1',
     [fundStructureId]
@@ -360,6 +369,11 @@ export async function generateComplianceReport(
         severity: 'medium',
         category: 'concentration',
         message: `${c.name} holds ${pct}% of total fund units (above 25% threshold)`,
+        details: [{
+          label: c.name,
+          info: `Holds ${pct}% of total fund units (${Number(c.total_units).toLocaleString()} units)`,
+          href: `/investors`,
+        }],
       });
     }
 
@@ -371,7 +385,7 @@ export async function generateComplianceReport(
     riskFlags.push({
       severity: 'high',
       category: 'fund_status',
-      message: `Fund status is '${fund.status}' — not accepting new investments`,
+      message: `Fund status is '${fund.status}' - not accepting new investments`,
     });
   }
 
@@ -379,7 +393,14 @@ export async function generateComplianceReport(
     riskFlags.push({
       severity: 'medium',
       category: 'kyc_expiry',
-      message: `${investorBreakdown.kyc_expiring_within_90_days.length} investor(s) have KYC expiring within 90 days`,
+      message: `${investorBreakdown.kyc_expiring_within_90_days.length} investor(s) have KYC expiring within 90 days - see details below`,
+      details: investorBreakdown.kyc_expiring_within_90_days.map((inv) => ({
+        label: inv.investor_name,
+        info: `KYC expires ${new Date(inv.kyc_expiry).toISOString().slice(0, 10)}`,
+        href: `/investors/${inv.investor_id}`,
+        actionLabel: 'Renew KYC',
+        actionHref: `/investors/${inv.investor_id}`,
+      })),
     });
   }
 
@@ -387,10 +408,18 @@ export async function generateComplianceReport(
     .filter(s => s.status === 'applied' || s.status === 'eligible')
     .reduce((sum, s) => sum + s.count, 0);
   if (pendingCount > 0) {
+    const pendingRecent = onboardingPipeline.recent.filter(
+      (r) => r.status === 'applied' || r.status === 'eligible'
+    );
     riskFlags.push({
       severity: 'low',
       category: 'onboarding_pending',
-      message: `${pendingCount} onboarding application(s) awaiting action`,
+      message: `${pendingCount} onboarding application(s) awaiting action - see details below`,
+      details: pendingRecent.map((r) => ({
+        label: r.investor_name,
+        info: `Applied ${new Date(r.applied_at).toISOString().slice(0, 10)} for ${r.asset_name} (${r.requested_units} units) — ${r.status}`,
+        href: '/onboarding',
+      })),
     });
   }
 
@@ -399,7 +428,12 @@ export async function generateComplianceReport(
     riskFlags.push({
       severity: 'low',
       category: 'recent_rejections',
-      message: `${recentRejections.length} rejection(s) in recent decisions — review for patterns`,
+      message: `${recentRejections.length} rejection(s) in recent decisions - review for patterns`,
+      details: recentRejections.map((d) => ({
+        label: `${d.decision_type.replace(/_/g, ' ')} decision`,
+        info: `Rejected on ${new Date(d.decided_at).toISOString().slice(0, 10)} — ${d.violation_count} violation${d.violation_count !== 1 ? 's' : ''}`,
+        href: `/decisions?id=${d.id}`,
+      })),
     });
   }
 

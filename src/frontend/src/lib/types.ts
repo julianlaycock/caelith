@@ -336,6 +336,16 @@ export interface CreateFundStructureRequest {
   status?: FundStatus;
 }
 
+// ── Risk Flag Details ────────────────────────────────
+
+export interface RiskFlagDetail {
+  label: string;
+  info: string;
+  href?: string;
+  actionLabel?: string;
+  actionHref?: string;
+}
+
 // ── Compliance Report ────────────────────────────────
 
 export interface ComplianceReport {
@@ -400,6 +410,7 @@ export interface ComplianceReport {
     severity: 'high' | 'medium' | 'low';
     category: string;
     message: string;
+    details?: RiskFlagDetail[];
   }[];
 }
 
