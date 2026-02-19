@@ -282,14 +282,14 @@ export default function FundsPage() {
       <Modal open={showForm} onClose={() => { setShowForm(false); setFormError(null); setFieldErrors({}); }} title={t('funds.createFundStructure')}>
         <form onSubmit={handleCreate} noValidate className="space-y-4">
           {formError && <Alert variant="error">{formError}</Alert>}
-          <Input label="Fund Name" name="name" placeholder="e.g., European Growth Fund I" error={fieldErrors.name} />
-          <Select label="Legal Form" name="legal_form" options={LEGAL_FORMS} error={fieldErrors.legal_form} />
-          <Select label="Domicile" name="domicile" options={DOMICILES} error={fieldErrors.domicile} />
-          <Select label="Regulatory Framework" name="regulatory_framework" options={FRAMEWORKS} error={fieldErrors.regulatory_framework} />
-          <Input label="AIFM Name" name="aifm_name" placeholder="Optional — managing entity name" />
+          <Input label={t('funds.form.fundName')} name="name" placeholder={t('funds.form.fundNamePlaceholder')} error={fieldErrors.name} />
+          <Select label={t('funds.form.legalForm')} name="legal_form" options={LEGAL_FORMS} error={fieldErrors.legal_form} />
+          <Select label={t('funds.form.domicile')} name="domicile" options={DOMICILES} error={fieldErrors.domicile} />
+          <Select label={t('funds.form.regulatoryFramework')} name="regulatory_framework" options={FRAMEWORKS} error={fieldErrors.regulatory_framework} />
+          <Input label={t('funds.form.aifmName')} name="aifm_name" placeholder={t('funds.form.aifmPlaceholder')} />
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
-            <Button type="submit">Create</Button>
+            <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>{t('common.cancel')}</Button>
+            <Button type="submit">{t('common.create')}</Button>
           </div>
         </form>
       </Modal>
@@ -299,15 +299,15 @@ export default function FundsPage() {
         {editFund && (
           <form onSubmit={handleEdit} className="space-y-4">
             {formError && <Alert variant="error">{formError}</Alert>}
-            <Input label="Fund Name" name="name" defaultValue={editFund.name} required />
-            <Select label="Legal Form" name="legal_form" options={LEGAL_FORMS} defaultValue={editFund.legal_form} required />
-            <Select label="Domicile" name="domicile" options={DOMICILES} defaultValue={editFund.domicile} required />
-            <Select label="Regulatory Framework" name="regulatory_framework" options={FRAMEWORKS} defaultValue={editFund.regulatory_framework} required />
-            <Select label="Status" name="status" options={STATUSES} defaultValue={editFund.status} required />
-            <Input label="AIFM Name" name="aifm_name" defaultValue={editFund.aifm_name || ''} placeholder="Optional" />
+            <Input label={t('funds.form.fundName')} name="name" defaultValue={editFund.name} required />
+            <Select label={t('funds.form.legalForm')} name="legal_form" options={LEGAL_FORMS} defaultValue={editFund.legal_form} required />
+            <Select label={t('funds.form.domicile')} name="domicile" options={DOMICILES} defaultValue={editFund.domicile} required />
+            <Select label={t('funds.form.regulatoryFramework')} name="regulatory_framework" options={FRAMEWORKS} defaultValue={editFund.regulatory_framework} required />
+            <Select label={t('investors.col.status')} name="status" options={STATUSES} defaultValue={editFund.status} required />
+            <Input label={t('funds.form.aifmName')} name="aifm_name" defaultValue={editFund.aifm_name || ''} placeholder={t('funds.form.aifmPlaceholder')} />
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="secondary" type="button" onClick={() => setEditFund(null)}>Cancel</Button>
-              <Button type="submit" disabled={actionLoading}>{actionLoading ? 'Saving...' : 'Save Changes'}</Button>
+              <Button variant="secondary" type="button" onClick={() => setEditFund(null)}>{t('common.cancel')}</Button>
+              <Button type="submit" disabled={actionLoading}>{actionLoading ? t('common.saving') : t('common.save')}</Button>
             </div>
           </form>
         )}
@@ -319,12 +319,12 @@ export default function FundsPage() {
           <div className="space-y-4">
             {formError && <Alert variant="error">{formError}</Alert>}
             <p className="text-sm text-ink-secondary">
-              Are you sure you want to delete <span className="font-semibold text-ink">{deleteFund.name}</span>? This action cannot be undone. Linked eligibility criteria will also be removed.
+              {t('funds.deleteConfirmation')} <span className="font-semibold text-ink">{deleteFund.name}</span>. {t('funds.deleteWarning')}
             </p>
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="secondary" onClick={() => setDeleteFund(null)}>Cancel</Button>
+              <Button variant="secondary" onClick={() => setDeleteFund(null)}>{t('common.cancel')}</Button>
               <Button variant="danger" disabled={actionLoading} onClick={handleDelete}>
-                {actionLoading ? 'Deleting...' : 'Delete'}
+                {actionLoading ? t('common.deleting') : t('common.delete')}
               </Button>
             </div>
           </div>
@@ -364,7 +364,7 @@ export default function FundsPage() {
                   <button
                     onClick={() => setEditFund(fund)}
                     className="rounded-md p-1.5 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink transition-colors"
-                    title="Edit"
+                    title={t('common.edit')}
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -373,7 +373,7 @@ export default function FundsPage() {
                   <button
                     onClick={() => setDeleteFund(fund)}
                     className="rounded-md p-1.5 text-ink-tertiary hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                    title="Delete"
+                    title={t('common.delete')}
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -396,18 +396,18 @@ export default function FundsPage() {
 
               {checklists[fund.id] && (
                 <div className="rounded-lg border border-edge-subtle bg-bg-tertiary p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-ink-tertiary">Setup Checklist</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-ink-tertiary">{t('funds.setupChecklist')}</p>
                   <div className="mt-2 space-y-1.5">
                     {[
-                      { label: 'Asset configured', done: checklists[fund.id].assetsConfigured },
-                      { label: 'Eligibility criteria configured', done: checklists[fund.id].criteriaConfigured },
-                      { label: 'At least one investor onboarded', done: checklists[fund.id].investorsOnboarded },
-                      { label: 'No critical risk flags', done: checklists[fund.id].noCriticalFlags },
+                      { label: t('funds.assetConfigured'), done: checklists[fund.id].assetsConfigured },
+                      { label: t('funds.criteriaConfigured'), done: checklists[fund.id].criteriaConfigured },
+                      { label: t('funds.investorOnboarded'), done: checklists[fund.id].investorsOnboarded },
+                      { label: t('funds.noCriticalFlags'), done: checklists[fund.id].noCriticalFlags },
                     ].map((item) => (
                       <div key={item.label} className="flex items-center justify-between text-xs">
                         <span className="text-ink-secondary">{item.label}</span>
                         <span className={item.done ? 'text-emerald-600' : 'text-amber-700'}>
-                          {item.done ? 'Ready' : 'Pending'}
+                          {item.done ? t('funds.ready') : t('funds.pendingSetup')}
                         </span>
                       </div>
                     ))}
@@ -417,13 +417,13 @@ export default function FundsPage() {
 
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-edge-subtle">
                 <p className="text-xs text-ink-tertiary">
-                  Created {formatDate(fund.created_at)}
+                  {t('funds.created')} {formatDate(fund.created_at)}
                 </p>
                 <Link
                   href={`/funds/${fund.id}`}
                   className="text-xs font-medium text-accent-400 hover:text-accent-300 transition-colors"
                 >
-                  View Compliance Report &rarr;
+                  {t('funds.viewReport')} &rarr;
                 </Link>
               </div>
             </Card>
@@ -431,9 +431,9 @@ export default function FundsPage() {
         </div>
       ) : (
         <EmptyState
-          title="No fund structures yet"
-          description="Create your first fund structure to get started with compliance reporting."
-          action={<Button onClick={() => setShowForm(true)}>+ New Fund</Button>}
+          title={t('funds.noFunds')}
+          description={t('funds.noFundsDesc')}
+          action={<Button onClick={() => setShowForm(true)}>+ {t('funds.addFund')}</Button>}
         />
       )}
     </div>

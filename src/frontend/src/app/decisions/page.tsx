@@ -22,19 +22,25 @@ import { formatDateTime, classNames } from '../../lib/utils';
 import type { DecisionRecord } from '../../lib/types';
 import { useI18n } from '../../lib/i18n';
 
-const DECISION_TYPE_OPTIONS = [
-  { value: '', label: 'All Types' },
-  { value: 'transfer_validation', label: 'Transfer Validation' },
-  { value: 'eligibility_check', label: 'Eligibility Check' },
-  { value: 'onboarding_approval', label: 'Onboarding Approval' },
-];
+function useDecisionTypeOptions() {
+  const { t } = useI18n();
+  return [
+    { value: '', label: t('decisions.allTypes') },
+    { value: 'transfer_validation', label: t('decisions.type.transferValidation') },
+    { value: 'eligibility_check', label: t('decisions.type.eligibilityCheck') },
+    { value: 'onboarding_approval', label: t('decisions.type.onboardingApproval') },
+  ];
+}
 
-const RESULT_OPTIONS = [
-  { value: '', label: 'All Results' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'simulated', label: 'Simulated' },
-];
+function useResultOptions() {
+  const { t } = useI18n();
+  return [
+    { value: '', label: t('decisions.allResults') },
+    { value: 'approved', label: t('decisions.approved') },
+    { value: 'rejected', label: t('decisions.rejected') },
+    { value: 'simulated', label: t('decisions.type.simulated') },
+  ];
+}
 
 function resultBadgeVariant(result: string): 'green' | 'red' | 'gray' | 'yellow' {
   if (result === 'approved' || result === 'pass') return 'green';
@@ -45,6 +51,8 @@ function resultBadgeVariant(result: string): 'green' | 'red' | 'gray' | 'yellow'
 
 export default function DecisionsPage() {
   const { t } = useI18n();
+  const DECISION_TYPE_OPTIONS = useDecisionTypeOptions();
+  const RESULT_OPTIONS = useResultOptions();
   const [filterType, setFilterType] = useState('');
   const [filterResult, setFilterResult] = useState('');
   const [selectedDecision, setSelectedDecision] = useState<DecisionRecord | null>(null);

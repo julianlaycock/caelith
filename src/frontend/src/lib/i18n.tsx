@@ -138,6 +138,13 @@ const translations: Record<Locale, Record<string, string>> = {
     'funds.completeConfig': 'Fondskonfiguration abschließen',
     'funds.investorsVerified': 'Investoren verifiziert',
     'funds.allChecksPassing': 'Alle Prüfungen bestanden',
+    'funds.form.fundName': 'Fondsname',
+    'funds.form.fundNamePlaceholder': 'z.B. European Growth Fund I',
+    'funds.form.legalForm': 'Rechtsform',
+    'funds.form.domicile': 'Domizil',
+    'funds.form.regulatoryFramework': 'Regulatorischer Rahmen',
+    'funds.form.aifmName': 'AIFM Name',
+    'funds.form.aifmPlaceholder': 'Optional — Name der Verwaltungsgesellschaft',
 
     // ── Investors ──
     'investors.title': 'Investoren',
@@ -221,6 +228,10 @@ const translations: Record<Locale, Record<string, string>> = {
     'decisions.exportFailed': 'Export fehlgeschlagen',
     'decisions.view': 'Anzeigen',
     'decisions.showing': 'Zeige',
+    'decisions.type.transferValidation': 'Transfer-Validierung',
+    'decisions.type.eligibilityCheck': 'Eignungsprüfung',
+    'decisions.type.onboardingApproval': 'Onboarding-Genehmigung',
+    'decisions.type.simulated': 'Simuliert',
 
     // ── Rules ──
     'rules.title': 'Regelwerk',
@@ -762,6 +773,13 @@ const translations: Record<Locale, Record<string, string>> = {
     'funds.completeConfig': 'Complete fund configuration',
     'funds.investorsVerified': 'investors verified',
     'funds.allChecksPassing': 'All checks passing',
+    'funds.form.fundName': 'Fund Name',
+    'funds.form.fundNamePlaceholder': 'e.g., European Growth Fund I',
+    'funds.form.legalForm': 'Legal Form',
+    'funds.form.domicile': 'Domicile',
+    'funds.form.regulatoryFramework': 'Regulatory Framework',
+    'funds.form.aifmName': 'AIFM Name',
+    'funds.form.aifmPlaceholder': 'Optional — managing entity name',
 
     // ── Investors ──
     'investors.title': 'Investors',
@@ -845,6 +863,10 @@ const translations: Record<Locale, Record<string, string>> = {
     'decisions.exportFailed': 'Export failed',
     'decisions.view': 'View',
     'decisions.showing': 'Showing',
+    'decisions.type.transferValidation': 'Transfer Validation',
+    'decisions.type.eligibilityCheck': 'Eligibility Check',
+    'decisions.type.onboardingApproval': 'Onboarding Approval',
+    'decisions.type.simulated': 'Simulated',
 
     // ── Rules ──
     'rules.title': 'Rules',
