@@ -41,7 +41,7 @@ export function Card({
   return (
     <div
       className={classNames(
-        'rounded-xl border border-edge-subtle bg-bg-secondary transition-colors hover:border-edge',
+        'rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] transition-colors hover:border-[var(--border-strong)]',
         padding && 'p-6',
         className
       )}

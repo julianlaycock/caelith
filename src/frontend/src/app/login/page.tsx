@@ -137,7 +137,7 @@ export default function LoginPage() {
                 color: 'rgba(255,255,255,0.5)',
                 marginBottom: '8px',
                 letterSpacing: '0.5px',
-              }}>E-MAIL
+              }}>E-MAIL</label>
               <input
                 type="email"
                 value={email}
@@ -171,7 +171,7 @@ export default function LoginPage() {
                 color: 'rgba(255,255,255,0.5)',
                 marginBottom: '8px',
                 letterSpacing: '0.5px',
-              }}>PASSWORT
+              }}>PASSWORT</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
