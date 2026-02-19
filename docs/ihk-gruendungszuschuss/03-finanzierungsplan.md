@@ -1,7 +1,7 @@
 # Finanzierungsplan
 
-**Unternehmen:** Caelith -- AIFMD II Compliance Engine
-**Gruender:** [VOLLSTAENDIGER NAME]
+**Unternehmen:** Caelith -- Regulatorische Compliance-Plattform fuer EU-Fondsverwalter
+**Gruender:** Julian Laycock
 **Gruendungsdatum:** 01.04.2026
 
 ---
@@ -11,9 +11,9 @@
 | Kategorie | Betrag (EUR) |
 |-----------|-------------:|
 | Investitionen (einmalig) | 3.215,50 |
-| Betriebsmittel (3 Monate bis Umsatzerzielung) | 3.105,00 |
-| Reserve (10%) | 632,05 |
-| **Gesamtkapitalbedarf** | **6.952,55** |
+| Betriebsmittel (3 Monate bis Umsatzerzielung) | 3.123,00 |
+| Reserve (10%) | 633,85 |
+| **Gesamtkapitalbedarf** | **6.972,35** |
 
 ---
 
@@ -21,11 +21,9 @@
 
 | Quelle | Betrag (EUR) | Anteil | Status | Erlaeuterung |
 |--------|-------------:|-------:|--------|--------------|
-| **Eigenkapital (Ersparnisse)** | [BETRAG],00 | [X]% | Verfuegbar | Persoenliche Ruecklagen des Gruenders |
+| **Eigenkapital (Ersparnisse)** | 7.000,00 | 100% | Verfuegbar | Persoenliche Ruecklagen des Gruenders |
 | **Umsatzerloese (ab Monat 3)** | aufwachsend | -- | Geplant | Siehe Umsatz- und Rentabilitaetsvorschau |
-| **Gesamtfinanzierung** | **[BETRAG],00** | **100%** | | |
-
-> **Hinweis:** Bitte [BETRAG] durch den tatsaechlichen Eigenkapitalbetrag ersetzen. Empfehlung: mindestens 5.000-7.000 EUR Eigenkapital, um den Gesamtkapitalbedarf zu decken.
+| **Gesamtfinanzierung** | **7.000,00** | **100%** | | |
 
 ---
 
@@ -35,11 +33,9 @@ Der Gruendungszuschuss der Agentur fuer Arbeit dient der persoenlichen Lebenshal
 
 | Phase | Dauer | Monatlich (EUR) | Gesamt (EUR) |
 |-------|-------|----------------:|-------------:|
-| Phase 1 | 6 Monate | [ALG_I_BETRAG] + 300,00 | [PHASE_1_GESAMT] |
+| Phase 1 | 6 Monate | 1.748,10 + 300,00 = 2.048,10 | 12.288,60 |
 | Phase 2 | 9 Monate | 300,00 | 2.700,00 |
-| **Gesamt** | **15 Monate** | | **[GESAMT_GZ]** |
-
-> **Hinweis:** [ALG_I_BETRAG] durch den aktuellen monatlichen ALG-I-Betrag ersetzen.
+| **Gesamt** | **15 Monate** | | **14.988,60** |
 
 ---
 

@@ -1,6 +1,6 @@
 # IHK Berlin -- Checkliste Gruendungszuschuss
 
-**Antragsteller:** [VOLLSTAENDIGER NAME]
+**Antragsteller:** Julian Laycock
 **Gruendungsdatum (geplant):** 01.04.2026
 **IHK Berlin -- Fachkundige Stellungnahme**
 **Gebuehr:** 50,00 EUR zzgl. MwSt.

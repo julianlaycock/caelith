@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <defs>
+    <linearGradient id="mark-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#C5E0EE"/>
+      <stop offset="100%" stop-color="#E8A87C"/>
+    </linearGradient>
+  </defs>
+  <!-- Logomark: abstract shield/chain link representing compliance + cryptographic proof -->
+  <g transform="translate(8, 12)">
+    <!-- Outer shield shape -->
+    <path d="M24 0L44 8V28C44 42 24 52 24 52C24 52 4 42 4 28V8L24 0Z" stroke="url(#mark-grad)" stroke-width="2.5" fill="none"/>
+    <!-- Inner chain links -->
+    <rect x="16" y="16" width="16" height="8" rx="2" stroke="#C5E0EE" stroke-width="1.5" fill="none"/>
+    <rect x="16" y="28" width="16" height="8" rx="2" stroke="#E8A87C" stroke-width="1.5" fill="none"/>
+    <!-- Chain connector -->
+    <line x1="24" y1="24" x2="24" y2="28" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="64" y="50" font-family="Sora, sans-serif" font-weight="800" font-size="38" letter-spacing="-1.5" fill="#2D3333">Caelith</text>
+</svg>

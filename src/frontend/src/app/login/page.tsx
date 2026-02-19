@@ -79,8 +79,8 @@ export default function LoginPage() {
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <a href="https://www.caelith.tech" style={{
             fontFamily: "'Sora', sans-serif",
-            fontWeight: 600,
-            fontSize: '24px',
+            fontWeight: 800,
+            fontSize: '28px',
             color: '#fff',
             textDecoration: 'none',
             letterSpacing: '-0.02em',

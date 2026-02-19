@@ -1,6 +1,6 @@
 # Aufstellung Private Lebenshaltungskosten
 
-**Name:** [VOLLSTAENDIGER NAME]
+**Name:** Julian Laycock
 **Zeitraum:** Durchschnittliche monatliche Kosten ab Gruendungsdatum 01.04.2026
 
 ---
@@ -9,13 +9,11 @@
 
 | Position | Betrag (EUR) | Erlaeuterung |
 |----------|-------------:|--------------|
-| Gruendungszuschuss Phase 1 (ALG I + 300 EUR) | [ALG_I + 300],00 | 6 Monate (April -- September 2026) |
+| Gruendungszuschuss Phase 1 (ALG I + 300 EUR) | 2.048,10 | 6 Monate (April -- September 2026) |
 | Gruendungszuschuss Phase 2 (Sozialversicherung) | 300,00 | 9 Monate (Oktober 2026 -- Juni 2027) |
 | Sonstige Einnahmen | 0,00 | -- |
-| **Summe Einnahmen (Phase 1)** | **[BETRAG],00** | |
+| **Summe Einnahmen (Phase 1)** | **2.048,10** | |
 | **Summe Einnahmen (Phase 2)** | **300,00** | Ab Phase 2 Deckung durch Unternehmensgewinne |
-
-> **Hinweis:** [ALG_I] durch den aktuellen monatlichen ALG-I-Betrag ersetzen.
 
 ---
 
@@ -24,13 +22,13 @@
 | Position | Betrag (EUR) | Erlaeuterung |
 |----------|-------------:|--------------|
 | **Wohnen** | | |
-| Miete (warm, inkl. Nebenkosten) | [MIETE],00 | Aktuelle Warmmiete Berlin |
-| Strom | [STROM],00 | Monatlicher Abschlag |
+| Miete (warm, inkl. Nebenkosten) | 850,00 | Aktuelle Warmmiete Berlin |
+| Strom | 45,00 | Monatlicher Abschlag |
 | GEZ (Rundfunkbeitrag) | 18,36 | Gesetzlicher Beitrag |
 | | | |
 | **Versicherungen** | | |
-| Krankenversicherung (freiwillig gesetzlich) | [KV_BETRAG],00 | Mindestbeitrag ca. 210-220 EUR bei geringem Einkommen |
-| Pflegeversicherung | [PV_BETRAG],00 | Inkl. in KV oder separat |
+| Krankenversicherung (freiwillig gesetzlich) | 210,00 | Mindestbeitrag freiwillig gesetzlich |
+| Pflegeversicherung | 45,00 | Separat |
 | Private Haftpflichtversicherung | 8,00 | Jahrliche Praemie / 12 |
 | Hausratversicherung | 10,00 | Optional |
 | | | |
@@ -50,9 +48,7 @@
 | Freizeit / Kultur | 50,00 | Konservativ |
 | Unvorhergesehenes | 50,00 | Puffer |
 | | | |
-| **Summe monatliche Ausgaben** | **[SUMME],00** | |
-
-> **Hinweis:** Bitte alle [PLATZHALTER] durch tatsaechliche Betraege ersetzen.
+| **Summe monatliche Ausgaben** | **1.739,36** | |
 
 ---
 
@@ -60,8 +56,8 @@
 
 | Phase | Einnahmen (EUR) | Ausgaben (EUR) | Saldo (EUR) |
 |-------|----------------:|---------------:|------------:|
-| Phase 1 (Monat 1-6) | [ALG_I + 300] | [SUMME] | [DIFFERENZ] |
-| Phase 2 (Monat 7-15) | 300,00 + Unternehmensgewinn | [SUMME] | Abhaengig vom Unternehmensgewinn |
+| Phase 1 (Monat 1-6) | 2.048,10 | 1.739,36 | +308,74 |
+| Phase 2 (Monat 7-15) | 300,00 + Unternehmensgewinn | 1.739,36 | Abhaengig vom Unternehmensgewinn |
 
 ---
 
@@ -75,9 +71,9 @@ Ab Phase 2 betraegt der Gruendungszuschuss nur noch 300 EUR/Monat (Sozialversich
 
 | Monat | Unternehmensgewinn (EUR) | GZ Phase 2 (EUR) | Deckung privat (EUR) | Fehlbetrag (EUR) |
 |-------|-------------------------:|------------------:|---------------------:|-----------------:|
-| Okt 26 (M7) | ca. 2.165 | 300 | [SUMME] | -- |
-| Nov 26 (M8) | ca. 2.965 | 300 | [SUMME] | -- |
-| Dez 26 (M9) | ca. 2.965 | 300 | [SUMME] | -- |
+| Okt 26 (M7) | ca. 2.892 | 300 | 1.739,36 | -- (Ueberschuss: 1.452,64) |
+| Nov 26 (M8) | ca. 3.862 | 300 | 1.739,36 | -- (Ueberschuss: 2.422,64) |
+| Dez 26 (M9) | ca. 3.862 | 300 | 1.739,36 | -- (Ueberschuss: 2.422,64) |
 
 > Ab Monat 7 (Oktober 2026) erzielt das Unternehmen laut Rentabilitaetsvorschau einen positiven Deckungsbeitrag, der die privaten Lebenshaltungskosten traegt. Siehe Umsatz- und Rentabilitaetsvorschau fuer Details.
 

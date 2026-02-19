@@ -1,8 +1,8 @@
 # Businessplan
 
-## Caelith -- AIFMD II Compliance Engine
+## Caelith -- Regulatorische Compliance-Plattform fuer EU-Fondsverwalter
 
-**Gruender:** [VOLLSTAENDIGER NAME]
+**Gruender:** Julian Laycock
 **Gruendungsdatum:** 01.04.2026
 **Rechtsform:** Einzelunternehmen (geplanter Wechsel zu UG haftungsbeschraenkt)
 **Standort:** Berlin
@@ -37,7 +37,7 @@
 
 ### Der Gruender
 
-[VOLLSTAENDIGER NAME] ist ein erfahrener Softwareentwickler mit Kenntnissen in [RELEVANTE ERFAHRUNGEN EINFUEGEN: Finanzbranche, Regulatorik, SaaS-Entwicklung]. Das Produkt wurde vollstaendig selbst entwickelt und ist funktionsfaehig (13 verifizierte API-Endpunkte, 65 automatisierte Tests, Demo-Umgebung mit Echtdaten).
+Julian Laycock ist ein erfahrener Softwareentwickler mit Kenntnissen in [RELEVANTE ERFAHRUNGEN EINFUEGEN: Finanzbranche, Regulatorik, SaaS-Entwicklung]. Das Produkt wurde vollstaendig selbst entwickelt und ist funktionsfaehig (13 verifizierte API-Endpunkte, 65 automatisierte Tests, Demo-Umgebung mit Echtdaten).
 
 ### Der Markt
 
@@ -120,7 +120,7 @@ Dies erfuellt:
 
 | | |
 |---|---|
-| **Name** | [VOLLSTAENDIGER NAME] |
+| **Name** | Julian Laycock |
 | **Wohnort** | Berlin |
 | **Geburtsdatum** | [GEBURTSDATUM] |
 
@@ -229,7 +229,7 @@ Wesentliche Neuerungen:
 
 | Differenzierungsmerkmal | Caelith | Enterprise-Loesungen | Excel/Manuell |
 |------------------------|---------|---------------------|---------------|
-| **Preis** | 800-1.500 EUR/Monat | 50.000-100.000+ EUR/Jahr | Personalkosten |
+| **Preis** | 990-1.500 EUR/Monat | 50.000-100.000+ EUR/Jahr | Personalkosten |
 | **Implementierungszeit** | 1 Tag | 3-12 Monate | Sofort, aber fehleranfaellig |
 | **Decision Provenance** | SHA-256-Integritaetskette | Keine | Keine |
 | **Regelzitate** | Jede Pruefung mit KAGB/AIFMD-Verweis | Teilweise | Keine |
@@ -317,9 +317,9 @@ Zum Gruendungszeitpunkt bestehen noch keine verbindlichen Kundenvertraege. Folge
 
 **Customer Lifetime Value (CLV, geschaetzt):**
 - Durchschnittliche Vertragsdauer: 24+ Monate (regulatorisch bedingt -- Wechsel ist aufwendig)
-- Durchschnittlicher Monatsumsatz: 800-1.200 EUR
-- CLV: 19.200-28.800 EUR
-- **CLV:CAC-Verhaeltnis: 27-41x** (exzellent fuer B2B SaaS)
+- Durchschnittlicher Monatsumsatz: 990-1.500 EUR
+- CLV: 23.760-36.000 EUR
+- **CLV:CAC-Verhaeltnis: 34-51x** (exzellent fuer B2B SaaS)
 
 ### 7.3 Akquisitionsstrategie (erste 6 Monate)
 
@@ -337,7 +337,7 @@ Zum Gruendungszeitpunkt bestehen noch keine verbindlichen Kundenvertraege. Folge
 
 | Tarif | Zielgruppe | Preis (monatlich) | Preis (jaehrlich) | Leistungsumfang |
 |-------|-----------|------------------:|-------------------:|----------------|
-| **Starter** | Kleine KVGs (1-3 Fonds) | 800,00 EUR | 8.640,00 EUR (10% Rabatt) | Bis 5 Fonds, 500 Investoren, E-Mail-Support, Basis-Reporting |
+| **Essentials** | Kleine KVGs (1-3 Fonds) | 990,00 EUR | 10.692,00 EUR (10% Rabatt) | Bis 5 Fonds, 500 Investoren, E-Mail-Support, Basis-Reporting |
 | **Professional** | Mittlere KVGs (4-10 Fonds) | 1.500,00 EUR | 16.200,00 EUR (10% Rabatt) | Unbegrenzte Fonds + Investoren, Annex IV Export, Szenariomodellierung, Prioritaets-Support |
 | **Enterprise** | Fondsadministratoren | Individuell (ab 2.500 EUR) | Individuell | Multi-Mandant, API-Zugang, SLA (99,5% Uptime), Dedizierter Ansprechpartner |
 
@@ -350,11 +350,11 @@ Zum Gruendungszeitpunkt bestehen noch keine verbindlichen Kundenvertraege. Folge
 | eFront (Enterprise) | Ab 50.000 EUR | 80-85% guenstiger |
 | Compliance-Berater (extern) | 20.000-40.000 EUR | 57-78% guenstiger + automatisiert |
 | Interner Compliance-Mitarbeiter | 60.000-80.000 EUR (Gehalt) | 85-89% guenstiger + skalierbar |
-| Caelith Starter | 9.600 EUR | -- |
+| Caelith Essentials | 11.880 EUR | -- |
 
 **Berechnung der Kostendeckung:**
-- Deckungsbeitrag pro Starter-Kunde: 800 EUR - ca. 80 EUR variable Kosten (Hosting, API) = **720 EUR (90% Bruttomarge)**
-- Break-even bei Fixkosten von ca. 1.035 EUR/Monat: **2 Kunden**
+- Deckungsbeitrag pro Essentials-Kunde: 990 EUR - ca. 80 EUR variable Kosten (Hosting, API) = **910 EUR (92% Bruttomarge)**
+- Break-even bei Fixkosten von ca. 1.041 EUR/Monat: **2 Kunden**
 
 ### 8.3 Preisanpassungsstrategie
 
@@ -370,7 +370,7 @@ Zum Gruendungszeitpunkt bestehen noch keine verbindlichen Kundenvertraege. Folge
 
 | Parameter | Wert | Begruendung |
 |-----------|------|-------------|
-| Durchschnittlicher Monatsumsatz pro Kunde | 900,00 EUR | Mischkalkulation Starter (800) und Professional (1.500) |
+| Durchschnittlicher Monatsumsatz pro Kunde | 990,00 EUR | Essentials-Tarif |
 | Kundengewinnungsrate | 1-2 Neukunden pro Monat | Konservativ fuer Solo-Gruender im B2B-Bereich |
 | Kuendigungsrate (Churn) | 5% pro Quartal | Niedrig aufgrund regulatorischer Bindung |
 | Arbeitstage pro Monat | 20 | Davon ca. 10 Vertrieb/Marketing, 10 Produktentwicklung |
@@ -381,17 +381,17 @@ Zum Gruendungszeitpunkt bestehen noch keine verbindlichen Kundenvertraege. Folge
 |-------|----------:|-----:|-------------------:|
 | Apr 2026 (M1) | 0 | 0 | 0 |
 | Mai 2026 (M2) | 0 | 0 | 0 |
-| Jun 2026 (M3) | 1 | 1 | 800 |
-| Jul 2026 (M4) | 1 | 2 | 1.600 |
-| Aug 2026 (M5) | 0 | 2 | 1.600 |
-| Sep 2026 (M6) | 1 | 3 | 2.400 |
-| Okt 2026 (M7) | 1 | 4 | 3.200 |
-| Nov 2026 (M8) | 1 | 5 | 4.000 |
-| Dez 2026 (M9) | 0 | 5 | 4.000 |
-| Jan 2027 (M10) | 1 | 6 | 4.800 |
-| Feb 2027 (M11) | 1 | 7 | 5.600 |
-| Maer 2027 (M12) | 0 | 7 | 5.600 |
-| **Gesamt Jahr 1** | **7** | | **33.600** |
+| Jun 2026 (M3) | 1 | 1 | 990 |
+| Jul 2026 (M4) | 1 | 2 | 1.980 |
+| Aug 2026 (M5) | 0 | 2 | 1.980 |
+| Sep 2026 (M6) | 1 | 3 | 2.970 |
+| Okt 2026 (M7) | 1 | 4 | 3.960 |
+| Nov 2026 (M8) | 1 | 5 | 4.950 |
+| Dez 2026 (M9) | 0 | 5 | 4.950 |
+| Jan 2027 (M10) | 1 | 6 | 5.940 |
+| Feb 2027 (M11) | 1 | 7 | 6.930 |
+| Maer 2027 (M12) | 0 | 7 | 6.930 |
+| **Gesamt Jahr 1** | **7** | | **41.580** |
 
 > **Hinweis:** Diese Prognose ist bewusst konservativ gehalten. Es wird angenommen, dass in einigen Monaten keine Neukunden gewonnen werden (laengere Vertriebszyklen, Urlaubszeiten). Keine Kuendigung in Jahr 1 angenommen (regulatorische Bindung).
 
@@ -400,8 +400,8 @@ Zum Gruendungszeitpunkt bestehen noch keine verbindlichen Kundenvertraege. Folge
 | | Jahr 1 | Jahr 2 | Jahr 3 |
 |---|-------:|-------:|-------:|
 | Kunden (Jahresende) | 7 | 20 | 35 |
-| Durchschnittl. Monatsumsatz/Kunde | 800 EUR | 950 EUR | 1.050 EUR |
-| **Jahresumsatz** | **33.600 EUR** | **180.000 EUR** | **360.000 EUR** |
+| Durchschnittl. Monatsumsatz/Kunde | 990 EUR | 1.500 EUR | 1.800 EUR |
+| **Jahresumsatz** | **41.580 EUR** | **252.000 EUR** | **600.000 EUR** |
 
 ---
 
@@ -431,7 +431,7 @@ Zum Gruendungszeitpunkt bestehen noch keine verbindlichen Kundenvertraege. Folge
 
 ### 10.3 Gesellschafterstruktur
 
-Einzelgruendung: 100% [VOLLSTAENDIGER NAME]
+Einzelgruendung: 100% Julian Laycock
 
 ### 10.4 Externe Dienstleister
 
@@ -517,9 +517,9 @@ Die detaillierte Finanzplanung ist in separaten Dokumenten aufgefuehrt:
 |----------|------|
 | Gesamtkapitalbedarf | ca. 7.000 EUR |
 | Finanzierung | Eigenkapital (100%) |
-| Umsatz Jahr 1 | ca. 33.600 EUR (konservativ) |
-| Umsatz Jahr 2 | ca. 180.000 EUR |
-| Umsatz Jahr 3 | ca. 360.000 EUR |
+| Umsatz Jahr 1 | ca. 41.580 EUR (konservativ) |
+| Umsatz Jahr 2 | ca. 252.000 EUR |
+| Umsatz Jahr 3 | ca. 600.000 EUR |
 | Break-even (Unternehmen) | Monat 6-7 |
 | Kunden Jahresende 1 | 7 |
 | Persoenliche Absicherung | Gruendungszuschuss (15 Monate) |

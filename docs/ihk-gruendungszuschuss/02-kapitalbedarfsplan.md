@@ -1,7 +1,7 @@
 # Kapitalbedarfsplan
 
-**Unternehmen:** Caelith -- AIFMD II Compliance Engine
-**Gruender:** [VOLLSTAENDIGER NAME]
+**Unternehmen:** Caelith -- Regulatorische Compliance-Plattform fuer EU-Fondsverwalter
+**Gruender:** Julian Laycock
 **Gruendungsdatum:** 01.04.2026
 **Rechtsform:** Einzelunternehmen (geplanter Wechsel zu UG haftungsbeschraenkt bei Erreichen von 10 Kunden)
 
@@ -34,6 +34,8 @@ Geschaetzter Zeitraum bis zum ersten Umsatz: 3 Monate (April -- Juni 2026)
 | Cloud-Hosting (Hetzner/AWS) | 150,00 | 450,00 | PostgreSQL-Datenbank + API-Server |
 | API-Kosten (Anthropic Claude) | 200,00 | 600,00 | KI-Compliance-Copilot |
 | Software-Abonnements | 65,00 | 195,00 | GitHub, Monitoring, E-Mail |
+| Railway Hosting | 5,00 | 15,00 | App-Hosting (PaaS) |
+| IONOS E-Mail | 1,00 | 3,00 | Geschaeftliche E-Mail |
 | Domain + E-Mail | 15,00 | 45,00 | Geschaeftliche E-Mail-Adresse |
 | Berufshaftpflichtversicherung | 45,00 | 135,00 | IT-Haftpflicht fuer B2B-SaaS |
 | Steuerberater | 150,00 | 450,00 | Monatliche Buchhaltung + USt-Voranmeldung |
@@ -41,7 +43,7 @@ Geschaetzter Zeitraum bis zum ersten Umsatz: 3 Monate (April -- Juni 2026)
 | Marketing (LinkedIn, Fachveranstaltungen) | 250,00 | 750,00 | Kundengewinnung Pilotphase |
 | Reisekosten (Kundentermine) | 200,00 | 600,00 | Berlin + ggf. Frankfurt, Muenchen |
 | Bueromaterial / Sonstiges | 40,00 | 120,00 | Verbrauchsmaterial, Porto |
-| **Summe Betriebsmittel (3 Monate)** | **1.035,00** | **3.105,00** | |
+| **Summe Betriebsmittel (3 Monate)** | **1.041,00** | **3.123,00** | |
 
 ---
 
@@ -49,7 +51,7 @@ Geschaetzter Zeitraum bis zum ersten Umsatz: 3 Monate (April -- Juni 2026)
 
 | Position | Betrag (EUR) | Erlaeuterung |
 |----------|-------------:|--------------|
-| Puffer (10% der Gesamtsumme) | 632,05 | Unerwartete Kosten, Preissteigerungen |
+| Puffer (10% der Gesamtsumme) | 633,85 | Unerwartete Kosten, Preissteigerungen |
 
 ---
 
@@ -58,9 +60,9 @@ Geschaetzter Zeitraum bis zum ersten Umsatz: 3 Monate (April -- Juni 2026)
 | Kategorie | Betrag (EUR) |
 |-----------|-------------:|
 | Investitionen (einmalig) | 3.215,50 |
-| Betriebsmittel (3 Monate) | 3.105,00 |
-| Reserve | 632,05 |
-| **Gesamtkapitalbedarf** | **6.952,55** |
+| Betriebsmittel (3 Monate) | 3.123,00 |
+| Reserve | 633,85 |
+| **Gesamtkapitalbedarf** | **6.972,35** |
 
 ---
 
