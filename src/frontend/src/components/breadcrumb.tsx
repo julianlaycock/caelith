@@ -27,7 +27,7 @@ export function Breadcrumb() {
   if (segments.length <= 1) return null;
 
   return (
-    <nav className="mb-3 md:mb-4 flex items-center gap-1.5 text-xs overflow-x-auto" aria-label="Breadcrumb">
+    <nav className="flex items-center gap-1.5 text-xs overflow-x-auto" aria-label="Breadcrumb">
       {segments.map((seg, i) => {
         const href = '/' + segments.slice(0, i + 1).join('/');
         const isLast = i === segments.length - 1;

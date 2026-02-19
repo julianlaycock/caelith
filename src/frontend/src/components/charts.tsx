@@ -499,7 +499,7 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
               {/* Three columns */}
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <div className="text-[10px] text-ink-muted mb-1">Top Investor</div>
+                  <div className="text-[10px] text-ink-muted mb-1">{t('charts.topInvestor')}</div>
                   <div className="h-1.5 bg-bg-tertiary rounded-full">
                     <div
                       className="h-full rounded-full"

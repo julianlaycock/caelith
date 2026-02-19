@@ -13,7 +13,7 @@ import { Breadcrumb } from './breadcrumb';
 function TopRightControls() {
   const { locale, setLocale, t } = useI18n();
   return (
-    <div className="fixed right-6 top-4 z-30 flex items-center gap-2 md:right-8">
+    <div className="flex items-center gap-2">
       <button
         onClick={() => setLocale(locale === 'de' ? 'en' : 'de')}
         className="rounded-lg border border-edge bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink-tertiary transition-all hover:border-edge-strong hover:text-ink-secondary"
@@ -84,10 +84,14 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             onMobileClose={() => setSidebarOpen(false)}
           />
 
-          <main className="relative flex-1 overflow-y-auto p-4 pb-20 pt-14 md:p-6 md:pt-6 lg:p-8 text-ink">
-            <TopRightControls />
-            <Breadcrumb />
-            <ErrorBoundary>{children}</ErrorBoundary>
+          <main className="relative flex-1 overflow-y-auto text-ink">
+            <div className="sticky top-0 z-20 flex h-11 items-center justify-between border-b border-edge bg-bg-primary/80 px-4 backdrop-blur-sm md:px-6 lg:px-8">
+              <Breadcrumb />
+              <TopRightControls />
+            </div>
+            <div className="p-4 pb-20 md:p-6 lg:p-8">
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </div>
           </main>
 
           <CopilotToggleButton onClick={() => setCopilotOpen(true)} />
