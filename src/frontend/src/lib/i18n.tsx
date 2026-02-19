@@ -649,6 +649,66 @@ const translations: Record<Locale, Record<string, string>> = {
     'charts.low': 'NIEDRIG',
     'charts.topInvestor': 'Top-Investor',
 
+    // ── Tabbed Analytics ──
+    'tabs.status': 'STATUS',
+    'tabs.risk': 'RISIKO',
+    'tabs.calendar': 'KALENDER',
+    'tabs.news': 'NACHRICHTEN',
+
+    // ── Active Violations ──
+    'violations.activeTitle': 'Aktive Verstöße',
+    'violations.activeSubtitle': 'Schweregrad-Verteilung über alle Fonds',
+    'violations.critical': 'KRITISCH',
+    'violations.high': 'HOCH',
+    'violations.medium': 'MITTEL',
+    'violations.noActive': 'Keine aktiven Verstöße',
+    'violations.perFund': 'Verstöße je Fonds',
+    'violations.age': 'Alter',
+    'violations.days': 'Tage',
+    'violations.regulatoryRef': 'Reg. Referenz',
+
+    // ── KYC/AML Pipeline ──
+    'kyc.pipelineTitle': 'KYC/AML Pipeline',
+    'kyc.pipelineSubtitle': 'Verifizierungsstatus und zeitlicher Verlauf',
+    'kyc.overdue': 'Überfällig',
+    'kyc.expiring90': 'Ablauf <90T',
+    'kyc.pending': 'Ausstehend',
+    'kyc.verified': 'Verifiziert',
+    'kyc.verificationRate': 'Verifizierungsrate',
+
+    // ── Audit Readiness ──
+    'audit.readinessTitle': 'Audit-Bereitschaft',
+    'audit.readinessSubtitle': 'Dokumentationsstatus über alle Fonds',
+    'audit.overallScore': 'Gesamtbewertung',
+    'audit.documentationGaps': 'Dokumentationslücken',
+    'audit.perFund': 'Je Fonds',
+
+    // ── Leverage ──
+    'leverage.title': 'Leverage-Auslastung',
+    'leverage.subtitle': 'Commitment- und Bruttomethode vs. Grenzen',
+    'leverage.commitmentMethod': 'Commitment-Methode',
+    'leverage.grossMethod': 'Bruttomethode',
+    'leverage.limit': 'Grenze',
+    'leverage.usage': 'Nutzung',
+
+    // ── Calendar ──
+    'calendar.title': 'Regulatorischer Kalender',
+    'calendar.subtitle': 'Anstehende Fristen in den nächsten 90 Tagen',
+    'calendar.deadline': 'Frist',
+    'calendar.regulatoryBody': 'Aufsichtsbehörde',
+    'calendar.status': 'Status',
+    'calendar.upcoming': 'Anstehend',
+    'calendar.dueSoon': 'Bald fällig',
+    'calendar.overdue': 'Überfällig',
+
+    // ── News ──
+    'news.title': 'Regulatorische Nachrichten',
+    'news.subtitle': 'Kuratierte Updates für EU-Fonds-Compliance',
+    'news.readMore': 'Lesen →',
+    'news.sourceRegulatory': 'Regulierung',
+    'news.sourceNews': 'Nachrichten',
+    'news.sourceAcademic': 'Akademisch',
+
     // ── Language ──
     'lang.toggle': 'Sprache wechseln',
   },
@@ -1283,6 +1343,66 @@ const translations: Record<Locale, Record<string, string>> = {
     'charts.medium': 'MEDIUM',
     'charts.low': 'LOW',
     'charts.topInvestor': 'Top Investor',
+
+    // ── Tabbed Analytics ──
+    'tabs.status': 'STATUS',
+    'tabs.risk': 'RISK',
+    'tabs.calendar': 'CALENDAR',
+    'tabs.news': 'NEWS',
+
+    // ── Active Violations ──
+    'violations.activeTitle': 'Active Violations',
+    'violations.activeSubtitle': 'Severity distribution across all funds',
+    'violations.critical': 'CRITICAL',
+    'violations.high': 'HIGH',
+    'violations.medium': 'MEDIUM',
+    'violations.noActive': 'No active violations',
+    'violations.perFund': 'Violations per Fund',
+    'violations.age': 'Age',
+    'violations.days': 'days',
+    'violations.regulatoryRef': 'Reg. Reference',
+
+    // ── KYC/AML Pipeline ──
+    'kyc.pipelineTitle': 'KYC/AML Pipeline',
+    'kyc.pipelineSubtitle': 'Verification status and temporal pipeline',
+    'kyc.overdue': 'Overdue',
+    'kyc.expiring90': 'Expiring <90d',
+    'kyc.pending': 'Pending',
+    'kyc.verified': 'Verified',
+    'kyc.verificationRate': 'Verification Rate',
+
+    // ── Audit Readiness ──
+    'audit.readinessTitle': 'Audit Readiness',
+    'audit.readinessSubtitle': 'Documentation status across all funds',
+    'audit.overallScore': 'Overall Score',
+    'audit.documentationGaps': 'Documentation Gaps',
+    'audit.perFund': 'Per Fund',
+
+    // ── Leverage ──
+    'leverage.title': 'Leverage Utilization',
+    'leverage.subtitle': 'Commitment and gross method vs. limits',
+    'leverage.commitmentMethod': 'Commitment Method',
+    'leverage.grossMethod': 'Gross Method',
+    'leverage.limit': 'Limit',
+    'leverage.usage': 'Usage',
+
+    // ── Calendar ──
+    'calendar.title': 'Regulatory Calendar',
+    'calendar.subtitle': 'Upcoming deadlines in the next 90 days',
+    'calendar.deadline': 'Deadline',
+    'calendar.regulatoryBody': 'Regulatory Body',
+    'calendar.status': 'Status',
+    'calendar.upcoming': 'Upcoming',
+    'calendar.dueSoon': 'Due Soon',
+    'calendar.overdue': 'Overdue',
+
+    // ── News ──
+    'news.title': 'Regulatory News',
+    'news.subtitle': 'Curated updates for EU fund compliance',
+    'news.readMore': 'Read →',
+    'news.sourceRegulatory': 'Regulatory',
+    'news.sourceNews': 'News',
+    'news.sourceAcademic': 'Academic',
 
     // ── Language ──
     'lang.toggle': 'Switch language',

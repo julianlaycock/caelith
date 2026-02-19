@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
 import { Card, SectionHeader, Badge, RiskFlagCard, ErrorMessage } from '../../components/ui';
 import {
-  InvestorTypeDonut,
-  JurisdictionExposureBar,
-  KycExpiryHorizon,
-  ViolationAnalysisBar,
   ConcentrationRiskGrid,
+  ActiveViolationsCard,
+  KycPipelineCard,
+  AuditReadinessCard,
+  LeverageUtilizationCard,
+  RegulatoryCalendarCard,
+  NewsFeedCard,
 } from '../../components/charts';
 import { formatDateTime, getErrorMessage } from '../../lib/utils';
 import { SetupWizard } from '../../components/setup-wizard';
@@ -20,10 +21,6 @@ import { ViolationModal } from '../../components/violation-modal';
 import { FundCard } from '../../components/fund-card';
 import { OnboardingChecklist } from '../../components/onboarding-checklist';
 import {
-  aggregateByType,
-  aggregateByJurisdiction,
-  aggregateKycData,
-  aggregateViolations,
   computeConcentration,
   calculateEventTrend,
 } from '../../lib/dashboard-utils';
@@ -55,8 +52,82 @@ function SkeletonChart() {
   );
 }
 
+type AnalyticsTab = 'status' | 'risk' | 'calendar' | 'news';
+
+function AnalyticsTabs({
+  fundReports,
+  allInvestors,
+  concentrationData,
+}: {
+  fundReports: FundReportPair[];
+  allInvestors: Investor[];
+  concentrationData: { fund_name: string; top_investor_pct: number; top3_investor_pct: number; hhi: number }[];
+}) {
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>('status');
+  const { t } = useI18n();
+
+  const tabs: { key: AnalyticsTab; label: string }[] = [
+    { key: 'status', label: t('tabs.status') },
+    { key: 'risk', label: t('tabs.risk') },
+    { key: 'calendar', label: t('tabs.calendar') },
+    { key: 'news', label: t('tabs.news') },
+  ];
+
+  const fundNames = fundReports.map(({ fund }) => fund.name);
+
+  return (
+    <div className="mb-6">
+      <SectionHeader title={t('dashboard.analytics')} description={t('dashboard.analyticsDesc')} />
+
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-5 p-1 rounded-lg bg-bg-tertiary/50 w-fit">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-1.5 rounded-md text-[11px] font-semibold tracking-[0.08em] transition-all font-[Sora,sans-serif] ${
+              activeTab === tab.key
+                ? 'bg-[rgba(197,224,238,0.15)] text-ink border border-brand-accent shadow-sm'
+                : 'text-ink-tertiary hover:text-ink-secondary border border-transparent'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'status' && (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <ActiveViolationsCard fundReports={fundReports} />
+          <KycPipelineCard investors={allInvestors} />
+          <AuditReadinessCard fundReports={fundReports} />
+        </div>
+      )}
+
+      {activeTab === 'risk' && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <ConcentrationRiskGrid data={concentrationData} />
+          <LeverageUtilizationCard fundNames={fundNames} />
+        </div>
+      )}
+
+      {activeTab === 'calendar' && (
+        <div>
+          <RegulatoryCalendarCard />
+        </div>
+      )}
+
+      {activeTab === 'news' && (
+        <div>
+          <NewsFeedCard />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
-  const router = useRouter();
   const { t } = useI18n();
   const localeDateFormat = useLocaleDate();
   const [fundReports, setFundReports] = useState<FundReportPair[]>([]);
@@ -242,10 +313,6 @@ export default function DashboardPage() {
     return items.sort((a, b) => weight[a.severity] - weight[b.severity]);
   }, [allDecisions, allInvestors, allRiskFlags, reports]);
 
-  const typeData = useMemo(() => aggregateByType(allInvestors, reports), [allInvestors, reports]);
-  const jurisdictionData = useMemo(() => aggregateByJurisdiction(allInvestors, reports), [allInvestors, reports]);
-  const kycData = useMemo(() => aggregateKycData(allInvestors), [allInvestors]);
-  const violationData = useMemo(() => aggregateViolations(reports, assetNameMap), [reports, assetNameMap]);
   const concentrationData = useMemo(() => computeConcentration(fundReports, capTables), [fundReports, capTables]);
 
   const today = new Date().toLocaleDateString(localeDateFormat, {
@@ -312,7 +379,7 @@ export default function DashboardPage() {
       {/* Action Queue */}
       {!loading && <ActionQueue items={actionQueue} />}
 
-      {/* Data Visualization Charts */}
+      {/* Tabbed Analytics */}
       {loading ? (
         <div className="mb-6">
           <div className="h-4 w-40 rounded bg-bg-tertiary mb-4 animate-pulse" />
@@ -323,18 +390,11 @@ export default function DashboardPage() {
           </div>
         </div>
       ) : fundReports.length > 0 ? (
-        <div className="mb-6">
-          <SectionHeader title={t('dashboard.analytics')} description={t('dashboard.analyticsDesc')} />
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-            <InvestorTypeDonut data={typeData} onTypeClick={(type) => router.push(`/investors?type=${type}`)} />
-            <JurisdictionExposureBar data={jurisdictionData} onBarClick={(j) => router.push(`/jurisdiction/${j}`)} />
-            <KycExpiryHorizon data={kycData} onStatusClick={(status) => router.push(`/investors?kyc=${status}`)} />
-          </div>
-          <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <ViolationAnalysisBar data={violationData} onBarClick={(name) => setViolationAsset(name)} />
-            <ConcentrationRiskGrid data={concentrationData} />
-          </div>
-        </div>
+        <AnalyticsTabs
+          fundReports={fundReports}
+          allInvestors={allInvestors}
+          concentrationData={concentrationData}
+        />
       ) : null}
 
       {/* Risk Flags */}

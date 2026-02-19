@@ -531,6 +531,448 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
   );
 });
 
+// ── 6. Active Violations (Status Tab) ──
+
+interface ActiveViolationsProps {
+  fundReports: Array<{ fund: { name: string }; report: { risk_flags: Array<{ severity: string; category?: string; message: string }> } }>;
+}
+
+export const ActiveViolationsCard = React.memo(function ActiveViolationsCard({ fundReports }: ActiveViolationsProps) {
+  const { t } = useI18n();
+
+  const severityCounts = { critical: 0, high: 0, medium: 0 };
+  const perFund: Array<{ name: string; count: number; refs: string[] }> = [];
+
+  for (const { fund, report } of fundReports) {
+    let count = 0;
+    const refs: string[] = [];
+    for (const flag of report.risk_flags) {
+      const s = flag.severity.toLowerCase();
+      if (s === 'critical') { severityCounts.critical++; count++; }
+      else if (s === 'high') { severityCounts.high++; count++; }
+      else if (s === 'medium') { severityCounts.medium++; count++; }
+      // derive regulatory refs from category
+      if (flag.category?.includes('concentration') || flag.category?.includes('limit')) refs.push('KAGB §262');
+      if (flag.category?.includes('leverage') || flag.category?.includes('risk')) refs.push('AIFMD Art. 25');
+      if (flag.category?.includes('kyc') || flag.category?.includes('aml')) refs.push('GwG §10');
+    }
+    if (count > 0) perFund.push({ name: fund.name, count, refs: Array.from(new Set(refs)) });
+  }
+
+  const total = severityCounts.critical + severityCounts.high + severityCounts.medium;
+
+  return (
+    <ChartCard title={t('violations.activeTitle')} subtitle={t('violations.activeSubtitle')}>
+      {total === 0 ? (
+        <div className="flex h-[160px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-bg-tertiary">
+              <svg className="h-5 w-5 text-ink-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-xs text-ink-tertiary">{t('violations.noActive')}</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Severity bands */}
+          <div className="flex gap-3 mb-4">
+            {([
+              { key: 'critical', label: t('violations.critical'), color: 'var(--danger)', count: severityCounts.critical },
+              { key: 'high', label: t('violations.high'), color: WARM, count: severityCounts.high },
+              { key: 'medium', label: t('violations.medium'), color: 'var(--warning)', count: severityCounts.medium },
+            ] as const).map((band) => (
+              <div key={band.key} className="flex-1 rounded-lg p-3" style={{ background: `color-mix(in srgb, ${band.color} 12%, transparent)` }}>
+                <div className="font-mono text-2xl font-bold" style={{ color: band.color }}>{band.count}</div>
+                <div className="text-[10px] font-semibold tracking-wider mt-0.5" style={{ color: band.color }}>{band.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Per-fund breakdown */}
+          <div className="space-y-2">
+            {perFund.map((f) => (
+              <div key={f.name} className="flex items-center justify-between py-2 border-b border-edge-subtle last:border-b-0">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-semibold text-ink truncate">{f.name}</div>
+                  {f.refs.length > 0 && (
+                    <div className="flex gap-1.5 mt-1 flex-wrap">
+                      {f.refs.map((r) => (
+                        <span key={r} className="text-[9px] px-1.5 py-0.5 rounded bg-bg-tertiary text-ink-muted font-mono">{r}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <span className="font-mono text-sm font-bold text-ink ml-3">{f.count}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </ChartCard>
+  );
+});
+
+// ── 7. KYC/AML Pipeline (Status Tab) ──
+
+interface KycPipelineProps {
+  investors: Array<{ kyc_status: string; kyc_expiry?: string | null }>;
+}
+
+export const KycPipelineCard = React.memo(function KycPipelineCard({ investors }: KycPipelineProps) {
+  const { t } = useI18n();
+  const now = new Date();
+  const in90 = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+  let overdue = 0, expiring90 = 0, pending = 0, verified = 0;
+  for (const inv of investors) {
+    if (inv.kyc_status === 'expired') { overdue++; }
+    else if (inv.kyc_status === 'verified' && inv.kyc_expiry && new Date(inv.kyc_expiry) <= in90 && new Date(inv.kyc_expiry) > now) { expiring90++; }
+    else if (inv.kyc_status === 'pending') { pending++; }
+    else if (inv.kyc_status === 'verified') { verified++; }
+  }
+  const total = investors.length || 1;
+  const verifiedPct = Math.round((verified / total) * 100);
+
+  const segments = [
+    { label: t('kyc.overdue'), count: overdue, color: 'var(--danger)' },
+    { label: t('kyc.expiring90'), count: expiring90, color: WARM },
+    { label: t('kyc.pending'), count: pending, color: 'var(--warning)' },
+    { label: t('kyc.verified'), count: verified, color: 'var(--success)' },
+  ];
+
+  return (
+    <ChartCard title={t('kyc.pipelineTitle')} subtitle={t('kyc.pipelineSubtitle')}>
+      {/* Big verification % */}
+      <div className="text-center my-4">
+        <div className="font-mono text-5xl font-extrabold" style={{ color: 'var(--success)' }}>{verifiedPct}%</div>
+        <div className="text-[11px] text-ink-muted mt-1">{t('kyc.verificationRate')}</div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="flex h-3 rounded-full overflow-hidden mb-4">
+        {segments.filter(s => s.count > 0).map((s, i) => (
+          <div key={i} style={{ flex: s.count, background: s.color }} />
+        ))}
+      </div>
+
+      {/* Pipeline stages */}
+      <div className="flex justify-between text-center">
+        {segments.map((s) => (
+          <div key={s.label} className="flex-1">
+            <div className="font-mono text-lg font-bold" style={{ color: s.color }}>{s.count}</div>
+            <div className="text-[10px] text-ink-muted mt-0.5">{s.label}</div>
+          </div>
+        ))}
+      </div>
+    </ChartCard>
+  );
+});
+
+// ── 8. Audit Readiness (Status Tab) ──
+
+interface AuditReadinessProps {
+  fundReports: Array<{ fund: { name: string }; report: { risk_flags: Array<{ severity: string; category?: string }>; eligibility_criteria: unknown[] } }>;
+}
+
+export const AuditReadinessCard = React.memo(function AuditReadinessCard({ fundReports }: AuditReadinessProps) {
+  const { t } = useI18n();
+
+  // Compute readiness per fund based on risk flags and criteria coverage
+  const perFund = fundReports.map(({ fund, report }) => {
+    const flagPenalty = report.risk_flags.length * 5;
+    const hasCriteria = report.eligibility_criteria.length > 0;
+    const base = hasCriteria ? 90 : 60;
+    const score = Math.max(0, Math.min(100, base - flagPenalty));
+    const gaps: string[] = [];
+    if (!hasCriteria) gaps.push('Eligibility criteria');
+    if (report.risk_flags.some(f => f.category?.includes('kyc'))) gaps.push('KYC documentation');
+    if (report.risk_flags.some(f => f.category?.includes('concentration'))) gaps.push('Concentration limits');
+    return { name: fund.name, score, gaps };
+  });
+
+  const overall = perFund.length > 0 ? Math.round(perFund.reduce((s, f) => s + f.score, 0) / perFund.length) : 0;
+  const overallColor = overall >= 80 ? 'var(--success)' : overall >= 50 ? WARM : 'var(--danger)';
+
+  return (
+    <ChartCard title={t('audit.readinessTitle')} subtitle={t('audit.readinessSubtitle')}>
+      {/* Overall score */}
+      <div className="text-center my-4">
+        <div className="font-mono text-5xl font-extrabold" style={{ color: overallColor }}>{overall}%</div>
+        <div className="text-[11px] text-ink-muted mt-1">{t('audit.overallScore')}</div>
+      </div>
+
+      {/* Per-fund bars */}
+      <div className="space-y-3">
+        {perFund.map((f) => {
+          const c = f.score >= 80 ? 'var(--success)' : f.score >= 50 ? WARM : 'var(--danger)';
+          return (
+            <div key={f.name}>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="font-semibold text-ink truncate">{f.name}</span>
+                <span className="font-mono font-bold" style={{ color: c }}>{f.score}%</span>
+              </div>
+              <div className="h-1.5 bg-bg-tertiary rounded-full">
+                <div className="h-full rounded-full transition-all" style={{ width: `${f.score}%`, background: c }} />
+              </div>
+              {f.gaps.length > 0 && (
+                <div className="flex gap-1.5 mt-1 flex-wrap">
+                  {f.gaps.map((g) => (
+                    <span key={g} className="text-[9px] px-1.5 py-0.5 rounded bg-bg-tertiary text-ink-muted">{g}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </ChartCard>
+  );
+});
+
+// ── 9. Leverage Utilization (Risk Tab) ──
+
+export const LeverageUtilizationCard = React.memo(function LeverageUtilizationCard({
+  fundNames,
+}: {
+  fundNames: string[];
+}) {
+  const { t } = useI18n();
+
+  // Demo data — will be wired to API later
+  const demoData = fundNames.map((name, i) => ({
+    name,
+    commitment: { usage: [65, 42, 78, 55][i % 4], limit: 100 },
+    gross: { usage: [120, 85, 145, 95][i % 4], limit: [200, 150, 200, 150][i % 4] },
+  }));
+
+  return (
+    <ChartCard title={t('leverage.title')} subtitle={t('leverage.subtitle')}>
+      <div className="space-y-4">
+        {demoData.map((fund) => (
+          <div key={fund.name} className="py-2 border-b border-edge-subtle last:border-b-0">
+            <div className="text-xs font-semibold text-ink mb-2.5">{fund.name}</div>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Commitment */}
+              <div>
+                <div className="text-[10px] text-ink-muted mb-1">{t('leverage.commitmentMethod')}</div>
+                <div className="h-2 bg-bg-tertiary rounded-full">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.min((fund.commitment.usage / fund.commitment.limit) * 100, 100)}%`,
+                      background: fund.commitment.usage / fund.commitment.limit > 0.8 ? WARM : ACCENT,
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1 text-[10px] font-mono">
+                  <span className="text-ink">{fund.commitment.usage}%</span>
+                  <span className="text-ink-muted">{t('leverage.limit')}: {fund.commitment.limit}%</span>
+                </div>
+              </div>
+              {/* Gross */}
+              <div>
+                <div className="text-[10px] text-ink-muted mb-1">{t('leverage.grossMethod')}</div>
+                <div className="h-2 bg-bg-tertiary rounded-full">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.min((fund.gross.usage / fund.gross.limit) * 100, 100)}%`,
+                      background: fund.gross.usage / fund.gross.limit > 0.8 ? WARM : ACCENT,
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1 text-[10px] font-mono">
+                  <span className="text-ink">{fund.gross.usage}%</span>
+                  <span className="text-ink-muted">{t('leverage.limit')}: {fund.gross.limit}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </ChartCard>
+  );
+});
+
+// ── 10. Regulatory Calendar (Calendar Tab) ──
+
+export const RegulatoryCalendarCard = React.memo(function RegulatoryCalendarCard() {
+  const { t } = useI18n();
+
+  const deadlines = [
+    { name: 'AIFMD Annex IV Report (Q4)', date: '2026-03-31', body: 'ESMA / BaFin', daysOut: 40 },
+    { name: 'Annual AML Risk Assessment', date: '2026-03-15', body: 'BaFin', daysOut: 24 },
+    { name: 'KAGB §35 Annual Report Filing', date: '2026-04-30', body: 'BaFin', daysOut: 70 },
+    { name: 'DORA ICT Risk Framework Review', date: '2026-03-01', body: 'ESMA', daysOut: 10 },
+    { name: 'Investor KYC Batch Renewal', date: '2026-02-28', body: 'Internal', daysOut: 9 },
+    { name: 'ESMA Leverage Reporting (Semi-Annual)', date: '2026-04-15', body: 'ESMA', daysOut: 55 },
+    { name: 'Bundesbank Capital Flow Report', date: '2026-05-01', body: 'Bundesbank', daysOut: 71 },
+  ].sort((a, b) => a.daysOut - b.daysOut);
+
+  function getStatus(daysOut: number) {
+    if (daysOut <= 0) return { label: t('calendar.overdue'), color: 'var(--danger)', bg: 'rgba(248,113,113,0.12)' };
+    if (daysOut <= 14) return { label: t('calendar.dueSoon'), color: WARM, bg: 'rgba(232,168,124,0.12)' };
+    return { label: t('calendar.upcoming'), color: 'var(--success)', bg: 'rgba(110,231,183,0.08)' };
+  }
+
+  return (
+    <ChartCard title={t('calendar.title')} subtitle={t('calendar.subtitle')}>
+      <div className="space-y-1">
+        {deadlines.map((d) => {
+          const status = getStatus(d.daysOut);
+          return (
+            <div key={d.name} className="flex items-center gap-3 py-2.5 border-b border-edge-subtle last:border-b-0">
+              {/* Date pill */}
+              <div className="w-16 text-center flex-shrink-0">
+                <div className="font-mono text-xs font-bold text-ink">{d.date.slice(5)}</div>
+                <div className="text-[9px] text-ink-muted">{d.daysOut}d</div>
+              </div>
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-ink">{d.name}</div>
+                <div className="text-[10px] text-ink-muted mt-0.5">{d.body}</div>
+              </div>
+              {/* Status badge */}
+              <span
+                className="inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold flex-shrink-0"
+                style={{ background: status.bg, color: status.color }}
+              >
+                {status.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </ChartCard>
+  );
+});
+
+// ── 11. News Feed (News Tab) ──
+
+export const NewsFeedCard = React.memo(function NewsFeedCard() {
+  const { t } = useI18n();
+
+  type SourceType = 'regulatory' | 'news' | 'academic';
+  const sourceColors: Record<SourceType, { bg: string; color: string }> = {
+    regulatory: { bg: 'rgba(197,224,238,0.2)', color: ACCENT },
+    news: { bg: 'rgba(232,168,124,0.15)', color: WARM },
+    academic: { bg: 'rgba(197,224,238,0.1)', color: 'rgba(197,224,238,0.6)' },
+  };
+
+  const articles: Array<{
+    title: string;
+    source: string;
+    sourceType: SourceType;
+    date: string;
+    excerpt: string;
+    url: string;
+  }> = [
+    {
+      title: 'AIFMD II: Final RTS on Leverage Reporting Published by ESMA',
+      source: 'ESMA',
+      sourceType: 'regulatory',
+      date: '2026-02-18',
+      excerpt: 'ESMA released the final regulatory technical standards for leverage calculation under AIFMD II, effective Q3 2026. New commitment method granularity requirements apply to all EU AIFMs.',
+      url: '#',
+    },
+    {
+      title: 'BaFin verschärft Prüfung von KAGB-Meldungen für offene Spezialfonds',
+      source: 'BaFin',
+      sourceType: 'regulatory',
+      date: '2026-02-15',
+      excerpt: 'Die BaFin kündigt intensivere Kontrollen der Meldepflichten nach KAGB §35 und §36 an. KVGen müssen ab April 2026 erweiterte Risikoberichte einreichen.',
+      url: '#',
+    },
+    {
+      title: 'EU Anti-Money Laundering Authority: First Supervisory Priorities Announced',
+      source: 'Reuters',
+      sourceType: 'news',
+      date: '2026-02-14',
+      excerpt: 'AMLA published its first supervisory priorities focusing on crypto-asset service providers and alternative fund managers with cross-border distribution.',
+      url: '#',
+    },
+    {
+      title: 'DORA Compliance Deadline: What Fund Managers Need to Know Now',
+      source: 'Handelsblatt',
+      sourceType: 'news',
+      date: '2026-02-12',
+      excerpt: 'Mit dem Inkrafttreten von DORA müssen Fondsmanager ihre ICT-Risikomanagement-Frameworks dokumentieren und Drittanbieter-Abhängigkeiten melden.',
+      url: '#',
+    },
+    {
+      title: 'ECB Financial Stability Review Highlights Leverage Risks in Alternative Funds',
+      source: 'ECB',
+      sourceType: 'regulatory',
+      date: '2026-02-10',
+      excerpt: 'The ECB\'s latest stability report flags elevated leverage in EU real estate and credit funds, recommending enhanced macroprudential tools for AIFMD.',
+      url: '#',
+    },
+    {
+      title: 'Implementing the EU AML Package: Impact on Investor Due Diligence',
+      source: 'Journal of Financial Regulation',
+      sourceType: 'academic',
+      date: '2026-02-08',
+      excerpt: 'A comprehensive analysis of how the sixth Anti-Money Laundering Directive reshapes beneficial ownership verification for fund subscriptions across the EU.',
+      url: '#',
+    },
+    {
+      title: 'Bundesbank Issues Updated Capital Flow Reporting Templates for AIFs',
+      source: 'Bundesbank',
+      sourceType: 'regulatory',
+      date: '2026-02-05',
+      excerpt: 'New Z4 reporting templates for alternative investment funds incorporate granular country-level exposure breakdowns effective May 2026.',
+      url: '#',
+    },
+    {
+      title: 'BaFin Enforcement: €2.1M Fine for Concentration Limit Breach in Spezialfonds',
+      source: 'Bloomberg Law',
+      sourceType: 'news',
+      date: '2026-02-03',
+      excerpt: 'A German KVG received a significant fine for repeated KAGB §262 concentration limit violations in three managed special funds, underscoring BaFin\'s enforcement posture.',
+      url: '#',
+    },
+  ];
+
+  const sourceLabel = (type: SourceType) => {
+    if (type === 'regulatory') return t('news.sourceRegulatory');
+    if (type === 'news') return t('news.sourceNews');
+    return t('news.sourceAcademic');
+  };
+
+  return (
+    <ChartCard title={t('news.title')} subtitle={t('news.subtitle')}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {articles.map((article, i) => {
+          const sc = sourceColors[article.sourceType];
+          return (
+            <div key={i} className="rounded-lg border border-edge-subtle p-4 hover:bg-bg-tertiary transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className="inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold"
+                  style={{ background: sc.bg, color: sc.color }}
+                >
+                  {article.source}
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary text-ink-muted">
+                  {sourceLabel(article.sourceType)}
+                </span>
+                <span className="text-[10px] text-ink-muted ml-auto font-mono">{article.date}</span>
+              </div>
+              <h4 className="text-xs font-semibold text-ink leading-snug mb-1.5">{article.title}</h4>
+              <p className="text-[11px] text-ink-secondary leading-relaxed mb-2 line-clamp-2">{article.excerpt}</p>
+              <a href={article.url} className="text-[11px] font-semibold" style={{ color: ACCENT }}>
+                {t('news.readMore')}
+              </a>
+            </div>
+          );
+        })}
+      </div>
+    </ChartCard>
+  );
+});
+
 // ── Shared Components ────────────────────────────────────
 
 function ChartCard({
