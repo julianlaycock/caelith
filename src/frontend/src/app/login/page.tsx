@@ -91,7 +91,7 @@ export default function LoginPage() {
             color: 'rgba(197, 224, 238, 0.5)',
             marginTop: '8px',
             letterSpacing: '1px',
-          }}>COMPLIANCE ENGINE</p>
+          }}>COMPLIANCE-PLATTFORM FÜR EU-FONDSVERWALTER</p>
         </div>
 
         {/* Card */}
@@ -108,13 +108,13 @@ export default function LoginPage() {
             color: '#fff',
             marginBottom: '8px',
             margin: '0 0 8px 0',
-          }}>Sign in</h1>
+          }}>Anmelden</h1>
           <p style={{
             fontSize: '14px',
             color: 'rgba(255,255,255,0.4)',
             marginBottom: '32px',
             margin: '0 0 32px 0',
-          }}>Enter your credentials to access the dashboard.</p>
+          }}>Melden Sie sich an, um auf das Dashboard zuzugreifen.</p>
 
           {error && (
             <div style={{
@@ -137,7 +137,7 @@ export default function LoginPage() {
                 color: 'rgba(255,255,255,0.5)',
                 marginBottom: '8px',
                 letterSpacing: '0.5px',
-              }}>EMAIL</label>
+              }}>E-MAIL
               <input
                 type="email"
                 value={email}
@@ -171,7 +171,7 @@ export default function LoginPage() {
                 color: 'rgba(255,255,255,0.5)',
                 marginBottom: '8px',
                 letterSpacing: '0.5px',
-              }}>PASSWORD</label>
+              }}>PASSWORT
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -211,7 +211,7 @@ export default function LoginPage() {
                     fontFamily: "'JetBrains Mono', monospace",
                     padding: '4px',
                   }}
-                >{showPassword ? 'Hide' : 'Show'}</button>
+                >{showPassword ? 'Verbergen' : 'Zeigen'}</button>
               </div>
             </div>
 
@@ -235,7 +235,7 @@ export default function LoginPage() {
                   onChange={e => setRememberMe(e.target.checked)}
                   style={{ accentColor: '#C5E0EE' }}
                 />
-                Remember me
+                Angemeldet bleiben
               </label>
             </div>
 
@@ -256,7 +256,7 @@ export default function LoginPage() {
                 opacity: loading ? 0.6 : 1,
                 transition: 'all 0.2s',
               }}
-            >{loading ? 'Signing in...' : 'Sign in'}</button>
+            >{loading ? 'Wird angemeldet...' : 'Anmelden'}</button>
           </form>
         </div>
 
@@ -267,7 +267,7 @@ export default function LoginPage() {
           fontSize: '12px',
           color: 'rgba(255,255,255,0.2)',
           fontFamily: "'JetBrains Mono', monospace",
-        }}>© 2026 Caelith. All rights reserved.</p>
+        }}>© 2026 Caelith. Alle Rechte vorbehalten.</p>
       </div>
     </div>
   );
