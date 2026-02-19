@@ -82,19 +82,19 @@ async function seed() {
   const fundDefs = [
     {
       id: FUND_IMMO, name: 'Rhein-Main Immobilien Spezial-AIF',
-      form: 'InvKG', dom: 'DE', fw: 'KAGB/AIFMD',
+      form: 'Spezial_AIF', dom: 'DE', fw: 'AIFMD',
       aifm: 'Rhein-Main Capital Verwaltungsgesellschaft mbH',
       lei: '391200QFXIMK7RH8DE42', target: 150000000, date: '2023-06-01',
     },
     {
       id: FUND_WP, name: 'Süddeutsche Wertpapier Spezial-AIF',
-      form: 'Spezial-AIF', dom: 'DE', fw: 'KAGB/AIFMD',
+      form: 'Spezial_AIF', dom: 'DE', fw: 'AIFMD',
       aifm: 'Süddeutsche Kapitalverwaltungsgesellschaft mbH',
       lei: '529900PLXF7B2HNMO618', target: 80000000, date: '2024-01-15',
     },
     {
       id: FUND_MULTI, name: 'Hanseatischer Multi-Asset Spezial-AIF',
-      form: 'GmbH & Co. KG', dom: 'DE', fw: 'KAGB/AIFMD',
+      form: 'Spezial_AIF', dom: 'DE', fw: 'AIFMD',
       aifm: 'Hanseatische Fondsverwaltung GmbH',
       lei: '529900TK8N4XJWQ09Y55', target: 60000000, date: '2024-07-01',
     },

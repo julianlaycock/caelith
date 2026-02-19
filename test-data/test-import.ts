@@ -36,11 +36,12 @@ async function test() {
 
     await client.query('ROLLBACK');
     console.log('DONE: all inserts work, rolled back');
-  } catch (err: any) {
+  } catch (err: unknown) {
     await client.query('ROLLBACK').catch(() => {});
-    console.error('FAILED:', err.message);
-    console.error('Detail:', err.detail || 'none');
-    console.error('Code:', err.code || 'none');
+    const e = err as Record<string, unknown>;
+    console.error('FAILED:', e.message);
+    console.error('Detail:', e.detail || 'none');
+    console.error('Code:', e.code || 'none');
     console.error('Table:', err.table || 'none');
     console.error('Constraint:', err.constraint || 'none');
   } finally {

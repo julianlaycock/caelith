@@ -36,7 +36,7 @@ export default function LoginPage() {
         const { email: savedEmail } = JSON.parse(saved);
         if (savedEmail) { setEmail(savedEmail); setRememberMe(true); }
       }
-    } catch {}
+    } catch { /* localStorage may be unavailable */ }
   }, []);
 
   const handleSignIn = useCallback(async (e: React.FormEvent) => {
