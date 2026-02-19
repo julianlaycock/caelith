@@ -1,36 +1,40 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { formatCompactNumber, formatInvestorType, classNames } from '../lib/utils';
 
 // ── Brand Palette (theme-safe) ───────────────────────────
 
 const ACCENT = '#C5E0EE';
 const WARM = '#E8A87C';
-const MUTED = '#9AA3AA';
 
-const TYPE_COLORS = [ACCENT, WARM, MUTED, '#B8C9A3', '#D4A5C7', '#A3B8C9', '#C9B8A3'];
+const TYPE_COLORS = [ACCENT, WARM, 'rgba(197,224,238,0.35)', '#B8C9A3', '#D4A5C7', '#A3B8C9', '#C9B8A3'];
+const TYPE_GRADIENTS = [
+  'linear-gradient(135deg, #3a6b7a, rgba(197,224,238,0.25))',
+  'linear-gradient(135deg, #8a5f3a, rgba(232,168,124,0.25))',
+  'linear-gradient(135deg, rgba(197,224,238,0.25), rgba(197,224,238,0.1))',
+  'linear-gradient(135deg, #5a7a4a, rgba(184,201,163,0.25))',
+  'linear-gradient(135deg, #7a4a6a, rgba(212,165,199,0.25))',
+  'linear-gradient(135deg, #4a6a7a, rgba(163,184,201,0.25))',
+  'linear-gradient(135deg, #7a6a4a, rgba(201,184,163,0.25))',
+];
 
-function getJurisdictionColor(j: string) {
-  const upper = j.toUpperCase();
-  if (upper === 'DE' || upper === 'GERMANY') return ACCENT;
-  if (upper === 'LU' || upper === 'LUXEMBOURG') return WARM;
-  return MUTED;
+function getJurisdictionColor(j: string): string {
+  const u = j.toUpperCase();
+  if (u === 'DE' || u === 'GERMANY' || u === 'DEUTSCHLAND') return ACCENT;
+  if (u === 'LU' || u === 'LUXEMBOURG' || u === 'LUXEMBURG') return WARM;
+  return 'rgba(197,224,238,0.35)';
 }
 
-// ── SVG Arc helpers ──────────────────────────────────────
-
-function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
-  const rad = (a: number) => ((a - 90) * Math.PI) / 180;
-  const x1 = cx + r * Math.cos(rad(startAngle));
-  const y1 = cy + r * Math.sin(rad(startAngle));
-  const x2 = cx + r * Math.cos(rad(endAngle));
-  const y2 = cy + r * Math.sin(rad(endAngle));
-  const large = endAngle - startAngle > 180 ? 1 : 0;
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
+function getJurisdictionBg(j: string, pct: number): string {
+  const u = j.toUpperCase();
+  const alpha = Math.max(0.08, Math.min(0.4, pct / 100));
+  if (u === 'DE' || u === 'GERMANY' || u === 'DEUTSCHLAND') return `rgba(197,224,238,${alpha})`;
+  if (u === 'LU' || u === 'LUXEMBOURG' || u === 'LUXEMBURG') return `rgba(232,168,124,${alpha})`;
+  return `rgba(197,224,238,${alpha * 0.5})`;
 }
 
-// ── 1. Investor Type Allocation (Radial Gauge) ──────────
+// ── 1. Investor Type: Treemap (C) + Tufte breakdown (B) ──
 
 interface TypeAllocationEntry {
   type: string;
@@ -49,87 +53,93 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({
     return <EmptyChart label="No investor type data" />;
   }
 
-  const chartData = data.map((d) => ({
-    name: formatInvestorType(d.type),
-    rawType: d.type,
-    value: d.total_units,
-    count: d.count,
-  }));
-
-  const total = chartData.reduce((s, d) => s + d.value, 0);
-  const dominant = chartData.reduce((a, b) => (b.value > a.value ? b : a), chartData[0]);
-  const dominantPct = total > 0 ? ((dominant.value / total) * 100).toFixed(0) : '0';
-
-  // Build arcs
-  const cx = 90, cy = 90, r = 72, trackR = r;
-  let angleOffset = 0;
-  const arcs = chartData.map((d, i) => {
-    const sweep = total > 0 ? (d.value / total) * 360 : 0;
-    const startAngle = angleOffset;
-    const endAngle = angleOffset + Math.max(sweep - 2, 0.5); // small gap
-    angleOffset += sweep;
-    return { ...d, startAngle, endAngle, color: TYPE_COLORS[i % TYPE_COLORS.length] };
-  });
+  const sorted = [...data].sort((a, b) => b.total_units - a.total_units);
+  const total = sorted.reduce((s, d) => s + d.total_units, 0);
 
   return (
     <ChartCard title="Investor Type Allocation" subtitle="Units by investor classification">
-      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-        <div className="relative flex-shrink-0" style={{ width: 180, height: 180 }}>
-          <svg viewBox="0 0 180 180" width="180" height="180">
-            {/* Track */}
-            <circle cx={cx} cy={cy} r={trackR} fill="none" className="stroke-edge-subtle" strokeWidth="10" opacity="0.3" />
-            {/* Arcs */}
-            {arcs.map((arc, i) => (
-              <path
-                key={i}
-                d={describeArc(cx, cy, r, arc.startAngle, arc.endAngle)}
-                fill="none"
-                stroke={arc.color}
-                strokeWidth="10"
-                strokeLinecap="round"
-                className={classNames(
-                  'transition-opacity',
-                  onTypeClick && 'cursor-pointer hover:opacity-70'
-                )}
-                onClick={onTypeClick ? () => onTypeClick(arc.rawType) : undefined}
-              />
-            ))}
-          </svg>
-          {/* Center label */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="font-mono text-2xl font-bold text-ink">{dominantPct}%</span>
-            <span className="text-[10px] text-ink-tertiary">{dominant.name}</span>
-          </div>
-        </div>
-        <div className="flex-1 space-y-2">
-          {arcs.map((d) => (
+      {/* Treemap blocks */}
+      <div className="flex gap-[3px] overflow-hidden rounded-lg" style={{ height: 140 }}>
+        {sorted.length > 0 && (
+          <>
+            {/* Largest block */}
             <div
-              key={d.name}
-              className={classNames(
-                'flex items-center justify-between text-xs',
-                onTypeClick && 'cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-bg-tertiary transition-colors'
-              )}
-              onClick={onTypeClick ? () => onTypeClick(d.rawType) : undefined}
+              className={classNames('flex flex-col justify-end rounded-md p-2.5 relative overflow-hidden transition-opacity', onTypeClick && 'cursor-pointer hover:opacity-85')}
+              style={{ flex: Math.max(sorted[0].total_units, 1), background: TYPE_GRADIENTS[0] }}
+              onClick={onTypeClick ? () => onTypeClick(sorted[0].type) : undefined}
             >
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: d.color }} />
-                <span className="text-ink-secondary">{d.name}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-ink-tertiary">{d.count}</span>
-                <span className="font-mono font-medium text-ink">
-                  {total > 0 ? ((d.value / total) * 100).toFixed(1) : '0'}%
-                </span>
-              </div>
+              <span className="font-mono text-sm font-bold text-white">
+                {total > 0 ? ((sorted[0].total_units / total) * 100).toFixed(0) : 0}%
+              </span>
+              <span className="text-[10px] font-semibold text-white/90">{formatInvestorType(sorted[0].type)}</span>
             </div>
-          ))}
-        </div>
+            {/* Remaining blocks stacked vertically */}
+            {sorted.length > 1 && (
+              <div className="flex flex-col gap-[3px]" style={{ flex: sorted.slice(1).reduce((s, d) => s + d.total_units, 0) }}>
+                {sorted.slice(1).map((d, i) => {
+                  const pct = total > 0 ? ((d.total_units / total) * 100).toFixed(0) : '0';
+                  return (
+                    <div
+                      key={d.type}
+                      className={classNames('flex flex-col justify-end rounded-md p-2 overflow-hidden transition-opacity', onTypeClick && 'cursor-pointer hover:opacity-85')}
+                      style={{ flex: Math.max(d.total_units, 1), background: TYPE_GRADIENTS[(i + 1) % TYPE_GRADIENTS.length] }}
+                      onClick={onTypeClick ? () => onTypeClick(d.type) : undefined}
+                    >
+                      {d.total_units / total > 0.08 ? (
+                        <>
+                          <span className="font-mono text-xs font-bold text-white">{pct}%</span>
+                          <span className="text-[9px] font-semibold text-white/90 truncate">{formatInvestorType(d.type)}</span>
+                        </>
+                      ) : (
+                        <span className="text-[9px] font-semibold text-white/80 truncate">
+                          {formatInvestorType(d.type)} {pct}%
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Tufte breakdown rows */}
+      <div className="mt-4">
+        {sorted.map((d, i) => {
+          const pct = total > 0 ? (d.total_units / total) * 100 : 0;
+          return (
+            <div
+              key={d.type}
+              className={classNames(
+                'flex items-center gap-2.5 py-1.5',
+                onTypeClick && 'cursor-pointer rounded px-1 -mx-1 hover:bg-bg-tertiary transition-colors'
+              )}
+              onClick={onTypeClick ? () => onTypeClick(d.type) : undefined}
+            >
+              <span className="w-28 text-[11px] text-ink-secondary truncate">{formatInvestorType(d.type)}</span>
+              <div className="flex-1 h-[2px] bg-bg-tertiary rounded-full relative">
+                <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${pct}%`, background: TYPE_COLORS[i % TYPE_COLORS.length] }} />
+              </div>
+              <span className="font-mono text-[11px] font-semibold w-12 text-right" style={{ color: TYPE_COLORS[i % TYPE_COLORS.length] }}>
+                {formatCompactNumber(d.total_units)}
+              </span>
+              <span className="font-mono text-[10px] text-ink-muted w-9 text-right">{pct.toFixed(0)}%</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Total */}
+      <div className="mt-3 pt-2.5 border-t border-edge-subtle flex justify-between text-[11px]">
+        <span className="text-ink-muted">Total</span>
+        <span className="font-mono font-bold text-ink">{total.toLocaleString()}</span>
       </div>
     </ChartCard>
   );
 });
 
-// ── 2. Jurisdiction Exposure (Horizontal CSS Bars) ───────
+// ── 2. Jurisdiction: Stacked strip (B) + Heatmap (C) + Breakdown (B) ──
 
 interface JurisdictionEntry {
   jurisdiction: string;
@@ -149,38 +159,77 @@ export const JurisdictionExposureBar = React.memo(function JurisdictionExposureB
   }
 
   const sorted = [...data].sort((a, b) => b.total_units - a.total_units).slice(0, 12);
-  const maxUnits = sorted[0]?.total_units || 1;
+  const total = sorted.reduce((s, d) => s + d.total_units, 0);
 
   return (
-    <ChartCard title="Jurisdiction Exposure" subtitle="Top jurisdictions by allocated units">
-      <div className="space-y-3">
+    <ChartCard title="Jurisdiction Exposure" subtitle="Geographic exposure by allocated units">
+      {/* Stacked strip */}
+      <div className="flex h-8 rounded-lg overflow-hidden mb-4">
         {sorted.map((d) => {
-          const pct = (d.total_units / maxUnits) * 100;
+          const pct = total > 0 ? (d.total_units / total) * 100 : 0;
+          if (pct < 1) return null;
+          const color = getJurisdictionColor(d.jurisdiction);
+          return (
+            <div
+              key={d.jurisdiction}
+              className={classNames('flex items-center justify-center transition-all', onBarClick && 'cursor-pointer hover:opacity-80')}
+              style={{ flex: d.total_units, background: color }}
+              onClick={onBarClick ? () => onBarClick(d.jurisdiction) : undefined}
+            >
+              {pct > 4 && (
+                <span className="font-mono text-[11px] font-semibold" style={{ color: pct > 15 ? '#2D3333' : undefined }}>
+                  {d.jurisdiction.slice(0, 2).toUpperCase()}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Heatmap tiles */}
+      <div className="grid grid-cols-4 gap-1 mb-4">
+        {sorted.map((d, i) => {
+          const pct = total > 0 ? (d.total_units / total) * 100 : 0;
+          const color = getJurisdictionColor(d.jurisdiction);
+          const isLarge = i < 2;
+          return (
+            <div
+              key={d.jurisdiction}
+              className={classNames(
+                'flex flex-col items-center justify-center rounded-md transition-transform hover:scale-105',
+                isLarge ? 'col-span-2' : 'col-span-2',
+                onBarClick && 'cursor-pointer'
+              )}
+              style={{
+                background: getJurisdictionBg(d.jurisdiction, pct),
+                aspectRatio: isLarge ? '3.4' : '1.6',
+              }}
+              onClick={onBarClick ? () => onBarClick(d.jurisdiction) : undefined}
+            >
+              <span className="font-mono font-bold" style={{ fontSize: isLarge ? 18 : 13, color }}>{d.jurisdiction.slice(0, 2).toUpperCase()}</span>
+              <span className="font-mono text-[10px] mt-0.5" style={{ color, opacity: 0.7 }}>{formatCompactNumber(d.total_units)}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Breakdown rows */}
+      <div>
+        {sorted.map((d) => {
+          const pct = total > 0 ? (d.total_units / total) * 100 : 0;
           const color = getJurisdictionColor(d.jurisdiction);
           return (
             <div
               key={d.jurisdiction}
               className={classNames(
-                'group',
-                onBarClick && 'cursor-pointer'
+                'flex items-center gap-2.5 py-1.5',
+                onBarClick && 'cursor-pointer rounded px-1 -mx-1 hover:bg-bg-tertiary transition-colors'
               )}
               onClick={onBarClick ? () => onBarClick(d.jurisdiction) : undefined}
             >
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-xs font-medium text-ink">{d.jurisdiction}</span>
-                <span className="font-mono text-xs text-ink-secondary">
-                  {formatCompactNumber(d.total_units)} <span className="text-ink-tertiary">({d.count})</span>
-                </span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-bg-tertiary overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all group-hover:opacity-80"
-                  style={{
-                    width: `${pct}%`,
-                    background: `linear-gradient(90deg, ${color}, ${color}CC)`,
-                  }}
-                />
-              </div>
+              <span className="w-28 text-[11px] text-ink-secondary truncate">{d.jurisdiction}</span>
+              <span className="font-mono text-[11px] font-semibold ml-auto" style={{ color }}>{formatCompactNumber(d.total_units)}</span>
+              <span className="font-mono text-[10px] text-ink-muted w-12 text-right">{pct.toFixed(1)}%</span>
             </div>
           );
         })}
@@ -189,7 +238,7 @@ export const JurisdictionExposureBar = React.memo(function JurisdictionExposureB
   );
 });
 
-// ── 3. KYC Expiry Horizon (Semi-circular Arc) ────────────
+// ── 3. KYC: Big number (B) + Dot matrix (C) + Segmented strip (B) ──
 
 interface KycSegmentData {
   verified: number;
@@ -197,6 +246,13 @@ interface KycSegmentData {
   expired: number;
   expiring_soon: number;
 }
+
+const KYC_SEGMENTS = [
+  { key: 'verified', label: 'Verified', color: 'var(--success)' },
+  { key: 'expiring_soon', label: 'Expiring <90d', color: WARM },
+  { key: 'pending', label: 'Pending', color: 'var(--warning)' },
+  { key: 'expired', label: 'Expired', color: 'var(--danger)' },
+] as const;
 
 export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({
   data,
@@ -206,93 +262,91 @@ export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({
   onStatusClick?: (status: string) => void;
 }) {
   const total = data.verified + data.pending + data.expired + data.expiring_soon;
+  const [hoveredDot, setHoveredDot] = useState<number | null>(null);
 
   if (total === 0) {
     return <EmptyChart label="No KYC data available" />;
   }
 
-  const segments = [
-    { key: 'verified', label: 'Verified', value: data.verified, color: 'var(--success)' },
-    { key: 'expiring_soon', label: 'Expiring <90d', value: data.expiring_soon, color: WARM },
-    { key: 'pending', label: 'Pending', value: data.pending, color: 'var(--warning)' },
-    { key: 'expired', label: 'Expired', value: data.expired, color: 'var(--danger)' },
-  ].filter((s) => s.value > 0);
+  // Build dot array
+  const dots: { status: string; color: string; label: string; index: number }[] = [];
+  let idx = 0;
+  for (const seg of KYC_SEGMENTS) {
+    const count = data[seg.key as keyof KycSegmentData];
+    for (let i = 0; i < count; i++) {
+      dots.push({ status: seg.key, color: seg.color, label: seg.label, index: idx++ });
+    }
+  }
 
-  const verified = data.verified;
-
-  // Semi-circle: 180 to 360 degrees
-  const cx = 120, cy = 110, r = 80;
-  let angleOffset = 180;
-  const arcs = segments.map((seg) => {
-    const sweep = (seg.value / total) * 180;
-    const start = angleOffset;
-    const end = angleOffset + Math.max(sweep - 1.5, 0.5);
-    angleOffset += sweep;
-    return { ...seg, start, end };
-  });
+  const segments = KYC_SEGMENTS.map(s => ({ ...s, value: data[s.key as keyof KycSegmentData] })).filter(s => s.value > 0);
 
   return (
     <ChartCard title="KYC Status Overview" subtitle="Investor KYC verification status">
-      <div className="flex flex-col items-center">
-        <div className="relative" style={{ width: 240, height: 130 }}>
-          <svg viewBox="0 0 240 130" width="240" height="130">
-            {/* Track */}
-            <path
-              d={describeArc(cx, cy, r, 180, 360)}
-              fill="none"
-              className="stroke-edge-subtle"
-              strokeWidth="14"
-              opacity="0.3"
-            />
-            {/* Segments */}
-            {arcs.map((arc) => (
-              <path
-                key={arc.key}
-                d={describeArc(cx, cy, r, arc.start, arc.end)}
-                fill="none"
-                stroke={arc.color}
-                strokeWidth="14"
-                strokeLinecap="round"
-                className={classNames(
-                  'transition-opacity',
-                  onStatusClick && 'cursor-pointer hover:opacity-70'
-                )}
-                onClick={onStatusClick ? () => onStatusClick(arc.key) : undefined}
-              />
-            ))}
-          </svg>
-          {/* Center number */}
-          <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
-            <span className="font-mono text-xl font-bold text-ink">
-              {verified} <span className="text-ink-tertiary font-normal text-base">/ {total}</span>
-            </span>
-            <span className="text-[10px] text-ink-tertiary">verified</span>
-          </div>
+      {/* Big number */}
+      <div className="text-center my-3">
+        <div className="font-mono text-5xl font-extrabold leading-none tracking-tight">
+          <span style={{ color: 'var(--success)' }}>{data.verified}</span>
+          <span className="text-ink-muted text-2xl"> / {total}</span>
         </div>
+        <div className="text-[11px] text-ink-muted mt-1.5">verified investors</div>
+      </div>
 
-        {/* Legend */}
-        <div className="mt-3 grid grid-cols-2 gap-2 w-full">
-          {segments.map((seg) => (
-            <div
-              key={seg.key}
-              className={classNames(
-                'flex items-center gap-2 text-xs',
-                onStatusClick && 'cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-bg-tertiary transition-colors'
-              )}
-              onClick={onStatusClick ? () => onStatusClick(seg.key) : undefined}
-            >
-              <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ background: seg.color }} />
-              <span className="text-ink-secondary">{seg.label}</span>
-              <span className="ml-auto font-mono font-medium text-ink">{seg.value}</span>
-            </div>
-          ))}
-        </div>
+      {/* Dot matrix */}
+      <div className="grid grid-cols-12 gap-1 max-w-[220px] mx-auto mb-4">
+        {dots.map((dot) => (
+          <div
+            key={dot.index}
+            className={classNames(
+              'rounded transition-transform relative',
+              onStatusClick && 'cursor-pointer',
+              hoveredDot === dot.index && 'scale-130 z-10'
+            )}
+            style={{ background: dot.color, height: 22, aspectRatio: '1' }}
+            onClick={onStatusClick ? () => onStatusClick(dot.status) : undefined}
+            onMouseEnter={() => setHoveredDot(dot.index)}
+            onMouseLeave={() => setHoveredDot(null)}
+          >
+            {hoveredDot === dot.index && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 rounded-md border border-edge bg-bg-secondary px-2.5 py-1.5 text-[10px] text-ink whitespace-nowrap z-20 shadow-lg">
+                Inv. {dot.index + 1} · {dot.label}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Segmented strip */}
+      <div className="flex h-2 rounded overflow-hidden">
+        {segments.map((seg, i) => (
+          <div
+            key={seg.key}
+            style={{
+              flex: seg.value,
+              background: seg.color,
+              borderRadius: i === 0 ? '4px 0 0 4px' : i === segments.length - 1 ? '0 4px 4px 0' : undefined,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Legend */}
+      <div className="flex justify-between mt-3 text-[10px]">
+        {segments.map((seg) => (
+          <span
+            key={seg.key}
+            className={classNames(onStatusClick && 'cursor-pointer hover:opacity-80')}
+            style={{ color: seg.color }}
+            onClick={onStatusClick ? () => onStatusClick(seg.key) : undefined}
+          >
+            ● {seg.label} {seg.value}
+          </span>
+        ))}
       </div>
     </ChartCard>
   );
 });
 
-// ── 4. Violation Analysis (Severity List) ────────────────
+// ── 4. Violations: Severity list with color bars ──
 
 interface ViolationEntry {
   asset_name: string;
@@ -312,8 +366,8 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({
       <ChartCard title="Rule Violations" subtitle="Top assets by compliance violations">
         <div className="flex h-[200px] items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-accent-500/10">
-              <svg className="h-5 w-5 text-accent-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-bg-tertiary">
+              <svg className="h-5 w-5 text-ink-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -324,51 +378,64 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({
     );
   }
 
-  const sorted = [...data].sort((a, b) => b.violation_count - a.violation_count).slice(0, 5);
+  const sorted = [...data].sort((a, b) => b.violation_count - a.violation_count);
+  const totalViolations = sorted.reduce((s, d) => s + d.violation_count, 0);
+  const totalDecisions = sorted.reduce((s, d) => s + d.total_decisions, 0);
 
   function getSeverityColor(count: number): string {
-    if (count >= 5) return 'var(--danger)';
-    if (count >= 2) return WARM;
+    if (count >= 3) return 'var(--danger)';
+    if (count >= 1) return WARM;
+    return 'rgba(197,224,238,0.2)';
+  }
+
+  function getCountColor(count: number): string {
+    if (count >= 3) return 'var(--danger)';
+    if (count >= 1) return WARM;
     return 'var(--success)';
   }
 
   return (
     <ChartCard title="Rule Violations" subtitle="Top assets by compliance violations">
-      <div className="space-y-2">
+      <div>
         {sorted.map((d) => {
-          const color = getSeverityColor(d.violation_count);
+          const barColor = getSeverityColor(d.violation_count);
+          const countColor = getCountColor(d.violation_count);
           return (
             <div
               key={d.asset_name}
               className={classNames(
-                'flex items-center gap-3 rounded-lg border border-edge-subtle p-3 transition-colors',
-                onBarClick && 'cursor-pointer hover:bg-bg-tertiary'
+                'flex items-center gap-3 py-2.5 border-b border-edge-subtle last:border-b-0',
+                onBarClick && 'cursor-pointer hover:bg-bg-tertiary transition-colors rounded -mx-1 px-1'
               )}
-              style={{ borderLeftWidth: 3, borderLeftColor: color }}
               onClick={onBarClick ? () => onBarClick(d.asset_name) : undefined}
             >
+              <div className="w-1.5 h-8 rounded-full flex-shrink-0" style={{ background: barColor }} />
               <div className="flex-1 min-w-0">
-                <span className="text-xs font-medium text-ink truncate block">{d.asset_name}</span>
-              </div>
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <div className="text-right">
-                  <span className="font-mono text-sm font-bold" style={{ color }}>{d.violation_count}</span>
-                  <span className="text-[10px] text-ink-tertiary block">violations</span>
-                </div>
-                <div className="text-right">
-                  <span className="font-mono text-sm text-ink-secondary">{d.total_decisions}</span>
-                  <span className="text-[10px] text-ink-tertiary block">decisions</span>
+                <div className="text-xs font-semibold text-ink truncate">{d.asset_name}</div>
+                <div className="text-[10px] text-ink-muted mt-0.5">
+                  {d.violation_count} violation{d.violation_count !== 1 ? 's' : ''} · {d.total_decisions} decisions
                 </div>
               </div>
+              <span className="font-mono text-lg font-bold flex-shrink-0" style={{ color: countColor }}>
+                {d.violation_count}
+              </span>
             </div>
           );
         })}
+      </div>
+
+      {/* Total */}
+      <div className="mt-3 pt-2.5 border-t border-edge-subtle flex justify-between text-[11px]">
+        <span className="text-ink-muted">Total violations / decisions</span>
+        <span className="font-mono font-bold text-ink">
+          <span style={{ color: totalViolations > 0 ? 'var(--danger)' : undefined }}>{totalViolations}</span> / {totalDecisions}
+        </span>
       </div>
     </ChartCard>
   );
 });
 
-// ── 5. Concentration Risk Grid ───────────────────────────
+// ── 5. Concentration Risk: Tags (C) + Gradient bars (B) + HHI ──
 
 interface ConcentrationEntry {
   fund_name: string;
@@ -386,47 +453,69 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
     return <EmptyChart label="No concentration data" />;
   }
 
+  function getRisk(fund: ConcentrationEntry) {
+    if (fund.top_investor_pct >= 50) return { label: 'HOCH', color: 'var(--danger)', bg: 'rgba(248,113,113,0.15)' };
+    if (fund.top_investor_pct >= 25) return { label: 'MITTEL', color: WARM, bg: 'rgba(232,168,124,0.15)' };
+    return { label: 'NIEDRIG', color: 'var(--success)', bg: 'rgba(110,231,183,0.15)' };
+  }
+
+  function getBarGradient(fund: ConcentrationEntry, type: 'top1' | 'top3'): string {
+    const risk = getRisk(fund);
+    if (type === 'top1') {
+      if (risk.label === 'HOCH') return `linear-gradient(90deg, var(--danger), ${WARM})`;
+      if (risk.label === 'MITTEL') return WARM;
+      return 'var(--success)';
+    }
+    // top3
+    if (risk.label === 'HOCH') return `linear-gradient(90deg, ${WARM}, rgba(232,168,124,0.5))`;
+    if (risk.label === 'MITTEL') return 'rgba(232,168,124,0.5)';
+    return 'rgba(110,231,183,0.5)';
+  }
+
   return (
     <ChartCard title="Concentration Risk" subtitle="Investor concentration by fund">
-      <div className="space-y-3">
-        {data.map((fund) => {
-          const riskLevel =
-            fund.top_investor_pct >= 50 ? 'high' : fund.top_investor_pct >= 25 ? 'medium' : 'low';
-          const riskLabel = riskLevel === 'high' ? 'HOCH' : riskLevel === 'medium' ? 'MITTEL' : 'NIEDRIG';
-          const riskColor =
-            riskLevel === 'high'
-              ? 'var(--danger)'
-              : riskLevel === 'medium'
-              ? WARM
-              : 'var(--success)';
-
+      <div>
+        {data.map((fund, fi) => {
+          const risk = getRisk(fund);
           return (
-            <div key={fund.fund_name} className="rounded-lg border border-edge-subtle p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-medium text-ink">{fund.fund_name}</span>
+            <div key={fund.fund_name} className={classNames('py-3', fi < data.length - 1 && 'border-b border-edge-subtle')}>
+              {/* Header */}
+              <div className="flex justify-between items-center mb-2.5">
+                <span className="text-xs font-semibold text-ink">{fund.fund_name}</span>
                 <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                  style={{
-                    color: riskColor,
-                    backgroundColor: 'var(--bg-tertiary)',
-                  }}
+                  className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold"
+                  style={{ background: risk.bg, color: risk.color }}
                 >
-                  {riskLabel}
+                  {risk.label}
                 </span>
               </div>
-              <div className="space-y-1.5">
-                <ConcentrationBar label="Top investor" value={fund.top_investor_pct} color={riskColor} />
-                <ConcentrationBar label="Top 3 investors" value={fund.top3_investor_pct} color={ACCENT} />
-              </div>
-              <div className="mt-2 flex items-center justify-between text-[10px] text-ink-tertiary">
-                <span>HHI: <span className="font-mono font-medium text-ink-secondary">{fund.hhi.toLocaleString()}</span></span>
-                <span>
-                  {fund.hhi < 1500
-                    ? 'Well diversified'
-                    : fund.hhi < 2500
-                    ? 'Moderately concentrated'
-                    : 'Highly concentrated'}
-                </span>
+
+              {/* Three columns */}
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <div className="text-[10px] text-ink-muted mb-1">Top Investor</div>
+                  <div className="h-1.5 bg-bg-tertiary rounded-full">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${Math.min(fund.top_investor_pct, 100)}%`, background: getBarGradient(fund, 'top1') }}
+                    />
+                  </div>
+                  <div className="font-mono text-[11px] font-semibold mt-1 text-ink">{fund.top_investor_pct.toFixed(1)}%</div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-[10px] text-ink-muted mb-1">Top 3</div>
+                  <div className="h-1.5 bg-bg-tertiary rounded-full">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${Math.min(fund.top3_investor_pct, 100)}%`, background: getBarGradient(fund, 'top3') }}
+                    />
+                  </div>
+                  <div className="font-mono text-[11px] font-semibold mt-1 text-ink">{fund.top3_investor_pct.toFixed(1)}%</div>
+                </div>
+                <div className="w-[60px] text-right">
+                  <div className="text-[10px] text-ink-muted mb-1">HHI</div>
+                  <div className="font-mono text-sm font-bold" style={{ color: risk.color }}>{fund.hhi.toLocaleString()}</div>
+                </div>
               </div>
             </div>
           );
@@ -435,25 +524,6 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
     </ChartCard>
   );
 });
-
-function ConcentrationBar({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="w-24 text-[11px] text-ink-tertiary">{label}</span>
-      <div className="flex-1">
-        <div className="h-1.5 w-full rounded-full bg-bg-tertiary">
-          <div
-            className="h-1.5 rounded-full transition-all"
-            style={{ width: `${Math.min(value, 100)}%`, background: `linear-gradient(90deg, ${color}, ${color}CC)` }}
-          />
-        </div>
-      </div>
-      <span className="w-10 text-right font-mono text-[11px] font-medium text-ink">
-        {value.toFixed(1)}%
-      </span>
-    </div>
-  );
-}
 
 // ── Shared Components ────────────────────────────────────
 
