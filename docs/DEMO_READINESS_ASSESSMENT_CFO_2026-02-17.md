@@ -41,8 +41,8 @@
 
 3. **Rotated all compromised credentials**
    - JWT secret: rotated to 128-char hex (done during git cleanup)
-   - Anthropic API key: `sk-ant-api03-Uztl...` → `sk-ant-api03-Dh19...` (rotated by founder)
-   - OpenAI API key: `sk-proj-8IFB...` → `sk-proj-QHIn...` (rotated by founder)
+   - Anthropic API key: [REDACTED] (rotated by founder)
+   - OpenAI API key: [REDACTED] (rotated by founder)
    - Old keys were exposed in public GitHub for ~7 days
 
 ### P1 — Landing Page & Legal
