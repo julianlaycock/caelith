@@ -22,8 +22,11 @@ export const metadata: Metadata = {
   description: 'AIFMD II compliance engine for EU alternative investment fund managers',
   applicationName: 'Caelith',
   icons: {
-    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
-    apple: '/favicon.svg',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.json',
   other: {

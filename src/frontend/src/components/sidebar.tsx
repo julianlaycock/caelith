@@ -159,12 +159,13 @@ export function Sidebar({
     >
       {/* Logo */}
       <div className="flex items-center justify-between px-[26px] pb-6 pt-7">
-        <span
-          className="text-[18px] font-extrabold text-ink font-sans"
+        <Link
+          href={user ? '/dashboard' : '/'}
+          className="text-[18px] font-extrabold text-ink font-sans hover:opacity-80 transition-opacity"
           style={{ letterSpacing: '-0.04em' }}
         >
           Caelith
-        </span>
+        </Link>
         {onMobileClose && (
           <button
             onClick={onMobileClose}
