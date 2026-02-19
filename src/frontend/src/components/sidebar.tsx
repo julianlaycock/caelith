@@ -79,6 +79,46 @@ const navItems: NavItem[] = [
   },
 ];
 
+// Theme toggle rendered in sidebar footer
+function ThemeToggle() {
+  const [dark, setDark] = React.useState(false);
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem('caelith_theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = saved ? saved === 'dark' : prefersDark;
+    setDark(isDark);
+    document.documentElement.classList.toggle('dark', isDark);
+  }, []);
+
+  const toggle = () => {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('caelith_theme', next ? 'dark' : 'light');
+  };
+
+  return (
+    <button
+      onClick={toggle}
+      className="rounded-lg border border-edge bg-surface p-1.5 text-ink-tertiary transition-all hover:border-edge-strong hover:text-ink-secondary"
+      title={dark ? 'Light Mode' : 'Dark Mode'}
+    >
+      {dark ? (
+        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+        </svg>
+      ) : (
+        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+export { ThemeToggle };
+
 export function Sidebar({
   onSearchToggle,
   mobileOpen,
@@ -113,22 +153,22 @@ export function Sidebar({
     <aside
       className={classNames(
         'fixed z-50 flex h-screen w-[220px] flex-col transition-transform duration-200 md:static md:translate-x-0',
-        'bg-[var(--bg-sidebar)] border-r border-[var(--border)]',
+        'bg-bg-sidebar border-r border-edge',
         mobileOpen ? 'translate-x-0' : '-translate-x-full'
       )}
     >
       {/* Logo */}
       <div className="flex items-center justify-between px-[26px] pb-6 pt-7">
         <span
-          className="text-[18px] font-extrabold text-[var(--text-primary)]"
-          style={{ fontFamily: "'Sora', sans-serif", letterSpacing: '-0.04em' }}
+          className="text-[18px] font-extrabold text-ink font-sans"
+          style={{ letterSpacing: '-0.04em' }}
         >
           Caelith
         </span>
         {onMobileClose && (
           <button
             onClick={onMobileClose}
-            className="rounded-md p-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] md:hidden"
+            className="rounded-md p-1 text-ink-muted hover:text-ink-secondary md:hidden"
             aria-label="Close menu"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
@@ -148,10 +188,7 @@ export function Sidebar({
           return (
             <React.Fragment key={item.label}>
               {showSection && (
-                <div
-                  className="mb-2 mt-6 px-[10px] font-mono text-[10px] tracking-[1.5px] text-[var(--text-muted)]"
-                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                >
+                <div className="mb-2 mt-6 px-[10px] font-mono text-[10px] tracking-[1.5px] text-ink-muted">
                   {item.section}
                 </div>
               )}
@@ -159,13 +196,13 @@ export function Sidebar({
                 href={item.href}
                 onClick={onMobileClose}
                 className={classNames(
-                  'group flex items-center gap-2.5 rounded-lg px-3 py-[9px] text-[13px] font-medium transition-all duration-150',
+                  'group flex items-center gap-2.5 rounded-lg px-3 py-[9px] text-[13px] font-medium transition-all duration-150 border-l-2',
                   active
-                    ? 'bg-[rgba(197,224,238,0.15)] text-[var(--text-primary)] border-l-2 border-[#C5E0EE] -ml-[2px] dark:bg-[rgba(197,224,238,0.08)] dark:text-[#C5E0EE]'
-                    : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]'
+                    ? 'bg-[rgba(197,224,238,0.15)] text-ink border-l-brand-accent dark:bg-[rgba(197,224,238,0.08)] dark:text-[#C5E0EE]'
+                    : 'text-ink-tertiary border-transparent hover:bg-bg-tertiary hover:text-ink-secondary'
                 )}
               >
-                <span className={active ? 'text-[#C5E0EE]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-tertiary)]'}>
+                <span className={active ? 'text-[#C5E0EE]' : 'text-ink-muted group-hover:text-ink-tertiary'}>
                   {item.icon}
                 </span>
                 {item.label}
@@ -176,32 +213,33 @@ export function Sidebar({
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-[var(--border)] px-3 py-4">
+      <div className="border-t border-edge px-3 py-4">
         {onSearchToggle && (
           <button
             onClick={onSearchToggle}
-            className="mb-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]"
+            className="mb-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-ink-tertiary transition-all hover:bg-bg-tertiary hover:text-ink-secondary"
           >
             <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
             <span className="flex-1 text-left">Suche</span>
-            <kbd className="font-mono text-[10px] text-[var(--text-muted)]">Ctrl+K</kbd>
+            <kbd className="font-mono text-[10px] text-ink-muted">Ctrl+K</kbd>
           </button>
         )}
 
         {user && (
           <div className="flex items-center gap-2.5 px-3 py-2">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[rgba(197,224,238,0.15)] border border-[rgba(197,224,238,0.3)] font-mono text-[10px] font-semibold text-[#2D3333] dark:text-[#C5E0EE] dark:bg-[rgba(197,224,238,0.08)] dark:border-[rgba(197,224,238,0.15)]">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[rgba(197,224,238,0.15)] border border-edge font-mono text-[10px] font-semibold text-brand-dark dark:text-brand-accent dark:bg-[rgba(197,224,238,0.08)] dark:border-[rgba(197,224,238,0.15)]">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[12px] font-medium text-[var(--text-secondary)]">{user.name}</p>
-              <p className="truncate text-[10px] text-[var(--text-muted)]">{user.role === 'admin' ? 'Administrator' : user.role === 'compliance_officer' ? 'Compliance Officer' : 'Viewer'}</p>
+              <p className="truncate text-[12px] font-medium text-ink-secondary">{user.name}</p>
+              <p className="truncate text-[10px] text-ink-muted">{user.role === 'admin' ? 'Administrator' : user.role === 'compliance_officer' ? 'Compliance Officer' : 'Viewer'}</p>
             </div>
+            <ThemeToggle />
             <button
               onClick={logout}
-              className="rounded-md p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]"
+              className="rounded-md p-1 text-ink-muted transition-colors hover:text-ink-secondary"
               title="Abmelden"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

@@ -41,7 +41,7 @@ export function Card({
   return (
     <div
       className={classNames(
-        'rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] transition-colors hover:border-[var(--border-strong)]',
+        'rounded-xl border border-edge bg-surface transition-colors hover:border-edge-strong',
         padding && 'p-6',
         className
       )}
@@ -77,7 +77,7 @@ export function MetricCard({
   return (
     <div
       className={classNames(
-        'rounded-xl border border-edge-subtle bg-bg-secondary border-l-[3px] transition-all',
+        'rounded-xl border border-edge-subtle bg-bg-secondary border-l-[4px] transition-all',
         compact ? 'px-4 py-3' : 'p-6',
         accentColors[accent || 'default'],
         onClick && 'cursor-pointer hover:border-edge hover:-translate-y-px'
@@ -265,9 +265,9 @@ export function Badge({
   variant?: 'green' | 'red' | 'yellow' | 'blue' | 'gray';
 }) {
   const colors = {
-    green: 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20',
-    red: 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20',
-    yellow: 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20',
+    green: 'bg-semantic-success-bg text-semantic-success ring-1 ring-semantic-success/20',
+    red: 'bg-semantic-danger-bg text-semantic-danger ring-1 ring-semantic-danger/20',
+    yellow: 'bg-semantic-warning-bg text-semantic-warning ring-1 ring-semantic-warning/20',
     blue: 'bg-cyan-500/10 text-cyan-400 ring-1 ring-cyan-500/20',
     gray: 'bg-bg-secondary/5 text-ink-secondary ring-1 ring-white/10',
   };
@@ -293,9 +293,9 @@ export function StatusDot({
   const greenStatuses = new Set(['active', 'eligible', 'approved', 'allocated']);
   const amberStatuses = new Set(['applied', 'warning']);
 
-  let dotColor = 'bg-red-400';
-  if (greenStatuses.has(status)) dotColor = 'bg-emerald-400';
-  else if (amberStatuses.has(status)) dotColor = 'bg-amber-400';
+  let dotColor = 'bg-semantic-danger';
+  if (greenStatuses.has(status)) dotColor = 'bg-semantic-success';
+  else if (amberStatuses.has(status)) dotColor = 'bg-semantic-warning';
   else if (status === 'inactive') dotColor = 'bg-ink-muted';
 
   return (
@@ -318,9 +318,9 @@ export function RiskFlagCard({
   message: string;
 }) {
   const styles = {
-    high: 'border-l-red-400 bg-red-500/5',
-    medium: 'border-l-amber-400 bg-amber-500/5',
-    low: 'border-l-emerald-400 bg-emerald-500/5',
+    high: 'border-l-semantic-danger bg-semantic-danger-bg',
+    medium: 'border-l-semantic-warning bg-semantic-warning-bg',
+    low: 'border-l-semantic-success bg-semantic-success-bg',
   };
   const badgeVariant = {
     high: 'red' as const,
@@ -531,8 +531,8 @@ export function Alert({
   children: React.ReactNode;
 }) {
   const styles = {
-    success: 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400',
-    error: 'border-red-500/20 bg-red-500/5 text-red-400',
+    success: 'border-semantic-success/20 bg-semantic-success-bg text-semantic-success',
+    error: 'border-semantic-danger/20 bg-semantic-danger-bg text-semantic-danger',
     info: 'border-accent-500/20 bg-accent-500/5 text-accent-400',
   };
   return (
