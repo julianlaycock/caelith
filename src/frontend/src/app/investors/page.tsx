@@ -310,7 +310,7 @@ function InvestorsContent() {
       {/* Filter bar */}
       <Card>
         <div className="flex flex-wrap items-end gap-3">
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-0 sm:min-w-[200px]">
             <Input
               label="Search"
               placeholder="Search by name..."
@@ -422,7 +422,8 @@ function InvestorsContent() {
         <ErrorMessage message={investors.error} onRetry={investors.refetch} />
       ) : filteredInvestors.length > 0 ? (
         <Card padding={false}>
-          <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm min-w-[900px]">
             <thead className="border-b border-edge">
               <tr>
                 <SortableHeader<Investor> label="Name" sortKey="name" sort={sort} onToggle={toggle} />
@@ -486,6 +487,7 @@ function InvestorsContent() {
               ))}
             </tbody>
           </table>
+          </div>
         </Card>
       ) : investors.data && investors.data.length > 0 && activeFilter ? (
         <Card>

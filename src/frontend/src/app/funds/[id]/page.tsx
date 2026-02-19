@@ -123,9 +123,9 @@ export default function FundDetailPage() {
       {/* Back link + Header */}
       <div className="mb-6">
         <BackLink href="/funds" label="Back to Fund Structures" />
-        <div className="mt-3 flex items-end justify-between">
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-ink">{f.name}</h1>
+            <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">{f.name}</h1>
             <div className="mt-1.5 flex items-center gap-2">
               <Badge variant="gray">{f.legal_form}</Badge>
               <Badge variant="gray">{f.domicile}</Badge>
@@ -161,7 +161,7 @@ export default function FundDetailPage() {
 
       {/* Fund Info */}
       <Card className="mb-6">
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">AIFM</p>
             <p className="mt-0.5 text-sm text-ink">{f.aifm_name || '-'}</p>
