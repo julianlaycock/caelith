@@ -279,7 +279,7 @@ export default function JurisdictionPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-ink-tertiary">
                 Framework

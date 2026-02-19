@@ -125,7 +125,7 @@ export default function AuditPage() {
       {/* Filters */}
       <Card className="mb-6">
         <div className="flex flex-wrap items-end gap-4">
-          <div className="w-48">
+          <div className="w-full sm:w-48">
             <Select
               label="Event Type"
               options={EVENT_TYPE_OPTIONS}
@@ -137,7 +137,7 @@ export default function AuditPage() {
               }}
             />
           </div>
-          <div className="w-64">
+          <div className="w-full sm:w-64">
             <Input
               label="Entity ID"
               value={entityId}

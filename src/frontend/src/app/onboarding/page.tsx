@@ -974,7 +974,7 @@ export default function OnboardingPage() {
       ) : allRecords.length > 0 ? (
         <>
           {/* Pipeline Summary Metrics */}
-          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
+          <div className="mb-6 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-5">
             {COLUMNS.map((col) => (
               <div key={col.key} className={classNames('rounded-xl border border-edge border-t-[3px] bg-bg-secondary p-4', col.color)}>
                 <div className="flex items-center gap-2">
@@ -987,7 +987,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* Kanban Board */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {COLUMNS.map((col) => (
               <div
                 key={col.key}

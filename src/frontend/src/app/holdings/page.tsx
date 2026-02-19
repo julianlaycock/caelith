@@ -160,7 +160,8 @@ export default function HoldingsPage() {
         <ErrorMessage message={capTable.error} onRetry={capTable.refetch} />
       ) : capTable.data && capTable.data.length > 0 ? (
         <Card padding={false}>
-          <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm min-w-[600px]">
             <thead className="border-b border-edge">
               <tr>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Investor</th>
@@ -187,6 +188,7 @@ export default function HoldingsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </Card>
       ) : (
         <EmptyState

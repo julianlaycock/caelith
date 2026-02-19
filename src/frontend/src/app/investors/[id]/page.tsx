@@ -163,8 +163,8 @@ export default function InvestorDetailPage() {
 
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-start justify-between">
-          <h1 className="text-xl font-semibold tracking-tight text-ink">{inv.name}</h1>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">{inv.name}</h1>
           <Button onClick={() => setShowEligibility(true)}>Check Eligibility</Button>
         </div>
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">

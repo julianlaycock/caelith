@@ -933,7 +933,8 @@ export default function TransfersPage() {
       ) : history.data && history.data.length > 0 ? (
         viewMode === 'table' ? (
           <Card padding={false}>
-            <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm min-w-[700px]">
               <thead className="border-b border-edge">
                 <tr>
                   <SortableHeader label="Date" sortKey="executed_at" sort={sort} onToggle={toggleSort} />
@@ -966,6 +967,7 @@ export default function TransfersPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">

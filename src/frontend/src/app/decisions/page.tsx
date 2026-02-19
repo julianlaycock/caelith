@@ -182,7 +182,8 @@ export default function DecisionsPage() {
         <ErrorMessage message={decisions.error} onRetry={decisions.refetch} />
       ) : filtered.length > 0 ? (
         <Card padding={false}>
-          <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="border-b border-edge">
               <tr>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Time</th>
@@ -235,6 +236,7 @@ export default function DecisionsPage() {
               })}
             </tbody>
           </table>
+          </div>
         </Card>
       ) : (
         <EmptyState
@@ -247,7 +249,7 @@ export default function DecisionsPage() {
       {selectedDecision && (
         <div className="fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedDecision(null)} />
-          <div className="ml-auto relative z-10 w-full max-w-xl h-full bg-bg-secondary shadow-xl border-l border-edge overflow-y-auto">
+          <div className="ml-auto relative z-10 w-full md:max-w-xl h-full bg-bg-secondary shadow-xl border-l border-edge overflow-y-auto">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-edge bg-bg-secondary px-6 py-4">
               <div>
                 <h2 className="text-base font-semibold text-ink">Decision Record</h2>
