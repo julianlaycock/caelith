@@ -9,10 +9,12 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
-import { closeDb, execute as dbExecute, DEFAULT_TENANT_ID, query as dbQuery } from './db.js';
+import { closeDb, execute as dbExecute, DEFAULT_TENANT_ID, query as dbQuery, getPool } from './db.js';
 import swaggerUi from 'swagger-ui-express';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { parse } from 'yaml';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 
@@ -337,6 +339,7 @@ async function runStartupFixes(): Promise<void> {
         EXECUTE 'ALTER TABLE decision_records NO FORCE ROW LEVEL SECURITY';
         EXECUTE 'ALTER TABLE onboarding_records NO FORCE ROW LEVEL SECURITY';
         EXECUTE 'ALTER TABLE eligibility_criteria NO FORCE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE investor_documents NO FORCE ROW LEVEL SECURITY';
       EXCEPTION WHEN OTHERS THEN NULL;
       END $$;
     `);
@@ -346,8 +349,56 @@ async function runStartupFixes(): Promise<void> {
   }
 }
 
+// Auto-run pending migrations on startup
+async function runPendingMigrations(): Promise<void> {
+  const __filename2 = fileURLToPath(import.meta.url);
+  const __dirname2 = path.dirname(__filename2);
+  // In dev: src/backend/server.ts → ../migrations
+  // In prod: dist/backend/server.js → ../../migrations
+  const migrationsDir = path.resolve(__dirname2, process.env.NODE_ENV === 'production' ? '../../migrations' : '../migrations');
+
+  const pool = getPool();
+  const client = await pool.connect();
+  try {
+    await client.query(`CREATE TABLE IF NOT EXISTS migrations (id SERIAL PRIMARY KEY, filename VARCHAR(255) NOT NULL UNIQUE, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+    const { rows } = await client.query('SELECT filename FROM migrations');
+    const applied = new Set(rows.map((r: { filename: string }) => r.filename));
+
+    let files: string[];
+    try { files = readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort(); } catch { logger.warn('Migrations directory not found, skipping'); return; }
+
+    let count = 0;
+    for (const file of files) {
+      if (file === '001_initial_schema.sql' || applied.has(file)) continue;
+      logger.info(`Applying migration: ${file}`);
+      let sql = readFileSync(path.join(migrationsDir, file), 'utf-8');
+      const rollback = sql.match(/^--\s*(DOWN|ROLLBACK)\b/im);
+      if (rollback?.index !== undefined) sql = sql.substring(0, rollback.index).trim();
+      await client.query('BEGIN');
+      try {
+        await client.query(sql);
+        await client.query('INSERT INTO migrations (filename) VALUES ($1)', [file]);
+        await client.query('COMMIT');
+        count++;
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      }
+    }
+    if (count > 0) logger.info(`Applied ${count} pending migration(s)`);
+  } finally {
+    client.release();
+  }
+}
+
 // Start server
 async function startServer(): Promise<void> {
+  try {
+    await runPendingMigrations();
+  } catch (err) {
+    logger.warn('Auto-migration failed (non-fatal)', { error: err });
+  }
+
   try {
     await runStartupFixes();
   } catch (err) {
