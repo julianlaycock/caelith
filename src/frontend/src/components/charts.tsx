@@ -1,55 +1,36 @@
 'use client';
 
 import React from 'react';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 import { formatCompactNumber, formatInvestorType, classNames } from '../lib/utils';
 
-// ── Color Palette ────────────────────────────────────────
+// ── Brand Palette (theme-safe) ───────────────────────────
 
-const CHART_COLORS = [
-  '#24364A', // navy
-  '#6E655D', // dark taupe
-  '#8A7A69', // muted bronze
-  '#B39B7A', // warm stone
-  '#D8BA8E', // palette accent
-  '#BDB0A4', // soft taupe
-  '#9AA3AA', // slate neutral
-];
+const ACCENT = '#C5E0EE';
+const WARM = '#E8A87C';
+const MUTED = '#9AA3AA';
 
-const KYC_COLORS: Record<string, string> = {
-  verified: '#3D6658',
-  pending: '#A5834F',
-  expired: '#8A4A45',
-  expiring_soon: '#9C6E2D',
-};
+const TYPE_COLORS = [ACCENT, WARM, MUTED, '#B8C9A3', '#D4A5C7', '#A3B8C9', '#C9B8A3'];
 
-const VIOLATION_COLOR = '#8A4A45';
+function getJurisdictionColor(j: string) {
+  const upper = j.toUpperCase();
+  if (upper === 'DE' || upper === 'GERMANY') return ACCENT;
+  if (upper === 'LU' || upper === 'LUXEMBOURG') return WARM;
+  return MUTED;
+}
 
-// ── Shared Tooltip Style ─────────────────────────────────
+// ── SVG Arc helpers ──────────────────────────────────────
 
-const tooltipStyle = {
-  contentStyle: {
-    background: '#F8F4EB',
-    border: '1px solid #C6BEB1',
-    borderRadius: '8px',
-    fontSize: '12px',
-    boxShadow: '0 8px 20px -12px rgb(45 39 34 / 0.35)',
-  },
-  itemStyle: { color: '#2D2722' },
-  labelStyle: { color: '#5A524B', fontWeight: 600 },
-};
+function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
+  const rad = (a: number) => ((a - 90) * Math.PI) / 180;
+  const x1 = cx + r * Math.cos(rad(startAngle));
+  const y1 = cy + r * Math.sin(rad(startAngle));
+  const x2 = cx + r * Math.cos(rad(endAngle));
+  const y2 = cy + r * Math.sin(rad(endAngle));
+  const large = endAngle - startAngle > 180 ? 1 : 0;
+  return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
+}
 
-// ── 1. Investor Type Allocation (Donut) ──────────────────
+// ── 1. Investor Type Allocation (Radial Gauge) ──────────
 
 interface TypeAllocationEntry {
   type: string;
@@ -57,7 +38,13 @@ interface TypeAllocationEntry {
   total_units: number;
 }
 
-export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({ data, onTypeClick }: { data: TypeAllocationEntry[]; onTypeClick?: (rawType: string) => void }) {
+export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({
+  data,
+  onTypeClick,
+}: {
+  data: TypeAllocationEntry[];
+  onTypeClick?: (rawType: string) => void;
+}) {
   if (!data || data.length === 0) {
     return <EmptyChart label="No investor type data" />;
   }
@@ -70,38 +57,52 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({ data, o
   }));
 
   const total = chartData.reduce((s, d) => s + d.value, 0);
+  const dominant = chartData.reduce((a, b) => (b.value > a.value ? b : a), chartData[0]);
+  const dominantPct = total > 0 ? ((dominant.value / total) * 100).toFixed(0) : '0';
+
+  // Build arcs
+  const cx = 90, cy = 90, r = 72, trackR = r;
+  let angleOffset = 0;
+  const arcs = chartData.map((d, i) => {
+    const sweep = total > 0 ? (d.value / total) * 360 : 0;
+    const startAngle = angleOffset;
+    const endAngle = angleOffset + Math.max(sweep - 2, 0.5); // small gap
+    angleOffset += sweep;
+    return { ...d, startAngle, endAngle, color: TYPE_COLORS[i % TYPE_COLORS.length] };
+  });
 
   return (
     <ChartCard title="Investor Type Allocation" subtitle="Units by investor classification">
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-        <div className="h-[180px] w-[180px] sm:h-[200px] sm:w-[200px] flex-shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={85}
-                dataKey="value"
-                stroke="#EAE5D8"
-                strokeWidth={2}
-                style={onTypeClick ? { cursor: 'pointer' } : undefined}
-                onClick={onTypeClick ? (_: unknown, index: number) => onTypeClick(chartData[index].rawType) : undefined}
-              >
-                {chartData.map((_, i) => (
-                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value) => [formatCompactNumber(Number(value)) + ' units', 'Allocated']}
-                {...tooltipStyle}
+        <div className="relative flex-shrink-0" style={{ width: 180, height: 180 }}>
+          <svg viewBox="0 0 180 180" width="180" height="180">
+            {/* Track */}
+            <circle cx={cx} cy={cy} r={trackR} fill="none" className="stroke-edge-subtle" strokeWidth="10" opacity="0.3" />
+            {/* Arcs */}
+            {arcs.map((arc, i) => (
+              <path
+                key={i}
+                d={describeArc(cx, cy, r, arc.startAngle, arc.endAngle)}
+                fill="none"
+                stroke={arc.color}
+                strokeWidth="10"
+                strokeLinecap="round"
+                className={classNames(
+                  'transition-opacity',
+                  onTypeClick && 'cursor-pointer hover:opacity-70'
+                )}
+                onClick={onTypeClick ? () => onTypeClick(arc.rawType) : undefined}
               />
-            </PieChart>
-          </ResponsiveContainer>
+            ))}
+          </svg>
+          {/* Center label */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="font-mono text-2xl font-bold text-ink">{dominantPct}%</span>
+            <span className="text-[10px] text-ink-tertiary">{dominant.name}</span>
+          </div>
         </div>
         <div className="flex-1 space-y-2">
-          {chartData.map((d, i) => (
+          {arcs.map((d) => (
             <div
               key={d.name}
               className={classNames(
@@ -111,10 +112,7 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({ data, o
               onClick={onTypeClick ? () => onTypeClick(d.rawType) : undefined}
             >
               <div className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
-                />
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: d.color }} />
                 <span className="text-ink-secondary">{d.name}</span>
               </div>
               <div className="flex items-center gap-3">
@@ -131,7 +129,7 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({ data, o
   );
 });
 
-// ── 2. Jurisdiction Exposure (Horizontal Bar) ────────────
+// ── 2. Jurisdiction Exposure (Horizontal CSS Bars) ───────
 
 interface JurisdictionEntry {
   jurisdiction: string;
@@ -139,62 +137,59 @@ interface JurisdictionEntry {
   total_units: number;
 }
 
-export const JurisdictionExposureBar = React.memo(function JurisdictionExposureBar({ data, onBarClick }: { data: JurisdictionEntry[]; onBarClick?: (jurisdiction: string) => void }) {
+export const JurisdictionExposureBar = React.memo(function JurisdictionExposureBar({
+  data,
+  onBarClick,
+}: {
+  data: JurisdictionEntry[];
+  onBarClick?: (jurisdiction: string) => void;
+}) {
   if (!data || data.length === 0) {
     return <EmptyChart label="No jurisdiction data" />;
   }
 
   const sorted = [...data].sort((a, b) => b.total_units - a.total_units).slice(0, 12);
-  const chartData = sorted.map((d) => ({
-    name: d.jurisdiction,
-    units: d.total_units,
-    investors: d.count,
-  }));
-
-  const chartHeight = Math.max(200, chartData.length * 28);
+  const maxUnits = sorted[0]?.total_units || 1;
 
   return (
     <ChartCard title="Jurisdiction Exposure" subtitle="Top jurisdictions by allocated units">
-      <div style={{ height: chartHeight }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            layout="vertical"
-            margin={{ left: 4, right: 12, top: 4, bottom: 4 }}
-            onClick={onBarClick ? (state) => {
-              const idx = Number(state?.activeTooltipIndex);
-              if (!isNaN(idx) && chartData[idx]?.name) onBarClick(chartData[idx].name);
-            } : undefined}
-            style={onBarClick ? { cursor: 'pointer' } : undefined}
-          >
-            <XAxis
-              type="number"
-              tickFormatter={formatCompactNumber}
-              tick={{ fontSize: 11, fill: '#6E655D' }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              type="category"
-              dataKey="name"
-              width={36}
-              tick={{ fontSize: 11, fill: '#5A524B' }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <Tooltip
-              formatter={(value) => [formatCompactNumber(Number(value)) + ' units', 'Allocated']}
-              {...tooltipStyle}
-            />
-            <Bar dataKey="units" fill="#A5834F" radius={[0, 4, 4, 0]} barSize={16} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="space-y-3">
+        {sorted.map((d) => {
+          const pct = (d.total_units / maxUnits) * 100;
+          const color = getJurisdictionColor(d.jurisdiction);
+          return (
+            <div
+              key={d.jurisdiction}
+              className={classNames(
+                'group',
+                onBarClick && 'cursor-pointer'
+              )}
+              onClick={onBarClick ? () => onBarClick(d.jurisdiction) : undefined}
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-xs font-medium text-ink">{d.jurisdiction}</span>
+                <span className="font-mono text-xs text-ink-secondary">
+                  {formatCompactNumber(d.total_units)} <span className="text-ink-tertiary">({d.count})</span>
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-bg-tertiary overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all group-hover:opacity-80"
+                  style={{
+                    width: `${pct}%`,
+                    background: `linear-gradient(90deg, ${color}, ${color}CC)`,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </ChartCard>
   );
 });
 
-// ── 3. KYC Expiry Horizon (Segmented Bar) ─────────────────
+// ── 3. KYC Expiry Horizon (Semi-circular Arc) ────────────
 
 interface KycSegmentData {
   verified: number;
@@ -203,7 +198,13 @@ interface KycSegmentData {
   expiring_soon: number;
 }
 
-export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({ data, onStatusClick }: { data: KycSegmentData; onStatusClick?: (status: string) => void }) {
+export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({
+  data,
+  onStatusClick,
+}: {
+  data: KycSegmentData;
+  onStatusClick?: (status: string) => void;
+}) {
   const total = data.verified + data.pending + data.expired + data.expiring_soon;
 
   if (total === 0) {
@@ -211,33 +212,66 @@ export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({ data, onS
   }
 
   const segments = [
-    { key: 'verified', label: 'Verified', value: data.verified, color: KYC_COLORS.verified },
-    { key: 'expiring_soon', label: 'Expiring <90d', value: data.expiring_soon, color: KYC_COLORS.expiring_soon },
-    { key: 'pending', label: 'Pending', value: data.pending, color: KYC_COLORS.pending },
-    { key: 'expired', label: 'Expired', value: data.expired, color: KYC_COLORS.expired },
+    { key: 'verified', label: 'Verified', value: data.verified, color: 'var(--success)' },
+    { key: 'expiring_soon', label: 'Expiring <90d', value: data.expiring_soon, color: WARM },
+    { key: 'pending', label: 'Pending', value: data.pending, color: 'var(--warning)' },
+    { key: 'expired', label: 'Expired', value: data.expired, color: 'var(--danger)' },
   ].filter((s) => s.value > 0);
+
+  const verified = data.verified;
+
+  // Semi-circle: 180 to 360 degrees
+  const cx = 120, cy = 110, r = 80;
+  let angleOffset = 180;
+  const arcs = segments.map((seg) => {
+    const sweep = (seg.value / total) * 180;
+    const start = angleOffset;
+    const end = angleOffset + Math.max(sweep - 1.5, 0.5);
+    angleOffset += sweep;
+    return { ...seg, start, end };
+  });
 
   return (
     <ChartCard title="KYC Status Overview" subtitle="Investor KYC verification status">
-      <div className="space-y-4">
-        {/* Segmented bar */}
-        <div className="flex h-6 w-full overflow-hidden rounded-full bg-bg-tertiary">
-          {segments.map((seg) => (
-            <div
-              key={seg.key}
-              className={classNames('transition-all', onStatusClick && 'cursor-pointer hover:opacity-80')}
-              style={{
-                width: `${(seg.value / total) * 100}%`,
-                backgroundColor: seg.color,
-                minWidth: seg.value > 0 ? '4px' : '0px',
-              }}
-              onClick={onStatusClick ? () => onStatusClick(seg.key) : undefined}
+      <div className="flex flex-col items-center">
+        <div className="relative" style={{ width: 240, height: 130 }}>
+          <svg viewBox="0 0 240 130" width="240" height="130">
+            {/* Track */}
+            <path
+              d={describeArc(cx, cy, r, 180, 360)}
+              fill="none"
+              className="stroke-edge-subtle"
+              strokeWidth="14"
+              opacity="0.3"
             />
-          ))}
+            {/* Segments */}
+            {arcs.map((arc) => (
+              <path
+                key={arc.key}
+                d={describeArc(cx, cy, r, arc.start, arc.end)}
+                fill="none"
+                stroke={arc.color}
+                strokeWidth="14"
+                strokeLinecap="round"
+                className={classNames(
+                  'transition-opacity',
+                  onStatusClick && 'cursor-pointer hover:opacity-70'
+                )}
+                onClick={onStatusClick ? () => onStatusClick(arc.key) : undefined}
+              />
+            ))}
+          </svg>
+          {/* Center number */}
+          <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
+            <span className="font-mono text-xl font-bold text-ink">
+              {verified} <span className="text-ink-tertiary font-normal text-base">/ {total}</span>
+            </span>
+            <span className="text-[10px] text-ink-tertiary">verified</span>
+          </div>
         </div>
 
         {/* Legend */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2 w-full">
           {segments.map((seg) => (
             <div
               key={seg.key}
@@ -247,24 +281,18 @@ export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({ data, onS
               )}
               onClick={onStatusClick ? () => onStatusClick(seg.key) : undefined}
             >
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: seg.color }} />
+              <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ background: seg.color }} />
               <span className="text-ink-secondary">{seg.label}</span>
               <span className="ml-auto font-mono font-medium text-ink">{seg.value}</span>
             </div>
           ))}
-        </div>
-
-        {/* Summary stats */}
-        <div className="flex items-center justify-between rounded-lg bg-bg-tertiary px-3 py-2">
-          <span className="text-xs text-ink-secondary">Total investors</span>
-          <span className="text-sm font-semibold text-ink">{total}</span>
         </div>
       </div>
     </ChartCard>
   );
 });
 
-// ── 4. Violation Top 5 (Horizontal Bar) ──────────────────
+// ── 4. Violation Analysis (Severity List) ────────────────
 
 interface ViolationEntry {
   asset_name: string;
@@ -272,7 +300,13 @@ interface ViolationEntry {
   total_decisions: number;
 }
 
-export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({ data, onBarClick }: { data: ViolationEntry[]; onBarClick?: (assetName: string) => void }) {
+export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({
+  data,
+  onBarClick,
+}: {
+  data: ViolationEntry[];
+  onBarClick?: (assetName: string) => void;
+}) {
   if (!data || data.length === 0) {
     return (
       <ChartCard title="Rule Violations" subtitle="Top assets by compliance violations">
@@ -291,76 +325,63 @@ export const ViolationAnalysisBar = React.memo(function ViolationAnalysisBar({ d
   }
 
   const sorted = [...data].sort((a, b) => b.violation_count - a.violation_count).slice(0, 5);
-  const chartData = sorted.map((d) => ({
-    name: d.asset_name,
-    fullName: d.asset_name,
-    violations: d.violation_count,
-    decisions: d.total_decisions,
-  }));
+
+  function getSeverityColor(count: number): string {
+    if (count >= 5) return 'var(--danger)';
+    if (count >= 2) return WARM;
+    return 'var(--success)';
+  }
 
   return (
     <ChartCard title="Rule Violations" subtitle="Top assets by compliance violations">
-      <div className="h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            layout="vertical"
-            margin={{ left: 4, right: 12, top: 4, bottom: 4 }}
-            onClick={onBarClick ? (state) => {
-              const idx = Number(state?.activeTooltipIndex);
-              if (!isNaN(idx) && chartData[idx]?.fullName) onBarClick(chartData[idx].fullName);
-            } : undefined}
-            style={onBarClick ? { cursor: 'pointer' } : undefined}
-          >
-            <XAxis
-              type="number"
-              tick={{ fontSize: 11, fill: '#6E655D' }}
-              axisLine={false}
-              tickLine={false}
-              allowDecimals={false}
-            />
-            <YAxis
-              type="category"
-              dataKey="name"
-              width={160}
-              tick={{ fontSize: 10, fill: '#5A524B' }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <Tooltip
-              labelFormatter={(label) => {
-                const entry = chartData.find((d) => d.name === label);
-                return entry?.fullName ?? label;
-              }}
-              formatter={(value, name) => [
-                Number(value),
-                name === 'violations' ? 'Violations' : 'Total Decisions',
-              ]}
-              {...tooltipStyle}
-            />
-            <Bar
-              dataKey="violations"
-              fill={VIOLATION_COLOR}
-              radius={[0, 4, 4, 0]}
-              barSize={16}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="space-y-2">
+        {sorted.map((d) => {
+          const color = getSeverityColor(d.violation_count);
+          return (
+            <div
+              key={d.asset_name}
+              className={classNames(
+                'flex items-center gap-3 rounded-lg border border-edge-subtle p-3 transition-colors',
+                onBarClick && 'cursor-pointer hover:bg-bg-tertiary'
+              )}
+              style={{ borderLeftWidth: 3, borderLeftColor: color }}
+              onClick={onBarClick ? () => onBarClick(d.asset_name) : undefined}
+            >
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-medium text-ink truncate block">{d.asset_name}</span>
+              </div>
+              <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="text-right">
+                  <span className="font-mono text-sm font-bold" style={{ color }}>{d.violation_count}</span>
+                  <span className="text-[10px] text-ink-tertiary block">violations</span>
+                </div>
+                <div className="text-right">
+                  <span className="font-mono text-sm text-ink-secondary">{d.total_decisions}</span>
+                  <span className="text-[10px] text-ink-tertiary block">decisions</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </ChartCard>
   );
 });
 
-// ── 5. Fund Concentration Risk (Small Multiples) ─────────
+// ── 5. Concentration Risk Grid ───────────────────────────
 
 interface ConcentrationEntry {
   fund_name: string;
   top_investor_pct: number;
   top3_investor_pct: number;
-  hhi: number; // Herfindahl-Hirschman Index
+  hhi: number;
 }
 
-export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({ data }: { data: ConcentrationEntry[] }) {
+export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
+  data,
+}: {
+  data: ConcentrationEntry[];
+}) {
   if (!data || data.length === 0) {
     return <EmptyChart label="No concentration data" />;
   }
@@ -370,23 +391,14 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
       <div className="space-y-3">
         {data.map((fund) => {
           const riskLevel =
-            fund.top_investor_pct >= 50
-              ? 'high'
-              : fund.top_investor_pct >= 25
-              ? 'medium'
-              : 'low';
+            fund.top_investor_pct >= 50 ? 'high' : fund.top_investor_pct >= 25 ? 'medium' : 'low';
+          const riskLabel = riskLevel === 'high' ? 'HOCH' : riskLevel === 'medium' ? 'MITTEL' : 'NIEDRIG';
           const riskColor =
             riskLevel === 'high'
-              ? '#8A4A45'
+              ? 'var(--danger)'
               : riskLevel === 'medium'
-              ? '#9C6E2D'
-              : '#3D6658';
-          const riskBgColor =
-            riskLevel === 'high'
-              ? '#8A4A451A'
-              : riskLevel === 'medium'
-              ? '#9C6E2D1A'
-              : '#3D66581A';
+              ? WARM
+              : 'var(--success)';
 
           return (
             <div key={fund.fund_name} className="rounded-lg border border-edge-subtle p-3">
@@ -394,17 +406,20 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
                 <span className="text-xs font-medium text-ink">{fund.fund_name}</span>
                 <span
                   className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                  style={{ color: riskColor, backgroundColor: riskBgColor }}
+                  style={{
+                    color: riskColor,
+                    backgroundColor: 'var(--bg-tertiary)',
+                  }}
                 >
-                  {riskLevel}
+                  {riskLabel}
                 </span>
               </div>
               <div className="space-y-1.5">
                 <ConcentrationBar label="Top investor" value={fund.top_investor_pct} color={riskColor} />
-                <ConcentrationBar label="Top 3 investors" value={fund.top3_investor_pct} color="#3D6658" />
+                <ConcentrationBar label="Top 3 investors" value={fund.top3_investor_pct} color={ACCENT} />
               </div>
               <div className="mt-2 flex items-center justify-between text-[10px] text-ink-tertiary">
-                <span>HHI: {fund.hhi.toLocaleString()}</span>
+                <span>HHI: <span className="font-mono font-medium text-ink-secondary">{fund.hhi.toLocaleString()}</span></span>
                 <span>
                   {fund.hhi < 1500
                     ? 'Well diversified'
@@ -429,7 +444,7 @@ function ConcentrationBar({ label, value, color }: { label: string; value: numbe
         <div className="h-1.5 w-full rounded-full bg-bg-tertiary">
           <div
             className="h-1.5 rounded-full transition-all"
-            style={{ width: `${Math.min(value, 100)}%`, backgroundColor: color }}
+            style={{ width: `${Math.min(value, 100)}%`, background: `linear-gradient(90deg, ${color}, ${color}CC)` }}
           />
         </div>
       </div>
