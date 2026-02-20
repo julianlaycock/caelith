@@ -22,9 +22,11 @@ export function Breadcrumb() {
     assets: t('breadcrumb.assets'),
     builder: t('breadcrumb.builder'),
   };
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const segments = pathname.split('/').filter(Boolean);
 
-  if (segments.length <= 1) return null;
+  // Hide auto-breadcrumb on detail pages (they render their own DetailBreadcrumb)
+  if (segments.length <= 1 || segments.some(s => UUID_RE.test(s))) return null;
 
   return (
     <nav className="flex items-center gap-1.5 text-xs overflow-x-auto" aria-label="Breadcrumb">

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
+import { DetailBreadcrumb } from '../../components/breadcrumb';
 import {
   PageHeader,
   Card,
@@ -83,8 +84,18 @@ export default function HoldingsPage() {
     }
   };
 
+  const fundId = searchParams.get('fund');
+  const fundName = searchParams.get('fundName');
+
   return (
     <div>
+      {fundId && fundName && (
+        <DetailBreadcrumb items={[
+          { label: 'Funds', href: '/funds' },
+          { label: fundName, href: `/funds/${fundId}` },
+          { label: 'Holdings & Cap Table' },
+        ]} />
+      )}
       <PageHeader
         title="Holdings & Cap Table"
         description="View ownership and allocate units"

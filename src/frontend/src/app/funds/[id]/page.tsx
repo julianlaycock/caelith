@@ -330,7 +330,7 @@ export default function FundDetailPage() {
                         </td>
                         <td className="px-6 py-3 text-sm tabular-nums text-ink-secondary">{asset.holder_count}</td>
                         <td className="px-6 py-3">
-                          <Link href={`/holdings?asset=${asset.id}`} className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline">
+                          <Link href={`/holdings?asset=${asset.id}&fund=${id}&fundName=${encodeURIComponent(f.name)}`} className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline">
                             Cap Table →
                           </Link>
                         </td>
