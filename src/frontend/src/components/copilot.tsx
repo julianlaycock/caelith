@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { api } from '../lib/api';
+import { useI18n } from '../lib/i18n';
 import type { CopilotResponse, CopilotCitation, CopilotSuggestedAction, ApiError } from '../lib/types';
 
 interface ChatMessage {
@@ -16,6 +17,15 @@ interface ChatMessage {
 
 const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
   '/': {
+    title: 'Dashboard',
+    prompts: [
+      'Summarize my portfolio compliance status',
+      'What risk flags need immediate attention?',
+      'What are the KAGB Spezial-AIF investor requirements?',
+      'What if minimum investment changed to EUR 200K?',
+    ],
+  },
+  '/dashboard': {
     title: 'Dashboard',
     prompts: [
       'Summarize my portfolio compliance status',
@@ -83,14 +93,14 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
     prompts: [
       'What compliance events happened recently?',
       'Explain AIFMD audit trail requirements',
-      'What records must be kept for CSSF inspections?',
+      'What records must be kept for BaFin inspections?',
       'How long must compliance records be retained?',
     ],
   },
 };
 
 const DEFAULT_PROMPTS = [
-  'What are the SIF investor requirements?',
+  'What are the KAGB Spezial-AIF investor requirements?',
   'Why was the last transfer rejected?',
   'Create a rule to block retail investors',
   'What if minimum investment changed to EUR 200K?',
@@ -122,6 +132,7 @@ export function CopilotPanel({
     return localStorage.getItem(COPILOT_ACK_KEY) === 'true';
   });
   const [ackChecked, setAckChecked] = useState(false);
+  const { t } = useI18n();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pathname = usePathname();
@@ -201,7 +212,7 @@ export function CopilotPanel({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
               </svg>
             </div>
-            <span className="text-sm font-semibold text-[#2D3333]">Compliance Copilot</span>
+            <span className="text-sm font-semibold text-[#2D3333]">{t('copilot.title')}</span>
           </div>
           <button
             onClick={onClose}
@@ -222,9 +233,9 @@ export function CopilotPanel({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
               </div>
-              <h3 className="mb-2 text-center text-sm font-semibold text-[#2D3333]">Before you proceed</h3>
+              <h3 className="mb-2 text-center text-sm font-semibold text-[#2D3333]">{t('copilot.beforeProceed')}</h3>
               <p className="mb-4 text-xs leading-relaxed text-[rgba(45,51,51,0.65)]">
-                The Compliance Copilot provides AI-generated informational assistance only. It does not constitute legal, regulatory, or compliance advice. All outputs require independent verification by a qualified professional before any reliance. Caelith shall not be liable for any loss, regulatory penalty, or adverse outcome arising from use of AI-generated content.
+                {t('copilot.disclaimer')}
               </p>
               <label className="mb-4 flex items-start gap-2.5 cursor-pointer">
                 <input
@@ -234,7 +245,7 @@ export function CopilotPanel({
                   className="mt-0.5 h-4 w-4 rounded border-[rgba(197,224,238,0.25)] accent-[#2D3333]"
                 />
                 <span className="text-xs leading-relaxed text-[rgba(45,51,51,0.65)]">
-                  I understand that Compliance Copilot outputs are informational only, do not constitute professional advice, and must be independently verified before reliance.
+                  {t('copilot.acknowledge')}
                 </span>
               </label>
               <button
@@ -245,7 +256,7 @@ export function CopilotPanel({
                 }}
                 className="w-full rounded-lg bg-[#2D3333] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#3a4242] disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                I Understand — Continue
+                {t('copilot.continue')}
               </button>
             </div>
           </div>
@@ -259,13 +270,13 @@ export function CopilotPanel({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
                 </svg>
               </div>
-              <p className="mb-1 text-sm font-medium text-[#2D3333]">Compliance Copilot</p>
+              <p className="mb-1 text-sm font-medium text-[#2D3333]">{t('copilot.title')}</p>
               <p className="mb-3 text-xs text-[rgba(45,51,51,0.45)]">
-                Ask questions about regulations, decisions, or draft rules using natural language.
+                {t('copilot.askDesc')}
               </p>
               <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
                 <p className="text-xs leading-relaxed text-[#c07a4a] font-medium">
-                  Compliance Copilot provides AI-generated informational assistance only. Responses do not constitute legal, regulatory, or compliance advice. All outputs require independent verification by a qualified professional before any reliance. Caelith does not provide legal advice and shall not be liable for decisions made using this tool.
+                  {t('copilot.disclaimer')}
                 </p>
               </div>
               <div className="w-full space-y-2">
@@ -305,7 +316,7 @@ export function CopilotPanel({
                 <div className="break-words whitespace-pre-wrap">{msg.content}</div>
                 {msg.citations && msg.citations.length > 0 && (
                   <div className="mt-2">
-                    <p className="text-[9px] font-medium uppercase tracking-wider text-ink-tertiary mb-1">Sources</p>
+                    <p className="text-[9px] font-medium uppercase tracking-wider text-ink-tertiary mb-1">{t('copilot.sources')}</p>
                     <div className="flex flex-wrap gap-1">
                       {msg.citations.map((c, j) => (
                         <span
@@ -343,7 +354,7 @@ export function CopilotPanel({
                   <div className="mt-2 border-t border-edge-subtle pt-1.5">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium leading-tight text-[#c07a4a]">
-                        AI-generated — not legal, regulatory, or compliance advice. Verify all content independently before reliance.
+                        {t('copilot.aiGenerated')}
                       </p>
                       <div className="flex items-center gap-1">
                         <button
@@ -362,7 +373,7 @@ export function CopilotPanel({
                               ? 'text-emerald-500 bg-emerald-500/10'
                               : 'text-[rgba(45,51,51,0.3)] hover:text-[rgba(45,51,51,0.65)] hover:bg-[rgba(45,51,51,0.06)]'
                           }`}
-                          title="Helpful"
+                          title={t('copilot.helpful')}
                         >
                           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48a4.53 4.53 0 01-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904M14.25 9h2.25M5.904 18.75c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 01-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 10.203 4.167 9.75 5 9.75h1.053c.472 0 .745.556.5.96a8.958 8.958 0 00-1.302 4.665c0 1.194.232 2.333.654 3.375z" />
@@ -384,7 +395,7 @@ export function CopilotPanel({
                               ? 'text-red-400 bg-red-500/10'
                               : 'text-[rgba(45,51,51,0.3)] hover:text-[rgba(45,51,51,0.65)] hover:bg-[rgba(45,51,51,0.06)]'
                           }`}
-                          title="Not helpful"
+                          title={t('copilot.notHelpful')}
                         >
                           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 15h2.25m8.024-9.75c.011.05.028.1.052.148.593 1.2.925 2.55.925 3.977 0 1.487-.36 2.89-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398-.306.774-1.086 1.227-1.918 1.227h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 001.302-4.665c0-1.194-.232-2.333-.654-3.375z" />
@@ -436,7 +447,7 @@ export function CopilotPanel({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about AIFMD eligibility, SIF requirements, or your fund's compliance..."
+              placeholder={t('copilot.askPlaceholder')}
               rows={1}
               className="flex-1 resize-none rounded-lg border border-[rgba(197,224,238,0.25)] bg-white px-3 py-2 text-sm text-[#2D3333] placeholder:text-[rgba(45,51,51,0.3)] focus:border-[#C5E0EE] focus:outline-none focus:ring-1 focus:ring-[#C5E0EE]/30"
             />
@@ -457,16 +468,17 @@ export function CopilotPanel({
 }
 
 export function CopilotToggleButton({ onClick }: { onClick: () => void }) {
+  const { t } = useI18n();
   return (
     <button
       onClick={onClick}
       className="fixed bottom-6 right-6 z-30 flex h-12 items-center gap-2.5 rounded-full bg-[#2D3333] px-5 text-white shadow-lg transition-all hover:scale-105 hover:bg-[#3a4242] hover:shadow-xl"
-      title="Open Compliance Copilot"
+      title={t('copilot.title')}
     >
       <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
       </svg>
-      <span className="text-sm font-medium">Compliance Copilot</span>
+      <span className="text-sm font-medium">{t('copilot.title')}</span>
     </button>
   );
 }

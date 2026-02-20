@@ -28,6 +28,7 @@ export default function HoldingsPage() {
   const [selectedAssetId, setSelectedAssetId] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [allocating, setAllocating] = useState(false);
   useAutoDismiss(successMsg, setSuccessMsg);
 
   const assets = useAsync(() => api.getAssets());
@@ -58,6 +59,7 @@ export default function HoldingsPage() {
       return;
     }
 
+    setAllocating(true);
     try {
       await api.allocateHolding({ asset_id, investor_id, units, acquired_at: new Date().toISOString() });
       setShowForm(false);
@@ -66,6 +68,8 @@ export default function HoldingsPage() {
       utilization.refetch();
     } catch (err) {
       setFormError((err as ApiError).message || 'Failed to allocate units');
+    } finally {
+      setAllocating(false);
     }
   };
 
@@ -108,7 +112,7 @@ export default function HoldingsPage() {
           <Input label="Units" name="units" type="number" min={1} required placeholder="e.g., 10000" />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
-            <Button type="submit">Allocate</Button>
+            <Button type="submit" disabled={allocating}>{allocating ? 'Allocating...' : 'Allocate'}</Button>
           </div>
         </form>
       </Modal>

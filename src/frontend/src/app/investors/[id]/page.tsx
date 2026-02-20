@@ -448,6 +448,34 @@ export default function InvestorDetailPage() {
         )}
       </div>
 
+      {/* Onboarding Status */}
+      {onboarding.data && onboarding.data.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <SectionHeader title="Onboarding Status" description={`${onboarding.data.length} record${onboarding.data.length !== 1 ? 's' : ''}`} />
+            <Link href="/onboarding" className="text-xs font-medium text-accent-600 hover:text-accent-700 hover:underline">
+              View all onboarding →
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {onboarding.data.map((rec) => {
+              const statusVariant =
+                rec.status === 'approved' || rec.status === 'allocated' ? 'green'
+                : rec.status === 'rejected' || rec.status === 'ineligible' ? 'red'
+                : rec.status === 'applied' || rec.status === 'eligible' ? 'yellow'
+                : 'gray';
+              const asset = assetMap.get(rec.asset_id);
+              return (
+                <div key={rec.id} className="flex items-center gap-2 rounded-lg border border-edge-subtle bg-bg-secondary px-3 py-2">
+                  <span className="text-xs font-medium text-ink">{asset?.name ?? rec.asset_id.substring(0, 8)}</span>
+                  <Badge variant={statusVariant}>{rec.status}</Badge>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Decision History */}
       <div className="mb-6">
         <SectionHeader title="Decision History" description={decisions.data ? `${decisions.data.length} decision${decisions.data.length !== 1 ? 's' : ''}` : undefined} />

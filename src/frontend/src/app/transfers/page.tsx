@@ -18,6 +18,7 @@ import {
   ExportMenu,
   SortableHeader,
 } from '../../components/ui';
+import { Pagination, usePagination } from '../../components/pagination';
 import { useAuth } from '../../components/auth-provider';
 import { exportCSV } from '../../lib/export-csv';
 import { formatNumber, formatDateTime, classNames } from '../../lib/utils';
@@ -203,6 +204,8 @@ export default function TransfersPage() {
       return sort.direction === 'desc' ? -cmp : cmp;
     });
   }, [history.data, sort]);
+
+  const { page, setPage, paginated: paginatedHistory, total: paginatedTotal, perPage } = usePagination(sortedHistory, 20);
 
   const canReviewPendingTransfers = user?.role === 'admin' || user?.role === 'compliance_officer';
 
@@ -950,7 +953,7 @@ export default function TransfersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-edge-subtle">
-                {sortedHistory.map((t) => (
+                {paginatedHistory.map((t) => (
                   <tr key={t.id} className="transition-colors hover:bg-bg-tertiary">
                     <td className="px-5 py-3 text-ink-tertiary">{formatDateTime(t.executed_at)}</td>
                     <td className="px-5 py-3 text-ink-secondary">{t.asset_name ?? t.asset_id}</td>
@@ -972,6 +975,7 @@ export default function TransfersPage() {
               </tbody>
             </table>
             </div>
+            <div className="px-4"><Pagination total={paginatedTotal} page={page} perPage={perPage} onPageChange={setPage} /></div>
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
