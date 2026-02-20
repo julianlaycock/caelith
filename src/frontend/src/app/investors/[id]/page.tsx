@@ -453,7 +453,7 @@ export default function InvestorDetailPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <SectionHeader title="Onboarding Status" description={`${onboarding.data.length} record${onboarding.data.length !== 1 ? 's' : ''}`} />
-            <Link href="/onboarding" className="text-xs font-medium text-accent-600 hover:text-accent-700 hover:underline">
+            <Link href="/onboarding" className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline">
               View all onboarding →
             </Link>
           </div>

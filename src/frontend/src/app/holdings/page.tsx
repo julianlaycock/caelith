@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import {
@@ -23,6 +24,7 @@ import { CsvUploadWizard } from '../../components/csv-upload-wizard';
 import { useAutoDismiss } from '../../lib/use-auto-dismiss';
 
 export default function HoldingsPage() {
+  const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(false);
   const [showCsvImport, setShowCsvImport] = useState(false);
   const [selectedAssetId, setSelectedAssetId] = useState<string>('');
@@ -30,6 +32,14 @@ export default function HoldingsPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [allocating, setAllocating] = useState(false);
   useAutoDismiss(successMsg, setSuccessMsg);
+
+  // Pre-select asset from URL param (e.g. /holdings?asset=<uuid>)
+  useEffect(() => {
+    const assetParam = searchParams.get('asset');
+    if (assetParam && !selectedAssetId) {
+      setSelectedAssetId(assetParam);
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const assets = useAsync(() => api.getAssets());
   const investors = useAsync(() => api.getInvestors());

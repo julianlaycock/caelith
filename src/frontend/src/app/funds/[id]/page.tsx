@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useAsync } from '../../../lib/hooks';
 import type { ScenarioResult, RulePackInfo } from '../../../lib/types';
+import Link from 'next/link';
 import { BackLink } from '../../../components/back-link';
 import { DetailBreadcrumb } from '../../../components/breadcrumb';
 import {
@@ -314,6 +315,7 @@ export default function FundDetailPage() {
                       <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Allocated</th>
                       <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Utilization</th>
                       <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Holders</th>
+                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-edge-subtle">
@@ -327,6 +329,11 @@ export default function FundDetailPage() {
                           <UtilizationBar allocated={asset.allocated_units} total={asset.total_units} />
                         </td>
                         <td className="px-6 py-3 text-sm tabular-nums text-ink-secondary">{asset.holder_count}</td>
+                        <td className="px-6 py-3">
+                          <Link href={`/holdings?asset=${asset.id}`} className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline">
+                            Cap Table →
+                          </Link>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
