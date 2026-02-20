@@ -187,12 +187,12 @@ export function CopilotPanel({
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-40 bg-black/20 md:hidden" onClick={onClose} />}
+      {open && <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />}
 
       <div
-        className={`fixed right-0 top-0 z-50 flex h-full flex-col bg-[#2D3333] shadow-xl transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 top-0 z-50 flex h-full flex-col bg-[#2D3333] shadow-2xl shadow-black/40 transition-transform duration-300 ease-in-out ${
           open ? 'translate-x-0' : 'translate-x-full'
-        } w-full md:w-[480px]`}
+        } w-full md:w-[480px] border-l border-edge`}
       >
         <div className="flex items-center justify-between border-b border-edge px-4 py-3">
           <div className="flex items-center gap-2.5">
