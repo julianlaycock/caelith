@@ -180,9 +180,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center pt-[15vh] animate-fade-in" onKeyDown={handleKeyDown}>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={close} />
-      <div className="relative z-10 w-full max-w-lg mx-4 md:mx-auto overflow-hidden rounded-xl border border-edge bg-bg-secondary shadow-2xl shadow-black/30">
-        <div className="flex items-center gap-3 border-b border-edge-subtle px-4 py-3">
-          <svg className="h-5 w-5 flex-shrink-0 text-ink-tertiary" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <div className="light-surface relative z-10 w-full max-w-lg mx-4 md:mx-auto overflow-hidden rounded-xl border border-[rgba(197,224,238,0.2)] bg-[#F8F9FA] shadow-2xl shadow-black/30">
+        <div className="flex items-center gap-3 border-b border-[rgba(197,224,238,0.2)] px-4 py-3">
+          <svg className="h-5 w-5 flex-shrink-0 text-[rgba(45,51,51,0.45)]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
           <input
@@ -191,21 +191,21 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search pages, investors, funds..."
-            className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink-muted outline-none"
+            className="flex-1 bg-transparent text-sm text-[#2D3333] placeholder:text-[rgba(45,51,51,0.3)] outline-none"
           />
-          <kbd className="hidden items-center rounded border border-edge-subtle px-1.5 py-0.5 font-mono text-[10px] text-ink-muted sm:inline-flex">
+          <kbd className="hidden items-center rounded border border-[rgba(197,224,238,0.2)] px-1.5 py-0.5 font-mono text-[10px] text-[rgba(45,51,51,0.3)] sm:inline-flex">
             ESC
           </kbd>
         </div>
 
         <div className="max-h-[320px] overflow-y-auto py-2">
           {flatFiltered.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-ink-tertiary">No results found</div>
+            <div className="px-4 py-8 text-center text-sm text-[rgba(45,51,51,0.45)]">No results found</div>
           ) : (
             filtered.map(([category, items]) => (
               <div key={category}>
                 <div className="px-4 pb-1 pt-2">
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-[rgba(45,51,51,0.4)]">
                     {categoryMeta[category]?.label ?? category}
                   </span>
                 </div>
@@ -220,16 +220,16 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                       onMouseEnter={() => setSelectedIndex(idx)}
                       className={`flex w-full items-center gap-3 border-l-2 px-4 py-2 text-left transition-colors ${
                         isSelected
-                          ? 'border-l-accent-400 bg-bg-tertiary'
-                          : 'border-l-transparent hover:bg-bg-tertiary'
+                          ? 'border-l-accent-400 bg-[rgba(197,224,238,0.12)]'
+                          : 'border-l-transparent hover:bg-[rgba(197,224,238,0.12)]'
                       }`}
                     >
-                      <span className="flex-shrink-0 text-ink-tertiary">{CATEGORY_ICONS[item.category]}</span>
+                      <span className="flex-shrink-0 text-[rgba(45,51,51,0.45)]">{CATEGORY_ICONS[item.category]}</span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm text-ink">{item.name}</span>
-                        {item.subtitle && <span className="block truncate text-xs text-ink-secondary">{item.subtitle}</span>}
+                        <span className="block truncate text-sm text-[#2D3333]">{item.name}</span>
+                        {item.subtitle && <span className="block truncate text-xs text-[rgba(45,51,51,0.65)]">{item.subtitle}</span>}
                       </span>
-                      <span className="flex-shrink-0 text-[10px] text-ink-muted">{categoryMeta[item.category]?.label}</span>
+                      <span className="flex-shrink-0 text-[10px] text-[rgba(45,51,51,0.3)]">{categoryMeta[item.category]?.label}</span>
                     </button>
                   );
                 })}

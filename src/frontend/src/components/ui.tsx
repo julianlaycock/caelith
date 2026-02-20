@@ -608,22 +608,22 @@ export function ExportMenu({ onExportCSV, onExportPDF }: { onExportCSV?: () => v
         Export
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-20 w-36 rounded-lg border border-edge bg-bg-secondary shadow-lg overflow-hidden">
+        <div className="light-surface absolute right-0 top-full mt-1 z-20 w-36 rounded-lg border border-[rgba(197,224,238,0.2)] bg-[#F8F9FA] shadow-lg overflow-hidden">
           {onExportCSV && (
             <button
               onClick={() => { onExportCSV(); setOpen(false); }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-ink-secondary hover:bg-bg-tertiary hover:text-ink transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-[rgba(45,51,51,0.65)] hover:bg-[rgba(197,224,238,0.06)] hover:text-[#2D3333] transition-colors"
             >
-              <span className="font-mono text-[10px] text-ink-muted">.csv</span>
+              <span className="font-mono text-[10px] text-[rgba(45,51,51,0.3)]">.csv</span>
               Export as CSV
             </button>
           )}
           {onExportPDF && (
             <button
               onClick={() => { onExportPDF(); setOpen(false); }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-ink-secondary hover:bg-bg-tertiary hover:text-ink transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-[rgba(45,51,51,0.65)] hover:bg-[rgba(197,224,238,0.06)] hover:text-[#2D3333] transition-colors"
             >
-              <span className="font-mono text-[10px] text-ink-muted">.pdf</span>
+              <span className="font-mono text-[10px] text-[rgba(45,51,51,0.3)]">.pdf</span>
               Export as PDF
             </button>
           )}

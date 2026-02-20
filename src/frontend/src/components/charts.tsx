@@ -311,7 +311,7 @@ export const KycExpiryHorizon = React.memo(function KycExpiryHorizon({
             onMouseLeave={() => setHoveredDot(null)}
           >
             {hoveredDot === dot.index && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 rounded-md border border-edge bg-bg-secondary px-2.5 py-1.5 text-[10px] text-ink whitespace-nowrap z-20 shadow-lg">
+              <div className="light-surface absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 rounded-md border border-[rgba(197,224,238,0.2)] bg-[#F8F9FA] px-2.5 py-1.5 text-[10px] text-[#2D3333] whitespace-nowrap z-20 shadow-lg">
                 Inv. {dot.index + 1} · {dot.label}
               </div>
             )}

@@ -17,12 +17,12 @@ export function RiskDetailPanel({ risk, today, onClose }: RiskDetailPanelProps) 
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="ml-auto relative z-10 w-full md:max-w-md h-full bg-surface shadow-xl border-l border-edge overflow-y-auto">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-edge bg-surface px-6 py-4">
+      <div className="light-surface ml-auto relative z-10 w-full md:max-w-md h-full bg-[#F8F9FA] shadow-xl border-l border-l-[rgba(197,224,238,0.2)] overflow-y-auto">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[rgba(197,224,238,0.2)] bg-[#F8F9FA] px-6 py-4">
           <h2 className="text-base font-semibold text-ink">{t('risk.detail')}</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink transition-colors"
+            className="rounded-lg p-1 text-[rgba(45,51,51,0.45)] hover:bg-[rgba(45,51,51,0.06)] hover:text-[rgba(45,51,51,0.65)] transition-colors"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
