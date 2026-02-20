@@ -191,10 +191,10 @@ export default function HoldingsPage() {
           <table className="w-full text-left text-sm min-w-[600px]">
             <thead className="border-b border-edge">
               <tr>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Investor</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Investor</th>
                 <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Units</th>
                 <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Ownership %</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Distribution</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Distribution</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-edge-subtle">

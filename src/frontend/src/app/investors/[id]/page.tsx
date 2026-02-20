@@ -405,7 +405,7 @@ export default function InvestorDetailPage() {
           <Card padding={false}>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead>
+                <thead className="border-b border-edge">
                   <tr className="border-b border-edge">
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Asset</th>
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Units</th>
@@ -487,7 +487,7 @@ export default function InvestorDetailPage() {
           <Card padding={false}>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead>
+                <thead className="border-b border-edge">
                   <tr className="border-b border-edge">
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Time</th>
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Type</th>
@@ -548,7 +548,7 @@ export default function InvestorDetailPage() {
           <Card padding={false}>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead>
+                <thead className="border-b border-edge">
                   <tr className="border-b border-edge">
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Document</th>
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Type</th>
@@ -674,7 +674,7 @@ export default function InvestorDetailPage() {
           <Card padding={false}>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead>
+                <thead className="border-b border-edge">
                   <tr className="border-b border-edge">
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Asset</th>
                     <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Status</th>

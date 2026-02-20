@@ -709,13 +709,13 @@ export default function DashboardPage() {
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left min-w-[600px]">
-                    <thead>
+                    <thead className="border-b border-edge">
                       <tr className="border-b border-edge">
-                        <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">{t('table.time')}</th>
-                        <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">{t('table.type')}</th>
-                        <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">{t('table.result')}</th>
-                        <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">{t('table.asset')}</th>
-                        <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">{t('table.checks')}</th>
+                        <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.time')}</th>
+                        <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.type')}</th>
+                        <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.result')}</th>
+                        <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.asset')}</th>
+                        <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.checks')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-edge-subtle">

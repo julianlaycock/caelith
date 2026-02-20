@@ -445,9 +445,9 @@ function InvestorsContent() {
                 <SortableHeader<Investor> label={t('investors.col.jurisdiction')} sortKey="jurisdiction" sort={sort} onToggle={toggle} />
                 <SortableHeader<Investor> label={t('investors.col.type')} sortKey="investor_type" sort={sort} onToggle={toggle} />
                 <SortableHeader<Investor> label={t('investors.col.kyc')} sortKey="kyc_status" sort={sort} onToggle={toggle} />
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">{t('investors.col.kycExpiry')}</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">{t('investors.col.daysLeft')}</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">{t('investors.col.status')}</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('investors.col.kycExpiry')}</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('investors.col.daysLeft')}</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('investors.col.status')}</th>
                 <SortableHeader<Investor> label={t('investors.col.created')} sortKey="created_at" sort={sort} onToggle={toggle} />
                 <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">{t('investors.col.actions')}</th>
               </tr>

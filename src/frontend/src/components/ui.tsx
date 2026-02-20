@@ -507,7 +507,7 @@ export function Modal({
       <div className={`light-surface relative z-10 w-full ${maxW} mx-4 md:mx-auto rounded-xl border border-[rgba(197,224,238,0.2)] bg-[#F8F9FA] p-4 md:p-6 shadow-2xl shadow-black/20 max-h-[80vh] overflow-y-auto`}>
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-base font-semibold text-[#2D3333]">{title}</h2>
-          <button onClick={onClose} className="rounded-lg p-1 text-[rgba(45,51,51,0.45)] hover:bg-[rgba(45,51,51,0.06)] hover:text-[rgba(45,51,51,0.65)] transition-colors">
+          <button onClick={onClose} className="rounded-lg p-1 text-[rgba(45,51,51,0.45)] hover:bg-[rgba(45,51,51,0.06)] hover:text-ink-secondary transition-colors">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -612,7 +612,7 @@ export function ExportMenu({ onExportCSV, onExportPDF }: { onExportCSV?: () => v
           {onExportCSV && (
             <button
               onClick={() => { onExportCSV(); setOpen(false); }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-[rgba(45,51,51,0.65)] hover:bg-[rgba(197,224,238,0.06)] hover:text-[#2D3333] transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-ink-secondary hover:bg-bg-tertiary hover:text-ink transition-colors"
             >
               <span className="font-mono text-[10px] text-[rgba(45,51,51,0.3)]">.csv</span>
               Export as CSV
@@ -621,7 +621,7 @@ export function ExportMenu({ onExportCSV, onExportPDF }: { onExportCSV?: () => v
           {onExportPDF && (
             <button
               onClick={() => { onExportPDF(); setOpen(false); }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-[rgba(45,51,51,0.65)] hover:bg-[rgba(197,224,238,0.06)] hover:text-[#2D3333] transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-ink-secondary hover:bg-bg-tertiary hover:text-ink transition-colors"
             >
               <span className="font-mono text-[10px] text-[rgba(45,51,51,0.3)]">.pdf</span>
               Export as PDF

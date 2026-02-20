@@ -749,12 +749,12 @@ export default function TransfersPage() {
 
               <div className="overflow-x-auto rounded-lg border border-edge-subtle">
                 <table className="w-full text-left text-sm">
-                  <thead className="border-b border-edge bg-bg-tertiary/60">
+                  <thead className="border-b border-edge">
                     <tr>
-                      <th className="px-4 py-2 text-xs font-medium uppercase tracking-wider text-ink-tertiary">From</th>
-                      <th className="px-4 py-2 text-xs font-medium uppercase tracking-wider text-ink-tertiary">To</th>
-                      <th className="px-4 py-2 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Units</th>
-                      <th className="px-4 py-2 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Result</th>
+                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">From</th>
+                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">To</th>
+                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Units</th>
+                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Result</th>
                       <th className="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Action</th>
                     </tr>
                   </thead>
@@ -945,10 +945,10 @@ export default function TransfersPage() {
               <thead className="border-b border-edge">
                 <tr>
                   <SortableHeader label="Date" sortKey="executed_at" sort={sort} onToggle={toggleSort} />
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Asset</th>
+                  <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Asset</th>
                   <SortableHeader label="From" sortKey="from_name" sort={sort} onToggle={toggleSort} />
                   <SortableHeader label="To" sortKey="to_name" sort={sort} onToggle={toggleSort} />
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Status</th>
+                  <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Status</th>
                   <SortableHeader label="Units" sortKey="units" sort={sort} onToggle={toggleSort} align="right" />
                 </tr>
               </thead>

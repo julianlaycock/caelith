@@ -199,12 +199,12 @@ export default function DecisionsPage() {
           <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="border-b border-edge">
               <tr>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Time</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Type</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Result</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Checks</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Decided By</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-tertiary">Seq</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Time</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Type</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Result</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Checks</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Decided By</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Seq</th>
                 <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Actions</th>
               </tr>
             </thead>

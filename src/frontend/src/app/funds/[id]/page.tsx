@@ -307,7 +307,7 @@ export default function FundDetailPage() {
             <Card padding={false}>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
-                  <thead>
+                  <thead className="border-b border-edge">
                     <tr className="border-b border-edge">
                       <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Name</th>
                       <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Type</th>
@@ -349,7 +349,7 @@ export default function FundDetailPage() {
               <Card padding={false}>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
-                    <thead>
+                    <thead className="border-b border-edge">
                       <tr className="border-b border-edge">
                         <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Investor Type</th>
                         <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Jurisdiction</th>
@@ -453,7 +453,7 @@ export default function FundDetailPage() {
               <Card padding={false}>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
-                    <thead>
+                    <thead className="border-b border-edge">
                       <tr className="border-b border-edge">
                         <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Time</th>
                         <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Type</th>
@@ -552,12 +552,12 @@ export default function FundDetailPage() {
                         <p className="text-xs font-semibold text-ink mb-2">Affected Investors</p>
                         <div className="rounded-lg border border-edge-subtle overflow-hidden">
                           <table className="w-full text-left">
-                            <thead className="bg-bg-tertiary">
+                            <thead className="border-b border-edge">
                               <tr>
-                                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">Name</th>
-                                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">Type</th>
-                                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">Units</th>
-                                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-ink-tertiary">Status Change</th>
+                                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Name</th>
+                                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Type</th>
+                                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Units</th>
+                                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Status Change</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-edge-subtle">
