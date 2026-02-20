@@ -45,6 +45,7 @@ import nlRulesRoutes from './routes/nl-rules-routes.js';
 import onboardingRoutes from './routes/onboarding-routes.js';
 import complianceReportRoutes from './routes/compliance-report-routes.js';
 import tenantRoutes from './routes/tenant-routes.js';
+import newsRoutes from './routes/news-routes.js';
 import { createRegulatoryRoutes } from './routes/regulatory-routes.js';
 import { createCopilotRoutes } from './routes/copilot-routes.js';
 import scenarioRoutes from './routes/scenario-routes.js';
@@ -276,6 +277,7 @@ app.use('/api/decisions', authenticate, authorizeWrite('admin'), decisionRecordR
 app.use('/api/nl-rules', authenticate, authorize('admin', 'compliance_officer'), nlRulesRoutes);
 app.use('/api/reports', authenticate, authorizeWrite('admin'), complianceReportRoutes);
 app.use('/api/tenants', authenticate, authorizeWrite('admin'), tenantRoutes);
+app.use('/api/news', authenticate, newsRoutes);
 app.use('/api/regulatory', authenticate, authorizeWrite('admin', 'compliance_officer'), createRegulatoryRoutes());
 app.use('/api/copilot', authenticate, createCopilotRoutes());
 app.use('/api/scenarios', authenticate, authorizeWrite('admin', 'compliance_officer'), scenarioRoutes);

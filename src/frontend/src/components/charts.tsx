@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { formatCompactNumber, formatInvestorType, classNames } from '../lib/utils';
+import { api } from '../lib/api';
 import { useI18n } from '../lib/i18n';
 
 // ── Brand Palette (theme-safe) ───────────────────────────
@@ -858,121 +859,105 @@ export const RegulatoryCalendarCard = React.memo(function RegulatoryCalendarCard
 export const NewsFeedCard = React.memo(function NewsFeedCard() {
   const { t } = useI18n();
 
-  type SourceType = 'regulatory' | 'news' | 'academic';
+  type SourceType = 'regulatory' | 'news';
   const sourceColors: Record<SourceType, { bg: string; color: string }> = {
-    regulatory: { bg: 'rgba(197,224,238,0.2)', color: ACCENT },
-    news: { bg: 'rgba(232,168,124,0.15)', color: WARM },
-    academic: { bg: 'rgba(197,224,238,0.1)', color: 'rgba(197,224,238,0.6)' },
+    regulatory: { bg: 'rgba(197,224,238,0.2)', color: '#C5E0EE' },
+    news: { bg: 'rgba(163,196,212,0.15)', color: '#A3C4D4' },
   };
 
-  const articles: Array<{
-    title: string;
-    source: string;
-    sourceType: SourceType;
-    date: string;
-    excerpt: string;
-    url: string;
-  }> = [
-    {
-      title: 'AIFMD II: Final RTS on Leverage Reporting Published by ESMA',
-      source: 'ESMA',
-      sourceType: 'regulatory',
-      date: '2026-02-18',
-      excerpt: 'ESMA released the final regulatory technical standards for leverage calculation under AIFMD II, effective Q3 2026. New commitment method granularity requirements apply to all EU AIFMs.',
-      url: '#',
-    },
-    {
-      title: 'BaFin verschärft Prüfung von KAGB-Meldungen für offene Spezialfonds',
-      source: 'BaFin',
-      sourceType: 'regulatory',
-      date: '2026-02-15',
-      excerpt: 'Die BaFin kündigt intensivere Kontrollen der Meldepflichten nach KAGB §35 und §36 an. KVGen müssen ab April 2026 erweiterte Risikoberichte einreichen.',
-      url: '#',
-    },
-    {
-      title: 'EU Anti-Money Laundering Authority: First Supervisory Priorities Announced',
-      source: 'Reuters',
-      sourceType: 'news',
-      date: '2026-02-14',
-      excerpt: 'AMLA published its first supervisory priorities focusing on crypto-asset service providers and alternative fund managers with cross-border distribution.',
-      url: '#',
-    },
-    {
-      title: 'DORA Compliance Deadline: What Fund Managers Need to Know Now',
-      source: 'Handelsblatt',
-      sourceType: 'news',
-      date: '2026-02-12',
-      excerpt: 'Mit dem Inkrafttreten von DORA müssen Fondsmanager ihre ICT-Risikomanagement-Frameworks dokumentieren und Drittanbieter-Abhängigkeiten melden.',
-      url: '#',
-    },
-    {
-      title: 'ECB Financial Stability Review Highlights Leverage Risks in Alternative Funds',
-      source: 'ECB',
-      sourceType: 'regulatory',
-      date: '2026-02-10',
-      excerpt: 'The ECB\'s latest stability report flags elevated leverage in EU real estate and credit funds, recommending enhanced macroprudential tools for AIFMD.',
-      url: '#',
-    },
-    {
-      title: 'Implementing the EU AML Package: Impact on Investor Due Diligence',
-      source: 'Journal of Financial Regulation',
-      sourceType: 'academic',
-      date: '2026-02-08',
-      excerpt: 'A comprehensive analysis of how the sixth Anti-Money Laundering Directive reshapes beneficial ownership verification for fund subscriptions across the EU.',
-      url: '#',
-    },
-    {
-      title: 'Bundesbank Issues Updated Capital Flow Reporting Templates for AIFs',
-      source: 'Bundesbank',
-      sourceType: 'regulatory',
-      date: '2026-02-05',
-      excerpt: 'New Z4 reporting templates for alternative investment funds incorporate granular country-level exposure breakdowns effective May 2026.',
-      url: '#',
-    },
-    {
-      title: 'BaFin Enforcement: €2.1M Fine for Concentration Limit Breach in Spezialfonds',
-      source: 'Bloomberg Law',
-      sourceType: 'news',
-      date: '2026-02-03',
-      excerpt: 'A German KVG received a significant fine for repeated KAGB §262 concentration limit violations in three managed special funds, underscoring BaFin\'s enforcement posture.',
-      url: '#',
-    },
-  ];
+  const [newsData, setNewsData] = React.useState<{ articles: Array<{ title: string; source: string; sourceType: SourceType; date: string; excerpt: string; url: string }>; cachedAt: string; stale?: boolean } | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const data = await api.getNews();
+        if (!cancelled) { setNewsData(data); setLoading(false); }
+      } catch (err) {
+        if (!cancelled) { setError((err as Error).message || 'Failed to load news'); setLoading(false); }
+      }
+    }
+    load();
+    // Refresh every 30 minutes
+    const interval = setInterval(load, 30 * 60 * 1000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
 
   const sourceLabel = (type: SourceType) => {
     if (type === 'regulatory') return t('news.sourceRegulatory');
-    if (type === 'news') return t('news.sourceNews');
-    return t('news.sourceAcademic');
+    return t('news.sourceNews');
   };
+
+  const cachedAgo = newsData?.cachedAt
+    ? Math.round((Date.now() - new Date(newsData.cachedAt).getTime()) / 60000)
+    : null;
 
   return (
     <ChartCard title={t('news.title')} subtitle={t('news.subtitle')}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {articles.map((article, i) => {
-          const sc = sourceColors[article.sourceType];
-          return (
-            <div key={i} className="rounded-lg border border-edge-subtle p-4 hover:bg-bg-tertiary transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <span
-                  className="inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ background: sc.bg, color: sc.color }}
+      {loading ? (
+        <div className="flex h-[200px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto mb-2 h-6 w-6 animate-spin rounded-full border-2 border-edge border-t-accent-500" />
+            <p className="text-xs text-ink-tertiary">{t('news.loading') || 'Loading latest regulatory news...'}</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex h-[200px] items-center justify-center">
+          <p className="text-xs text-ink-tertiary">{error}</p>
+        </div>
+      ) : newsData && newsData.articles.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {newsData.articles.map((article, i) => {
+              const sc = sourceColors[article.sourceType] || sourceColors.news;
+              return (
+                <a
+                  key={i}
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-lg border border-edge-subtle p-4 hover:bg-bg-tertiary transition-colors group"
                 >
-                  {article.source}
-                </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary text-ink-muted">
-                  {sourceLabel(article.sourceType)}
-                </span>
-                <span className="text-[10px] text-ink-muted ml-auto font-mono">{article.date}</span>
-              </div>
-              <h4 className="text-xs font-semibold text-ink leading-snug mb-1.5">{article.title}</h4>
-              <p className="text-[11px] text-ink-secondary leading-relaxed mb-2 line-clamp-2">{article.excerpt}</p>
-              <a href={article.url} className="text-[11px] font-semibold" style={{ color: ACCENT }}>
-                {t('news.readMore')}
-              </a>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className="inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold"
+                      style={{ background: sc.bg, color: sc.color }}
+                    >
+                      {article.source}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary text-ink-muted">
+                      {sourceLabel(article.sourceType)}
+                    </span>
+                    <span className="text-[10px] text-ink-muted ml-auto font-mono">{article.date}</span>
+                  </div>
+                  <h4 className="text-xs font-semibold text-ink leading-snug mb-1.5 group-hover:text-[#C5E0EE] transition-colors">{article.title}</h4>
+                  {article.excerpt && (
+                    <p className="text-[11px] text-ink-secondary leading-relaxed line-clamp-2">{article.excerpt}</p>
+                  )}
+                  <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold" style={{ color: '#C5E0EE' }}>
+                    {t('news.readMore')}
+                    <svg className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+          {cachedAgo !== null && (
+            <div className="mt-4 pt-3 border-t border-edge-subtle flex items-center justify-between text-[10px] text-ink-muted">
+              <span>Sources: BaFin, ESMA, ECB, EBA</span>
+              <span>{newsData.stale ? '⚠ Stale — ' : ''}Updated {cachedAgo < 1 ? 'just now' : `${cachedAgo}m ago`}</span>
             </div>
-          );
-        })}
-      </div>
+          )}
+        </>
+      ) : (
+        <div className="flex h-[200px] items-center justify-center">
+          <p className="text-xs text-ink-tertiary">No regulatory news available</p>
+        </div>
+      )}
     </ChartCard>
   );
 });

@@ -699,6 +699,10 @@ class ApiClient {
       'Template download failed'
     );
   }
+
+  async getNews(): Promise<{ articles: Array<{ title: string; source: string; sourceType: 'regulatory' | 'news'; date: string; excerpt: string; url: string }>; cachedAt: string; stale?: boolean }> {
+    return this.request('/news');
+  }
 }
 
 export const api = new ApiClient();
