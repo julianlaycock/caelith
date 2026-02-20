@@ -69,6 +69,28 @@
   --card-shadow-hover: 0 4px 16px rgba(0,0,0,0.2);
 }
 
+/* ── Light Surface Override (overlays, modals, copilot) ── */
+.light-surface {
+  --bg-primary: #F8F9FA;
+  --bg-secondary: #FFFFFF;
+  --bg-hover: rgba(197,224,238,0.06);
+  --text-primary: #2D3333;
+  --text-secondary: rgba(45,51,51,0.65);
+  --text-tertiary: rgba(45,51,51,0.45);
+  --text-muted: rgba(45,51,51,0.3);
+  --border: rgba(197,224,238,0.25);
+  --border-subtle: rgba(197,224,238,0.15);
+  --border-strong: rgba(197,224,238,0.4);
+  --border-warm: rgba(232,168,124,0.2);
+  --success: #16a34a;
+  --success-bg: rgba(22,163,74,0.08);
+  --warning: #c07a4a;
+  --warning-bg: rgba(232,168,124,0.1);
+  --danger: #dc2626;
+  --danger-bg: rgba(220,38,38,0.08);
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
 /* ── Base Styles ─────────────────────────────────── */
 html {
   font-family: var(--font-sans);

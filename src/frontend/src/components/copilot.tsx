@@ -190,22 +190,22 @@ export function CopilotPanel({
       {open && <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />}
 
       <div
-        className={`fixed right-0 top-0 z-50 flex h-full flex-col bg-[#2D3333] shadow-2xl shadow-black/40 transition-transform duration-300 ease-in-out ${
+        className={`light-surface fixed right-0 top-0 z-50 flex h-full flex-col bg-[#F8F9FA] shadow-2xl shadow-black/40 transition-transform duration-300 ease-in-out ${
           open ? 'translate-x-0' : 'translate-x-full'
-        } w-full md:w-[480px] border-l border-edge`}
+        } w-full md:w-[480px] border-l border-[rgba(197,224,238,0.2)]`}
       >
-        <div className="flex items-center justify-between border-b border-edge px-4 py-3">
+        <div className="flex items-center justify-between border-b border-[rgba(197,224,238,0.15)] px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#24364A]/15">
-              <svg className="h-4 w-4 text-[#24364A]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(197,224,238,0.15)]">
+              <svg className="h-4 w-4 text-[#2D3333]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
               </svg>
             </div>
-            <span className="text-sm font-semibold text-ink">Compliance Copilot</span>
+            <span className="text-sm font-semibold text-[#2D3333]">Compliance Copilot</span>
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink"
+            className="rounded-md p-1.5 text-[rgba(45,51,51,0.45)] hover:bg-[rgba(45,51,51,0.06)] hover:text-[rgba(45,51,51,0.65)]"
             aria-label="Close copilot"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
@@ -215,15 +215,15 @@ export function CopilotPanel({
         </div>
 
         {open && !acknowledged && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#2D3333] px-6">
-            <div className="w-full max-w-sm rounded-xl border border-edge bg-[#2D3333] p-6 shadow-lg">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#F8F9FA] px-6">
+            <div className="w-full max-w-sm rounded-xl border border-[rgba(197,224,238,0.2)] bg-white p-6 shadow-lg">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 mx-auto">
                 <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
               </div>
-              <h3 className="mb-2 text-center text-sm font-semibold text-ink">Before you proceed</h3>
-              <p className="mb-4 text-xs leading-relaxed text-ink-secondary">
+              <h3 className="mb-2 text-center text-sm font-semibold text-[#2D3333]">Before you proceed</h3>
+              <p className="mb-4 text-xs leading-relaxed text-[rgba(45,51,51,0.65)]">
                 The Compliance Copilot provides AI-generated informational assistance only. It does not constitute legal, regulatory, or compliance advice. All outputs require independent verification by a qualified professional before any reliance. Caelith shall not be liable for any loss, regulatory penalty, or adverse outcome arising from use of AI-generated content.
               </p>
               <label className="mb-4 flex items-start gap-2.5 cursor-pointer">
@@ -231,9 +231,9 @@ export function CopilotPanel({
                   type="checkbox"
                   checked={ackChecked}
                   onChange={(e) => setAckChecked(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-edge accent-[#24364A]"
+                  className="mt-0.5 h-4 w-4 rounded border-[rgba(197,224,238,0.25)] accent-[#2D3333]"
                 />
-                <span className="text-xs leading-relaxed text-ink-secondary">
+                <span className="text-xs leading-relaxed text-[rgba(45,51,51,0.65)]">
                   I understand that Compliance Copilot outputs are informational only, do not constitute professional advice, and must be independently verified before reliance.
                 </span>
               </label>
@@ -243,7 +243,7 @@ export function CopilotPanel({
                   localStorage.setItem(COPILOT_ACK_KEY, 'true');
                   setAcknowledged(true);
                 }}
-                className="w-full rounded-lg bg-[#24364A] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1F2F40] disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full rounded-lg bg-[#2D3333] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#3a4242] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 I Understand — Continue
               </button>
@@ -254,17 +254,17 @@ export function CopilotPanel({
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {messages.length === 0 && !loading && (
             <div className="flex h-full flex-col items-center justify-center px-4 text-center">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#24364A]/10">
-                <svg className="h-6 w-6 text-[#24364A]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(197,224,238,0.12)]">
+                <svg className="h-6 w-6 text-[#2D3333]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
                 </svg>
               </div>
-              <p className="mb-1 text-sm font-medium text-ink">Compliance Copilot</p>
-              <p className="mb-3 text-xs text-ink-tertiary">
+              <p className="mb-1 text-sm font-medium text-[#2D3333]">Compliance Copilot</p>
+              <p className="mb-3 text-xs text-[rgba(45,51,51,0.45)]">
                 Ask questions about regulations, decisions, or draft rules using natural language.
               </p>
               <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
-                <p className="text-xs leading-relaxed text-amber-700 font-medium">
+                <p className="text-xs leading-relaxed text-[#c07a4a] font-medium">
                   Compliance Copilot provides AI-generated informational assistance only. Responses do not constitute legal, regulatory, or compliance advice. All outputs require independent verification by a qualified professional before any reliance. Caelith does not provide legal advice and shall not be liable for decisions made using this tool.
                 </p>
               </div>
@@ -273,7 +273,7 @@ export function CopilotPanel({
                   <button
                     key={prompt}
                     onClick={() => sendMessage(prompt)}
-                    className="w-full rounded-lg border border-edge px-3 py-2 text-left text-xs text-ink-secondary transition-colors hover:border-[#24364A]/30 hover:bg-[#24364A]/10"
+                    className="w-full rounded-lg border border-[rgba(197,224,238,0.2)] bg-white px-3 py-2 text-left text-xs text-[rgba(45,51,51,0.65)] transition-colors hover:border-[#C5E0EE]"
                   >
                     {prompt}
                   </button>
@@ -286,12 +286,12 @@ export function CopilotPanel({
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                  msg.role === 'user' ? 'bg-[#24364A] text-white' : 'bg-bg-tertiary text-ink'
+                  msg.role === 'user' ? 'bg-[#2D3333] text-white' : 'bg-[rgba(197,224,238,0.08)] text-[#2D3333] border border-[rgba(197,224,238,0.12)]'
                 }`}
               >
                 {msg.role === 'assistant' && msg.intent && (
                   <div className="mb-1.5 flex items-center gap-1.5">
-                    <span className="inline-block rounded bg-[#24364A]/15 px-1.5 py-0.5 text-[10px] font-medium text-[#24364A]">
+                    <span className="inline-block rounded bg-[rgba(45,51,51,0.06)] px-1.5 py-0.5 text-[10px] font-medium text-[rgba(45,51,51,0.5)]">
                       {msg.intent.replace('_', ' ')}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-500" title="AI-assisted regulatory interpretation — requires human review">
@@ -332,7 +332,7 @@ export function CopilotPanel({
                           e.stopPropagation();
                           sendMessage(sa.label);
                         }}
-                        className="inline-flex items-center rounded-full border border-[#24364A]/20 bg-[#24364A]/5 px-2.5 py-1 text-[10px] font-medium text-[#24364A] transition-colors hover:bg-[#24364A]/10 hover:border-[#24364A]/30"
+                        className="inline-flex items-center rounded-full border border-[rgba(197,224,238,0.15)] bg-[rgba(45,51,51,0.06)] px-2.5 py-1 text-[10px] font-medium text-[rgba(45,51,51,0.65)] transition-colors hover:bg-[rgba(45,51,51,0.1)] hover:border-[rgba(197,224,238,0.25)]"
                       >
                         {sa.label}
                       </button>
@@ -342,7 +342,7 @@ export function CopilotPanel({
                 {msg.role === 'assistant' && (
                   <div className="mt-2 border-t border-edge-subtle pt-1.5">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-medium leading-tight text-amber-600">
+                      <p className="text-xs font-medium leading-tight text-[#c07a4a]">
                         AI-generated — not legal, regulatory, or compliance advice. Verify all content independently before reliance.
                       </p>
                       <div className="flex items-center gap-1">
@@ -360,7 +360,7 @@ export function CopilotPanel({
                           className={`rounded p-1 transition-colors ${
                             feedback[msg.id] === 'up'
                               ? 'text-emerald-500 bg-emerald-500/10'
-                              : 'text-ink-muted hover:text-ink-secondary hover:bg-bg-tertiary'
+                              : 'text-[rgba(45,51,51,0.3)] hover:text-[rgba(45,51,51,0.65)] hover:bg-[rgba(45,51,51,0.06)]'
                           }`}
                           title="Helpful"
                         >
@@ -382,7 +382,7 @@ export function CopilotPanel({
                           className={`rounded p-1 transition-colors ${
                             feedback[msg.id] === 'down'
                               ? 'text-red-400 bg-red-500/10'
-                              : 'text-ink-muted hover:text-ink-secondary hover:bg-bg-tertiary'
+                              : 'text-[rgba(45,51,51,0.3)] hover:text-[rgba(45,51,51,0.65)] hover:bg-[rgba(45,51,51,0.06)]'
                           }`}
                           title="Not helpful"
                         >
@@ -400,18 +400,18 @@ export function CopilotPanel({
 
           {loading && (
             <div className="flex justify-start">
-              <div className="rounded-lg bg-bg-tertiary px-3 py-2">
+              <div className="rounded-lg bg-[rgba(197,224,238,0.08)] px-3 py-2">
                 <div className="flex gap-1">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-ink-tertiary [animation-delay:0ms]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-ink-tertiary [animation-delay:150ms]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-ink-tertiary [animation-delay:300ms]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-[rgba(45,51,51,0.3)] [animation-delay:0ms]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-[rgba(45,51,51,0.3)] [animation-delay:150ms]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-[rgba(45,51,51,0.3)] [animation-delay:300ms]" />
                 </div>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600">
+            <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-[#dc2626]">
               {error}
               <button
                 onClick={() => {
@@ -429,7 +429,7 @@ export function CopilotPanel({
           <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSubmit} className="border-t border-edge p-3">
+        <form onSubmit={handleSubmit} className="border-t border-[rgba(197,224,238,0.15)] p-3">
           <div className="flex items-end gap-2">
             <textarea
               ref={inputRef}
@@ -438,12 +438,12 @@ export function CopilotPanel({
               onKeyDown={handleKeyDown}
               placeholder="Ask about AIFMD eligibility, SIF requirements, or your fund's compliance..."
               rows={1}
-              className="flex-1 resize-none rounded-lg border border-edge bg-bg-primary px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-[#24364A] focus:outline-none focus:ring-1 focus:ring-[#24364A]/30"
+              className="flex-1 resize-none rounded-lg border border-[rgba(197,224,238,0.25)] bg-white px-3 py-2 text-sm text-[#2D3333] placeholder:text-[rgba(45,51,51,0.3)] focus:border-[#C5E0EE] focus:outline-none focus:ring-1 focus:ring-[#C5E0EE]/30"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#24364A] text-white transition-colors hover:bg-[#1F2F40] disabled:opacity-40"
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#2D3333] text-white transition-colors hover:bg-[#3a4242] disabled:opacity-40"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
@@ -460,7 +460,7 @@ export function CopilotToggleButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-30 flex h-12 items-center gap-2.5 rounded-full bg-[#24364A] px-5 text-white shadow-lg transition-all hover:scale-105 hover:bg-[#1F2F40] hover:shadow-xl"
+      className="fixed bottom-6 right-6 z-30 flex h-12 items-center gap-2.5 rounded-full bg-[#2D3333] px-5 text-white shadow-lg transition-all hover:scale-105 hover:bg-[#3a4242] hover:shadow-xl"
       title="Open Compliance Copilot"
     >
       <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

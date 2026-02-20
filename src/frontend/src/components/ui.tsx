@@ -504,10 +504,10 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] animate-fade-in">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative z-10 w-full ${maxW} mx-4 md:mx-auto rounded-xl border border-edge-subtle bg-[#2D3333] p-4 md:p-6 shadow-2xl shadow-black/20 border-t-accent-400/20 max-h-[80vh] overflow-y-auto`}>
+      <div className={`light-surface relative z-10 w-full ${maxW} mx-4 md:mx-auto rounded-xl border border-[rgba(197,224,238,0.2)] bg-[#F8F9FA] p-4 md:p-6 shadow-2xl shadow-black/20 max-h-[80vh] overflow-y-auto`}>
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-ink">{title}</h2>
-          <button onClick={onClose} className="rounded-lg p-1 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink transition-colors">
+          <h2 className="text-base font-semibold text-[#2D3333]">{title}</h2>
+          <button onClick={onClose} className="rounded-lg p-1 text-[rgba(45,51,51,0.45)] hover:bg-[rgba(45,51,51,0.06)] hover:text-[rgba(45,51,51,0.65)] transition-colors">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>

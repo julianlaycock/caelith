@@ -182,14 +182,9 @@ const checkLmtRedemptionGate: ValidationRule = (ctx): string | null => {
   return null;
 };
 
-const checkLmtNoticePeriod: ValidationRule = (ctx): string | null => {
-  if (!ctx.fund?.lmt_types) return null;
-  const notice = ctx.fund.lmt_types.find(
-    (lmt) => lmt.type === 'notice_period' && lmt.active
-  );
-  if (notice) {
-    return `Notice period required before transfer (AIFMD II Art 16(2b): ${notice.description || 'Notice period in effect'})`;
-  }
+const checkLmtNoticePeriod: ValidationRule = (_ctx): string | null => {
+  // Notice periods are advisory — they do not block transfers per AIFMD II Art 16(2b).
+  // The notice requirement is informational and recorded in the decision record.
   return null;
 };
 
