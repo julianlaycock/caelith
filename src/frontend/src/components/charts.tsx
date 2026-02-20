@@ -9,30 +9,33 @@ import { useI18n } from '../lib/i18n';
 const ACCENT = '#C5E0EE';
 const WARM = '#E8A87C';
 
-const TYPE_COLORS = [ACCENT, WARM, 'rgba(197,224,238,0.35)', '#B8C9A3', '#D4A5C7', '#A3B8C9', '#C9B8A3'];
-const TYPE_GRADIENTS = [
-  'linear-gradient(135deg, #3a6b7a, rgba(197,224,238,0.25))',
-  'linear-gradient(135deg, #8a5f3a, rgba(232,168,124,0.25))',
-  'linear-gradient(135deg, rgba(197,224,238,0.25), rgba(197,224,238,0.1))',
-  'linear-gradient(135deg, #5a7a4a, rgba(184,201,163,0.25))',
-  'linear-gradient(135deg, #7a4a6a, rgba(212,165,199,0.25))',
-  'linear-gradient(135deg, #4a6a7a, rgba(163,184,201,0.25))',
-  'linear-gradient(135deg, #7a6a4a, rgba(201,184,163,0.25))',
+const CAT_COLORS = ['#C5E0EE', '#7BA8BD', '#5A8FA6', '#3D7A91', '#A3C4D4', '#2A6478'];
+const CAT_GRADIENTS = [
+  'linear-gradient(135deg, #5A8FA6, rgba(197,224,238,0.3))',
+  'linear-gradient(135deg, #3D7A91, rgba(123,168,189,0.3))',
+  'linear-gradient(135deg, #2A6478, rgba(90,143,166,0.3))',
+  'linear-gradient(135deg, #7BA8BD, rgba(197,224,238,0.25))',
+  'linear-gradient(135deg, #A3C4D4, rgba(123,168,189,0.2))',
+  'linear-gradient(135deg, #3D7A91, rgba(61,122,145,0.25))',
 ];
 
 function getJurisdictionColor(j: string): string {
   const u = j.toUpperCase();
-  if (u === 'DE' || u === 'GERMANY' || u === 'DEUTSCHLAND') return ACCENT;
-  if (u === 'LU' || u === 'LUXEMBOURG' || u === 'LUXEMBURG') return WARM;
-  return 'rgba(197,224,238,0.35)';
+  if (u === 'DE' || u === 'GERMANY' || u === 'DEUTSCHLAND') return '#C5E0EE';
+  if (u === 'AT' || u === 'AUSTRIA' || u === 'ÖSTERREICH') return '#A3C4D4';
+  if (u === 'LU' || u === 'LUXEMBOURG' || u === 'LUXEMBURG') return '#7BA8BD';
+  if (u === 'CH' || u === 'SWITZERLAND' || u === 'SCHWEIZ') return '#5A8FA6';
+  return '#3D7A91';
 }
 
 function getJurisdictionBg(j: string, pct: number): string {
-  const u = j.toUpperCase();
+  const color = getJurisdictionColor(j);
   const alpha = Math.max(0.08, Math.min(0.4, pct / 100));
-  if (u === 'DE' || u === 'GERMANY' || u === 'DEUTSCHLAND') return `rgba(197,224,238,${alpha})`;
-  if (u === 'LU' || u === 'LUXEMBOURG' || u === 'LUXEMBURG') return `rgba(232,168,124,${alpha})`;
-  return `rgba(197,224,238,${alpha * 0.5})`;
+  // Extract RGB from hex and return rgba
+  const r = parseInt(color.slice(1,3), 16);
+  const g = parseInt(color.slice(3,5), 16);
+  const b = parseInt(color.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 // ── 1. Investor Type: Treemap (C) + Tufte breakdown (B) ──
@@ -67,7 +70,7 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({
             {/* Largest block */}
             <div
               className={classNames('flex flex-col justify-end rounded-md p-2.5 relative overflow-hidden transition-opacity', onTypeClick && 'cursor-pointer hover:opacity-85')}
-              style={{ flex: Math.max(sorted[0].total_units, 1), background: TYPE_GRADIENTS[0] }}
+              style={{ flex: Math.max(sorted[0].total_units, 1), background: CAT_GRADIENTS[0] }}
               onClick={onTypeClick ? () => onTypeClick(sorted[0].type) : undefined}
             >
               <span className="font-mono text-sm font-bold text-white">
@@ -84,7 +87,7 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({
                     <div
                       key={d.type}
                       className={classNames('flex flex-col justify-end rounded-md p-2 overflow-hidden transition-opacity', onTypeClick && 'cursor-pointer hover:opacity-85')}
-                      style={{ flex: Math.max(d.total_units, 1), background: TYPE_GRADIENTS[(i + 1) % TYPE_GRADIENTS.length] }}
+                      style={{ flex: Math.max(d.total_units, 1), background: CAT_GRADIENTS[(i + 1) % CAT_GRADIENTS.length] }}
                       onClick={onTypeClick ? () => onTypeClick(d.type) : undefined}
                     >
                       {d.total_units / total > 0.08 ? (
@@ -121,9 +124,9 @@ export const InvestorTypeDonut = React.memo(function InvestorTypeDonut({
             >
               <span className="w-28 text-[11px] text-ink-secondary truncate">{formatInvestorType(d.type)}</span>
               <div className="flex-1 h-[2px] bg-bg-tertiary rounded-full relative">
-                <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${pct}%`, background: TYPE_COLORS[i % TYPE_COLORS.length] }} />
+                <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${pct}%`, background: CAT_COLORS[i % CAT_COLORS.length] }} />
               </div>
-              <span className="font-mono text-[11px] font-semibold w-12 text-right" style={{ color: TYPE_COLORS[i % TYPE_COLORS.length] }}>
+              <span className="font-mono text-[11px] font-semibold w-12 text-right" style={{ color: CAT_COLORS[i % CAT_COLORS.length] }}>
                 {formatCompactNumber(d.total_units)}
               </span>
               <span className="font-mono text-[10px] text-ink-muted w-9 text-right">{pct.toFixed(0)}%</span>
@@ -253,7 +256,7 @@ interface KycSegmentData {
 const KYC_SEGMENTS = [
   { key: 'verified', label: 'Verified', color: 'var(--success)' },
   { key: 'expiring_soon', label: 'Expiring <90d', color: WARM },
-  { key: 'pending', label: 'Pending', color: 'var(--warning)' },
+  { key: 'pending', label: 'Pending', color: '#C5E0EE' },
   { key: 'expired', label: 'Expired', color: 'var(--danger)' },
 ] as const;
 
@@ -467,14 +470,15 @@ export const ConcentrationRiskGrid = React.memo(function ConcentrationRiskGrid({
 
   function getBarGradient(fund: ConcentrationEntry, type: 'top1' | 'top3'): string {
     const risk = getRisk(fund);
+    const isHigh = risk.color === 'var(--danger)';
+    const isMed = risk.color === WARM;
     if (type === 'top1') {
-      if (risk.label === 'HOCH') return `linear-gradient(90deg, var(--danger), ${WARM})`;
-      if (risk.label === 'MITTEL') return WARM;
+      if (isHigh) return `linear-gradient(90deg, var(--danger), ${WARM})`;
+      if (isMed) return WARM;
       return 'var(--success)';
     }
-    // top3
-    if (risk.label === 'HOCH') return `linear-gradient(90deg, ${WARM}, rgba(232,168,124,0.5))`;
-    if (risk.label === 'MITTEL') return 'rgba(232,168,124,0.5)';
+    if (isHigh) return `linear-gradient(90deg, ${WARM}, rgba(232,168,124,0.5))`;
+    if (isMed) return 'rgba(232,168,124,0.5)';
     return 'rgba(110,231,183,0.5)';
   }
 
@@ -638,7 +642,7 @@ export const KycPipelineCard = React.memo(function KycPipelineCard({ investors }
   const segments = [
     { label: t('kyc.overdue'), count: overdue, color: 'var(--danger)' },
     { label: t('kyc.expiring90'), count: expiring90, color: WARM },
-    { label: t('kyc.pending'), count: pending, color: 'var(--warning)' },
+    { label: t('kyc.pending'), count: pending, color: '#C5E0EE' },
     { label: t('kyc.verified'), count: verified, color: 'var(--success)' },
   ];
 
@@ -978,10 +982,10 @@ export const NewsFeedCard = React.memo(function NewsFeedCard() {
 import type { Investor } from '../lib/types';
 
 const INVESTOR_TYPE_COLORS: Record<string, string> = {
-  institutional: '#3B82F6',
-  professional: '#10B981',
-  semi_professional: '#F59E0B',
-  retail: '#EF4444',
+  institutional: '#C5E0EE',
+  professional: '#7BA8BD',
+  semi_professional: '#5A8FA6',
+  retail: '#3D7A91',
 };
 
 function getInvestorTypeColor(type: string): string {
@@ -1037,10 +1041,10 @@ export const InvestorTypeBreakdownCard = React.memo(function InvestorTypeBreakdo
 // ── 13. Jurisdiction Exposure (Status Tab) ──
 
 const JURISDICTION_COLORS: Record<string, string> = {
-  DE: '#3B82F6',
-  AT: '#10B981',
-  CH: '#F59E0B',
-  LU: '#8B5CF6',
+  DE: '#C5E0EE',
+  AT: '#A3C4D4',
+  CH: '#5A8FA6',
+  LU: '#7BA8BD',
 };
 
 function getJurisdictionCardColor(j: string): string {
