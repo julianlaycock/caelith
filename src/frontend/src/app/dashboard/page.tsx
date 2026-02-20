@@ -8,6 +8,8 @@ import {
   ActiveViolationsCard,
   KycPipelineCard,
   AuditReadinessCard,
+  InvestorTypeBreakdownCard,
+  JurisdictionExposureCard,
   LeverageUtilizationCard,
   RegulatoryCalendarCard,
   NewsFeedCard,
@@ -102,6 +104,8 @@ function AnalyticsTabs({
           <ActiveViolationsCard fundReports={fundReports} />
           <KycPipelineCard investors={allInvestors} />
           <AuditReadinessCard fundReports={fundReports} />
+          <InvestorTypeBreakdownCard investors={allInvestors} />
+          <JurisdictionExposureCard investors={allInvestors} />
         </div>
       )}
 

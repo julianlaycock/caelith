@@ -973,6 +973,122 @@ export const NewsFeedCard = React.memo(function NewsFeedCard() {
   );
 });
 
+// ── 12. Investor Type Breakdown (Status Tab) ──
+
+import type { Investor } from '../lib/types';
+
+const INVESTOR_TYPE_COLORS: Record<string, string> = {
+  institutional: '#3B82F6',
+  professional: '#10B981',
+  semi_professional: '#F59E0B',
+  retail: '#EF4444',
+};
+
+function getInvestorTypeColor(type: string): string {
+  return INVESTOR_TYPE_COLORS[type.toLowerCase()] || '#6B7280';
+}
+
+function formatTypeLabel(type: string): string {
+  return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export const InvestorTypeBreakdownCard = React.memo(function InvestorTypeBreakdownCard({
+  investors,
+}: {
+  investors: Investor[];
+}) {
+  const counts: Record<string, number> = {};
+  for (const inv of investors) {
+    const t = inv.investor_type || 'unknown';
+    counts[t] = (counts[t] || 0) + 1;
+  }
+  const total = investors.length || 1;
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <ChartCard title="Investor Type Breakdown" subtitle="Distribution by investor classification">
+      <div className="space-y-2.5">
+        {sorted.map(([type, count]) => {
+          const pct = (count / total) * 100;
+          const color = getInvestorTypeColor(type);
+          return (
+            <div key={type}>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-ink-secondary">{formatTypeLabel(type)}</span>
+                <span className="font-mono text-ink">
+                  {count} <span className="text-ink-muted">({pct.toFixed(1)}%)</span>
+                </span>
+              </div>
+              <div className="h-2 bg-bg-tertiary rounded-full">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 pt-2.5 border-t border-edge-subtle flex justify-between text-[11px]">
+        <span className="text-ink-muted">Total</span>
+        <span className="font-mono font-bold text-ink">{investors.length}</span>
+      </div>
+    </ChartCard>
+  );
+});
+
+// ── 13. Jurisdiction Exposure (Status Tab) ──
+
+const JURISDICTION_COLORS: Record<string, string> = {
+  DE: '#3B82F6',
+  AT: '#10B981',
+  CH: '#F59E0B',
+  LU: '#8B5CF6',
+};
+
+function getJurisdictionCardColor(j: string): string {
+  return JURISDICTION_COLORS[j.toUpperCase()] || '#6B7280';
+}
+
+export const JurisdictionExposureCard = React.memo(function JurisdictionExposureCard({
+  investors,
+}: {
+  investors: Investor[];
+}) {
+  const counts: Record<string, number> = {};
+  for (const inv of investors) {
+    const j = inv.jurisdiction || 'Unknown';
+    counts[j] = (counts[j] || 0) + 1;
+  }
+  const total = investors.length || 1;
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <ChartCard title="Jurisdiction Exposure" subtitle="Distribution by investor jurisdiction">
+      <div className="space-y-2.5">
+        {sorted.map(([jurisdiction, count]) => {
+          const pct = (count / total) * 100;
+          const color = getJurisdictionCardColor(jurisdiction);
+          return (
+            <div key={jurisdiction}>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-ink-secondary">{jurisdiction}</span>
+                <span className="font-mono text-ink">
+                  {count} <span className="text-ink-muted">({pct.toFixed(1)}%)</span>
+                </span>
+              </div>
+              <div className="h-2 bg-bg-tertiary rounded-full">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 pt-2.5 border-t border-edge-subtle flex justify-between text-[11px]">
+        <span className="text-ink-muted">Total</span>
+        <span className="font-mono font-bold text-ink">{investors.length}</span>
+      </div>
+    </ChartCard>
+  );
+});
+
 // ── Shared Components ────────────────────────────────────
 
 function ChartCard({
