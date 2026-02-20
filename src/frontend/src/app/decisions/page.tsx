@@ -18,7 +18,8 @@ import {
   ExportMenu,
 } from '../../components/ui';
 import { exportCSV } from '../../lib/export-csv';
-import { formatDateTime, classNames } from '../../lib/utils';
+import { formatDateTime, classNames, titleCase } from '../../lib/utils';
+import { Pagination, usePagination } from '../../components/pagination';
 import type { DecisionRecord } from '../../lib/types';
 import { useI18n } from '../../lib/i18n';
 
@@ -86,6 +87,8 @@ export default function DecisionsPage() {
     if (filterResult) result = result.filter(d => d.result === filterResult);
     return result;
   }, [decisions.data, filterType, filterResult]);
+
+  const { page, setPage, paginated: paginatedDecisions, total: paginatedTotal, perPage } = usePagination(filtered, 25);
 
   const handleVerifyChain = async () => {
     setVerifying(true);
@@ -206,7 +209,7 @@ export default function DecisionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-edge-subtle">
-              {filtered.map((d) => {
+              {paginatedDecisions.map((d) => {
                 const violations = d.result_details?.violation_count ?? 0;
                 const totalChecks = d.result_details?.checks?.length ?? 0;
                 return (
@@ -219,7 +222,7 @@ export default function DecisionsPage() {
                       {formatDateTime(d.decided_at)}
                     </td>
                     <td className="px-5 py-3 text-sm text-ink">
-                      {d.decision_type.replace(/_/g, ' ')}
+                      {titleCase(d.decision_type)}
                     </td>
                     <td className="px-5 py-3">
                       <Badge variant={resultBadgeVariant(d.result)}>{d.result}</Badge>
@@ -246,6 +249,9 @@ export default function DecisionsPage() {
               })}
             </tbody>
           </table>
+          </div>
+          <div className="px-4">
+            <Pagination total={paginatedTotal} page={page} perPage={perPage} onPageChange={setPage} />
           </div>
         </Card>
       ) : (
@@ -290,7 +296,7 @@ export default function DecisionsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">Type</p>
-                  <p className="text-sm font-medium text-ink">{selectedDecision.decision_type.replace(/_/g, ' ')}</p>
+                  <p className="text-sm font-medium text-ink">{titleCase(selectedDecision.decision_type)}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">Result</p>

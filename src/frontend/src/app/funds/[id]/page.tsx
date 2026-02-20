@@ -6,6 +6,7 @@ import { api } from '../../../lib/api';
 import { useAsync } from '../../../lib/hooks';
 import type { ScenarioResult, RulePackInfo } from '../../../lib/types';
 import { BackLink } from '../../../components/back-link';
+import { DetailBreadcrumb } from '../../../components/breadcrumb';
 import {
   Card,
   MetricCard,
@@ -21,7 +22,7 @@ import {
   ErrorMessage,
 } from '../../../components/ui';
 import { InvestorTypeDonut, JurisdictionExposureBar, KycExpiryHorizon } from '../../../components/charts';
-import { formatNumber, formatDate, formatDateTime } from '../../../lib/utils';
+import { formatNumber, formatDate, formatDateTime, titleCase } from '../../../lib/utils';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -157,9 +158,9 @@ export default function FundDetailPage() {
 
   return (
     <div>
-      {/* Back link + Header */}
+      {/* Breadcrumb + Header */}
       <div className="mb-6">
-        <BackLink href="/funds" label="Back to Fund Structures" />
+        <DetailBreadcrumb items={[{ label: 'Funds', href: '/funds' }, { label: f.name }]} />
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">{f.name}</h1>
@@ -466,7 +467,7 @@ export default function FundDetailPage() {
                               {formatDateTime(d.decided_at)}
                             </td>
                             <td className="px-6 py-3 text-sm text-ink">
-                              {d.decision_type.replace(/_/g, ' ')}
+                              {titleCase(d.decision_type)}
                             </td>
                             <td className="px-6 py-3">
                               <Badge variant={resultVariant}>{d.result}</Badge>

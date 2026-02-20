@@ -20,6 +20,7 @@ import { exportCSV } from '../../lib/export-csv';
 import { formatNumber, formatPercentage, toAssetOptions, toInvestorOptions } from '../../lib/utils';
 import type { ApiError } from '../../lib/types';
 import { CsvUploadWizard } from '../../components/csv-upload-wizard';
+import { useAutoDismiss } from '../../lib/use-auto-dismiss';
 
 export default function HoldingsPage() {
   const [showForm, setShowForm] = useState(false);
@@ -27,6 +28,7 @@ export default function HoldingsPage() {
   const [selectedAssetId, setSelectedAssetId] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  useAutoDismiss(successMsg, setSuccessMsg);
 
   const assets = useAsync(() => api.getAssets());
   const investors = useAsync(() => api.getInvestors());

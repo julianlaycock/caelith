@@ -21,6 +21,7 @@ import { formatDate, formatDateTime } from '../../lib/utils';
 import { ALL_JURISDICTIONS } from '../../lib/constants';
 import type { RuleSet, CompositeRule, ApiError, Investor, NLRuleResponse } from '../../lib/types';
 import { useI18n } from '../../lib/i18n';
+import { useAutoDismiss } from '../../lib/use-auto-dismiss';
 
 const RULE_TEMPLATES = [
   { label: 'Block retail investors', prompt: 'Block all transfers to retail investors' },
@@ -61,6 +62,7 @@ export default function RulesPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [compositeFormError, setCompositeFormError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  useAutoDismiss(successMsg, setSuccessMsg);
   const [saving, setSaving] = useState(false);
 
   const [qualRequired, setQualRequired] = useState(false);
@@ -601,7 +603,9 @@ export default function RulesPage() {
           <Card>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-ink">Custom Compliance Rules</h3>
-              <Button size="sm" onClick={() => setShowCompositeForm(true)}>+ Add Rule</Button>
+              {compositeRules.data && compositeRules.data.length > 0 && (
+                <Button size="sm" onClick={() => setShowCompositeForm(true)}>+ Add Rule</Button>
+              )}
             </div>
 
             {compositeRules.loading ? <LoadingSpinner /> : compositeRules.data && compositeRules.data.length > 0 ? (

@@ -49,3 +49,32 @@ export function Breadcrumb() {
     </nav>
   );
 }
+
+/** Explicit breadcrumb for detail pages with custom labels */
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+export function DetailBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
+  return (
+    <nav className="flex items-center gap-1.5 text-xs mb-3 animate-fade-in">
+      {items.map((item, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && (
+            <svg className="h-3 w-3 text-ink-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          )}
+          {item.href ? (
+            <Link href={item.href} className="text-accent-400 hover:text-accent-300 transition-colors font-medium">
+              {item.label}
+            </Link>
+          ) : (
+            <span className="text-ink-secondary font-medium truncate max-w-[200px]">{item.label}</span>
+          )}
+        </React.Fragment>
+      ))}
+    </nav>
+  );
+}

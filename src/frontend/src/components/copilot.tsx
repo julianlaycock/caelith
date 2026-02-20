@@ -20,7 +20,7 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
     prompts: [
       'Summarize my portfolio compliance status',
       'What risk flags need immediate attention?',
-      'What are the SIF investor requirements?',
+      'What are the KAGB Spezial-AIF investor requirements?',
       'What if minimum investment changed to EUR 200K?',
     ],
   },
@@ -28,18 +28,18 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
     title: 'Funds',
     prompts: [
       'What if minimum investment changed to €200K?',
-      'Explain the difference between SIF and RAIF',
-      'What CSSF requirements apply to my fund?',
+      'Explain the difference between Spezial-AIF and Publikumsfonds',
+      'What BaFin requirements apply to my fund?',
       'Which investors would be affected by new criteria?',
     ],
   },
   '/investors': {
     title: 'Investors',
     prompts: [
-      'What are the well-informed investor requirements?',
+      'What are the semi-professional investor requirements under KAGB?',
       'Explain KYC/AML requirements for fund investors',
-      'What is the EUR 125,000 minimum investment rule?',
-      'Which investor types qualify for SIF funds?',
+      'What is the EUR 200,000 minimum investment rule?',
+      'Which investor types qualify for Spezial-AIF?',
     ],
   },
   '/transfers': {
@@ -48,15 +48,15 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
       'Why was the last transfer rejected?',
       'What checks are applied to transfer validation?',
       'What if minimum investment changed to EUR 200K?',
-      'Explain transfer restriction rules',
+      'Explain transfer restriction rules under KAGB',
     ],
   },
   '/rules': {
     title: 'Rules',
     prompts: [
       'Create a rule to block retail investors',
-      'What eligibility rules should a SIF fund have?',
-      'Draft a rule for EUR 125K minimum investment',
+      'What eligibility rules should a Spezial-AIF have?',
+      'Draft a rule for EUR 200K minimum investment',
       'Explain how composite rules work',
     ],
   },
@@ -64,9 +64,9 @@ const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
     title: 'Onboarding',
     prompts: [
       'What documents are needed for investor onboarding?',
-      'Explain the AML due diligence process',
+      'Explain the AML due diligence process under AMLR',
       'What are the KYC requirements for professional investors?',
-      'How long does CSSF approval typically take?',
+      'What are the BaFin reporting requirements?',
     ],
   },
   '/decisions': {

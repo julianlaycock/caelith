@@ -23,6 +23,7 @@ import { exportCSV } from '../../lib/export-csv';
 import { formatNumber, formatDateTime, classNames } from '../../lib/utils';
 import type { DetailedValidationResult, ApiError, TransferHistoryEntry } from '../../lib/types';
 import { useI18n } from '../../lib/i18n';
+import { useAutoDismiss } from '../../lib/use-auto-dismiss';
 
 type TransferSortKey = 'executed_at' | 'from_name' | 'to_name' | 'units';
 type TransferSortDirection = 'asc' | 'desc' | null;
@@ -99,6 +100,7 @@ export default function TransfersPage() {
   const [viewMode, setViewMode] = useState<TransfersViewMode>(() => parseView());
   const [formError, setFormError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  useAutoDismiss(successMsg, setSuccessMsg);
   const [validationResult, setValidationResult] = useState<DetailedValidationResult | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [executing, setExecuting] = useState(false);

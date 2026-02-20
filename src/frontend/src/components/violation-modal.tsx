@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Modal, Badge } from './ui';
-import { classNames, formatDateTime } from '../lib/utils';
+import { classNames, formatDateTime, titleCase } from '../lib/utils';
 import type { DecisionRecord, ComplianceReport } from '../lib/types';
 
 interface ViolationModalProps {
@@ -33,7 +33,7 @@ export function ViolationModal({ violationAsset, violationDecisions, violationLo
             {violationDecisions.map((d) => (
               <div key={d.id} className="rounded-lg border border-edge-subtle p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-ink">{d.decision_type.replace(/_/g, ' ')}</span>
+                  <span className="text-sm font-medium text-ink">{titleCase(d.decision_type)}</span>
                   <Badge variant={d.result === 'approved' ? 'green' : d.result === 'rejected' ? 'red' : 'gray'}>
                     {d.result}
                   </Badge>

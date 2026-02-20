@@ -78,3 +78,8 @@ const INVESTOR_TYPE_LABELS: Record<string, string> = {
 export function formatInvestorType(type: string): string {
   return INVESTOR_TYPE_LABELS[type] || type;
 }
+
+/** Capitalize each word: "transfer_validation" → "Transfer Validation" */
+export function titleCase(s: string): string {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}

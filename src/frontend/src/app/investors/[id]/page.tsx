@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { BackLink } from '../../../components/back-link';
+import { DetailBreadcrumb } from '../../../components/breadcrumb';
 import { useAsync } from '../../../lib/hooks';
 import {
   Card,
@@ -19,7 +20,7 @@ import {
   ErrorMessage,
   EmptyState,
 } from '../../../components/ui';
-import { formatNumber, formatDate, formatDateTime, classNames } from '../../../lib/utils';
+import { formatNumber, formatDate, formatDateTime, classNames, titleCase } from '../../../lib/utils';
 import type { Holding, Asset, DecisionRecord, OnboardingRecord, FundStructure, EligibilityResult, InvestorDocument } from '../../../lib/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -217,7 +218,7 @@ export default function InvestorDetailPage() {
 
   return (
     <div>
-      {backLink}
+      <DetailBreadcrumb items={[{ label: 'Investors', href: '/investors' }, { label: inv.name }]} />
 
       {/* Header */}
       <div className="mb-6">
@@ -476,7 +477,7 @@ export default function InvestorDetailPage() {
                           {formatDateTime(d.decided_at)}
                         </td>
                         <td className="px-6 py-3 text-sm text-ink">
-                          {d.decision_type.replace(/_/g, ' ')}
+                          {titleCase(d.decision_type)}
                         </td>
                         <td className="px-6 py-3">
                           <Badge variant={resultVariant}>{d.result}</Badge>

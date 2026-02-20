@@ -28,6 +28,8 @@ import type { Investor, InvestorType, KycStatus } from '../../lib/types';
 import { BackLink } from '../../components/back-link';
 import { CsvUploadWizard } from '../../components/csv-upload-wizard';
 import { useI18n } from '../../lib/i18n';
+import { useAutoDismiss } from '../../lib/use-auto-dismiss';
+import { Pagination, usePagination } from '../../components/pagination';
 
 function daysUntilExpiry(expiryDate: string | null | undefined) {
   if (!expiryDate) return null;
@@ -96,6 +98,7 @@ function InvestorsContent() {
   const [editInvestor, setEditInvestor] = useState<Investor | null>(null);
   const formAction = useFormAction();
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  useAutoDismiss(successMsg, setSuccessMsg);
   const [sort, setSort] = useState<InvestorSortState>(() => parseSort(searchParams));
 
   // Local filters (stack on top of URL-based filters)
@@ -199,6 +202,8 @@ function InvestorsContent() {
       return sort.direction === 'desc' ? -cmp : cmp;
     });
   }, [locallyFiltered, sort]);
+
+  const { page, setPage, paginated: paginatedInvestors, total: paginatedTotal, perPage } = usePagination(sortedInvestors, 20);
 
   const clearFilters = () => {
     const params = new URLSearchParams(searchParams.toString());
@@ -384,7 +389,7 @@ function InvestorsContent() {
           />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>{t('common.cancel')}</Button>
-            <Button type="submit">{t('common.create')}</Button>
+            <Button type="submit" disabled={formAction.loading}>{formAction.loading ? '...' : t('common.create')}</Button>
           </div>
         </form>
       </Modal>
@@ -411,7 +416,7 @@ function InvestorsContent() {
             />
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="secondary" type="button" onClick={() => setEditInvestor(null)}>{t('common.cancel')}</Button>
-              <Button type="submit">{t('common.update')}</Button>
+              <Button type="submit" disabled={formAction.loading}>{formAction.loading ? '...' : t('common.update')}</Button>
             </div>
           </form>
         )}
@@ -448,7 +453,7 @@ function InvestorsContent() {
               </tr>
             </thead>
             <tbody className="divide-y divide-edge-subtle">
-              {sortedInvestors.map((inv) => (
+              {paginatedInvestors.map((inv) => (
                 <tr key={inv.id} className="transition-colors hover:bg-bg-tertiary">
                   <td className="px-5 py-3 font-medium">
                     <Link href={`/investors/${inv.id}`} className="text-ink hover:text-brand-accent transition-colors">
@@ -457,7 +462,12 @@ function InvestorsContent() {
                   </td>
                   <td className="px-5 py-3 text-ink-secondary">{inv.jurisdiction}</td>
                   <td className="px-5 py-3">
-                    <Badge variant="gray">{inv.investor_type.replace(/_/g, ' ')}</Badge>
+                    <Badge variant={
+                      inv.investor_type === 'institutional' ? 'blue' :
+                      inv.investor_type === 'professional' ? 'green' :
+                      inv.investor_type === 'semi_professional' ? 'yellow' :
+                      'gray'
+                    }>{inv.investor_type.replace(/_/g, ' ')}</Badge>
                   </td>
                   <td className="px-5 py-3">
                     <Badge variant={inv.kyc_status === 'verified' ? 'green' : inv.kyc_status === 'expired' ? 'red' : 'yellow'}>
@@ -497,6 +507,9 @@ function InvestorsContent() {
               ))}
             </tbody>
           </table>
+          </div>
+          <div className="px-4">
+            <Pagination total={paginatedTotal} page={page} perPage={perPage} onPageChange={setPage} />
           </div>
         </Card>
       ) : investors.data && investors.data.length > 0 && activeFilter ? (
