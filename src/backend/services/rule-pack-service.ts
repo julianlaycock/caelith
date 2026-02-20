@@ -221,38 +221,38 @@ const RULE_PACKS: Record<string, RulePackDefinition> = {
   },
 
   Spezial_AIF: {
-    name: 'German Spezial-AIF (KAGB)',
-    description: 'German special AIF — restricted to semi-professional and professional investors under KAGB.',
+    name: 'German Spezial-AIF (KAGB, as amended by FoMaStG)',
+    description: 'German special AIF — restricted to semi-professional and professional investors under KAGB ss 282-292, as amended by Fondsstandortgesetz (FoMaStG).',
     criteria: [
       {
         jurisdiction: 'DE', investor_type: 'institutional', minimum_investment: 0,
         maximum_allocation_pct: null, documentation_required: ['proof_of_institutional_status'],
         suitability_required: false,
-        source_reference: 'KAGB ss 282, 1(1); BaFin Guidelines on KAGB',
+        source_reference: 'KAGB s1 Abs. 6 Nr. 1; s282 et seq.; FoMaStG Art. 1 (amending KAGB)',
       },
       {
         jurisdiction: 'DE', investor_type: 'professional', minimum_investment: 0,
         maximum_allocation_pct: null, documentation_required: ['MiFID_professional_classification'],
         suitability_required: false,
-        source_reference: 'KAGB ss 282, 1(1); BaFin Guidelines on KAGB',
+        source_reference: 'KAGB s1 Abs. 6 Nr. 2; MiFID II Annex II; FoMaStG Art. 1',
       },
       {
         jurisdiction: 'DE', investor_type: 'semi_professional', minimum_investment: 20000000,
         maximum_allocation_pct: null, documentation_required: ['semi_professional_declaration', 'proof_of_experience'],
         suitability_required: true,
-        source_reference: 'KAGB ss 282, 1(2); Minimum EUR 200,000 for semi-professional investors',
+        source_reference: 'KAGB s1 Abs. 19 Nr. 33; EUR 200,000 minimum; FoMaStG Art. 1',
       },
       {
         jurisdiction: 'AT', investor_type: 'institutional', minimum_investment: 0,
         maximum_allocation_pct: null, documentation_required: ['proof_of_institutional_status'],
         suitability_required: false,
-        source_reference: 'AIFMD Passport; KAGB ss 282',
+        source_reference: 'AIFMD Passport Art. 32; KAGB s282 et seq.',
       },
       {
         jurisdiction: 'CH', investor_type: 'institutional', minimum_investment: 0,
         maximum_allocation_pct: null, documentation_required: ['proof_of_institutional_status'],
         suitability_required: false,
-        source_reference: 'AIFMD Passport; bilateral agreement DE-CH; KAGB ss 282',
+        source_reference: 'AIFMD Passport Art. 32; bilateral agreement DE-CH; KAGB s282 et seq.',
       },
     ],
     jurisdiction_whitelist: ['DE', 'AT', 'CH', 'LU', 'NL', 'FR', 'IE', 'GB'],
@@ -264,8 +264,8 @@ const RULE_PACKS: Record<string, RulePackDefinition> = {
   },
 
   ELTIF: {
-    name: 'ELTIF 2.0 (EU Regulation 2015/760 as amended)',
-    description: 'European Long-Term Investment Fund — accessible to retail investors with EUR 10,000 minimum and suitability assessment.',
+    name: 'ELTIF 2.0 (EU Regulation 2015/760 as amended by Regulation 2023/606)',
+    description: 'European Long-Term Investment Fund — accessible to retail investors with suitability assessment (no minimum investment per ELTIF 2.0 Recital 47).',
     criteria: [
       {
         jurisdiction: 'LU', investor_type: 'institutional', minimum_investment: 0,
@@ -280,23 +280,23 @@ const RULE_PACKS: Record<string, RulePackDefinition> = {
         source_reference: 'Regulation (EU) 2015/760, Art. 30 as amended by Regulation (EU) 2023/606',
       },
       {
-        jurisdiction: 'LU', investor_type: 'retail', minimum_investment: 1000000,
+        jurisdiction: 'LU', investor_type: 'retail', minimum_investment: 0,
         maximum_allocation_pct: 10, documentation_required: ['KYC_identity', 'suitability_questionnaire'],
         suitability_required: true,
-        source_reference: 'Regulation (EU) 2015/760, Art. 30(3) as amended; ELTIF 2.0 EUR 10,000 minimum',
+        source_reference: 'Regulation (EU) 2015/760, Art. 30(3) as amended by Regulation (EU) 2023/606, Recital 47; no minimum investment',
       },
       {
-        jurisdiction: 'DE', investor_type: 'retail', minimum_investment: 1000000,
+        jurisdiction: 'DE', investor_type: 'retail', minimum_investment: 0,
         maximum_allocation_pct: 10, documentation_required: ['KYC_identity', 'suitability_questionnaire'],
         suitability_required: true,
-        source_reference: 'ELTIF 2.0; AIFMD Passport',
+        source_reference: 'ELTIF 2.0 Regulation (EU) 2023/606, Recital 47; AIFMD Passport Art. 32',
       },
     ],
     jurisdiction_whitelist: [],
     kyc_required: true,
     qualification_required: false,
     lockup_days: 365,
-    minimum_investment: 1000000,
+    minimum_investment: null,
     concentration_limit_pct: 10,
   },
 };

@@ -83,6 +83,6 @@ Ab Phase 2 betraegt der Gruendungszuschuss nur noch 300 EUR/Monat (Sozialversich
 
 - Alle Angaben sind konservativ geschaetzt.
 - Der Gruender plant in der Anfangsphase bewusst sparsam zu wirtschaften.
-- Keine Unterhaltspflichten fuer Kinder oder Partner [BITTE ANPASSEN FALLS ZUTREFFEND].
-- Keine laufenden Kreditverpflichtungen [BITTE ANPASSEN FALLS ZUTREFFEND].
+- Keine Unterhaltspflichten fuer Kinder oder Partner (ledig, keine Kinder).
+- Keine laufenden Kreditverpflichtungen.
 - Die Krankenversicherung wird als freiwillig gesetzlich Versicherter fortgefuehrt. Der Beitrag berechnet sich nach dem tatsaechlichen Einkommen (Mindestbeitrag bei geringem Einkommen).

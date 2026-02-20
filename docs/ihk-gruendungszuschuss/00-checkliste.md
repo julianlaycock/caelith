@@ -1,6 +1,6 @@
 # IHK Berlin -- Checkliste Gruendungszuschuss
 
-**Antragsteller:** Julian Laycock
+**Antragsteller:** Julian Robert Laycock
 **Gruendungsdatum (geplant):** 01.04.2026
 **IHK Berlin -- Fachkundige Stellungnahme**
 **Gebuehr:** 50,00 EUR zzgl. MwSt.
@@ -34,7 +34,7 @@ Oeffnungszeiten: Mo-Do 8:00-17:00, Fr 8:00-15:00
 | 5 | **Finanzierungsplan** | [x] | 03-finanzierungsplan.md | Eigenkapital + weitere Finanzierungsquellen |
 | 6 | **Umsatz- und Rentabilitaetsvorschau** | [x] | 04-umsatz-rentabilitaetsvorschau.md | Mind. 12 Monate, monatliche Aufstellung |
 | 7 | **Liquiditaetsplan** | [x] | 05-liquiditaetsplan.md | Mind. 12 Monate, monatliche Aufstellung |
-| 8 | **Lebenslauf (tabellarisch)** + Zeugnisse | [ ] | 07-lebenslauf-vorlage.md | Vorlage vorbereitet -- bitte mit persoenlichen Daten befuellen. Zeugnisse als Kopie beilegen. |
+| 8 | **Lebenslauf (tabellarisch)** + Zeugnisse | [x] | 07-lebenslauf.md | Tabellarischer Lebenslauf mit vollstaendigen Angaben. Zeugnisse als Kopie beilegen. |
 | 9 | **Aufstellung private Lebenshaltungskosten** | [x] | 06-private-lebenshaltungskosten.md | Durchschnittliche monatliche Einnahmen und Ausgaben |
 | 10 | **Unterzeichnete Vereinbarung** (IHK-Formular) | [ ] | -- | Original. Erhaeltlich bei der IHK Berlin bei Abholung der Stellungnahme. |
 | 11 | **Gewerbeanmeldung** (Kopie, falls vorhanden) | [ ] | -- | WICHTIG: Erst NACH Antragstellung anmelden! |
@@ -61,9 +61,9 @@ Oeffnungszeiten: Mo-Do 8:00-17:00, Fr 8:00-15:00
   - Beratungsgespraech zum Gruendungszuschuss vereinbaren
   - Restanspruch ALG I in Tagen berechnen lassen
   - Formular "Anforderung der Stellungnahme" erhalten
-- [ ] **Businessplan fertigstellen**: Vorlage (01-businessplan.md) mit persoenlichen Daten befuellen
-- [ ] **Finanzplanung pruefen**: Alle Zahlen auf eigene Situation anpassen
-- [ ] **Lebenslauf erstellen**: Vorlage (07-lebenslauf-vorlage.md) befuellen
+- [x] **Businessplan fertigstellen**: Alle persoenlichen Daten eingetragen
+- [x] **Finanzplanung pruefen**: Alle Zahlen auf eigene Situation angepasst
+- [x] **Lebenslauf erstellen**: Tabellarischer Lebenslauf fertiggestellt
 - [ ] **Zeugnisse/Zertifikate kopieren**: Alle relevanten Qualifikationsnachweise
 
 ### Phase 2: IHK-Einreichung (KW 10-11, Maerz 2026)

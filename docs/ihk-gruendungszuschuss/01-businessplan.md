@@ -37,7 +37,7 @@
 
 ### Der Gruender
 
-Julian Laycock ist ein erfahrener Softwareentwickler mit Kenntnissen in [RELEVANTE ERFAHRUNGEN EINFUEGEN: Finanzbranche, Regulatorik, SaaS-Entwicklung]. Das Produkt wurde vollstaendig selbst entwickelt und ist funktionsfaehig (13 verifizierte API-Endpunkte, 65 automatisierte Tests, Demo-Umgebung mit Echtdaten).
+Julian Robert Laycock (geb. 27.01.1994) vereint juristische, wirtschaftswissenschaftliche und technische Expertise: LL.B. in Rechtswissenschaften (University of Valencia), MBA in internationalem Handel (ICEX-CECO, Madrid), IT-Projektmanagement-Erfahrung bei ]init[ AG (Digitalisierungsprojekt fuer das Auswaertige Amt) sowie wirtschaftswissenschaftliche Forschung an der HWR Berlin mit Politikempfehlungen fuer die IHK Berlin. Das Produkt wurde vollstaendig selbst entwickelt und ist funktionsfaehig (13 verifizierte API-Endpunkte, 65 automatisierte Tests, Demo-Umgebung mit Echtdaten).
 
 ### Der Markt
 
@@ -120,35 +120,55 @@ Dies erfuellt:
 
 | | |
 |---|---|
-| **Name** | Julian Laycock |
-| **Wohnort** | Berlin |
-| **Geburtsdatum** | [GEBURTSDATUM] |
+| **Name** | Julian Robert Laycock |
+| **Geburtsdatum** | 27.01.1994 |
+| **Geburtsort** | Brisbane, Queensland, Australien |
+| **Anschrift** | Prinzenallee 21, 13357 Berlin |
+| **Telefon** | +34 627714130 |
+| **E-Mail** | julianlaycock@hotmail.com |
+| **Staatsangehoerigkeit** | Spanisch, Australisch (doppelte Staatsbuergerschaft) |
+| **Familienstand** | Ledig |
 
 ### 3.2 Fachliche Qualifikation
 
 | Bereich | Qualifikation |
 |---------|---------------|
-| **Softwareentwicklung** | TypeScript, Node.js, PostgreSQL, React/Next.js, Docker [BITTE ERGAENZEN] |
-| **Regulatorik** | AIFMD / AIFMD II, KAGB, MiFID II, DSGVO, ELTIF 2.0, AMLD-Richtlinien |
+| **Softwareentwicklung** | Python (fortgeschritten), TypeScript, Node.js, PostgreSQL, React/Next.js, Docker, R |
+| **Projektmanagement** | PRINCE2® (zertifiziert), Agile (SAFe, Scrum), MS Project -- praktische Erfahrung bei ]init[ AG (Digitalisierungsprojekt Auswaertiges Amt) |
+| **Regulatorik** | AIFMD / AIFMD II, KAGB, MiFID II, DSGVO, ELTIF 2.0, AMLD-Richtlinien. Vertiefte Kenntnisse durch LL.B.-Studium (Vertragsrecht, Compliance, Due Diligence) sowie Forschung zu Investorenregulierung an der HWR Berlin. |
 | **KI / Machine Learning** | LLM-Integration (Anthropic Claude), RAG-Pipelines, Vektorsuche (pgvector) |
 | **Sicherheit** | JWT-Authentifizierung, RBAC, SHA-256-Integritaetsketten, HMAC-Signaturen |
+| **Datenanalyse** | Quantitative Wirtschaftsanalysen (Python/R), Input-Output-Analyse, Life Cycle Analysis -- WifOR Institute und HWR Berlin |
 
 ### 3.3 Kaufmaennische Qualifikation
 
-[BITTE ERGAENZEN: Relevante Erfahrungen in Unternehmensfuehrung, Budgetverantwortung, B2B-Vertrieb, Projektmanagement, oder kaufmaennische Weiterbildungen]
+Die kaufmaennische Qualifikation wird durch folgende Ausbildungen und Berufserfahrungen belegt:
 
-> **Hinweis fuer IHK**: Falls keine formale kaufmaennische Ausbildung vorliegt, werden kaufmaennische Kenntnisse durch folgende Nachweise belegt:
-> - Eigenstaendige Entwicklung und technische Architektur eines marktfaehigen SaaS-Produkts
-> - Erstellung von Businessplan, Finanzplanung und Marketingstrategie
-> - [WEITERE NACHWEISE EINFUEGEN]
+| Bereich | Nachweis |
+|---------|----------|
+| **Formale kaufmaennische Ausbildung** | (Junior) MBA am ICEX-CECO (Spanish Institute for Foreign Trade, Madrid) -- internationaler Handel, Marktanalyse, Aussenwirtschaft, Unternehmensstrategie |
+| **Key Account Management** | Werkstudent bei Bundesdruckerei GmbH (03/2022 -- 02/2023) -- Vertragsverhandlungen, Angebotserstellung, Business-KPIs, Kundenbeziehungsmanagement im Bereich Digital Government |
+| **IT-Projektmanagement mit Budgetverantwortung** | Consultant bei ]init[ AG (04/2023 -- 09/2025) -- Meilensteinsteuerung, Budget- und Ressourcenplanung, Entscheidungsprozesse bis Top-Management, Program Governance |
+| **Wirtschaftsforschung und Politikberatung** | Wissenschaftlicher Mitarbeiter an der HWR Berlin (11/2022 -- 09/2024) -- quantitative Datenanalyse, Politikempfehlungen fuer IHK Berlin, Publikationen |
+| **Vertragsrecht und Compliance** | LL.B. (University of Valencia) -- Vertragsrecht, regulatorische Rahmenbedingungen, Due Diligence. Praktische Anwendung in Graduate Programs bei McCullough Robertson und HopgoodGanim (Australien). |
 
 ### 3.4 Beruflicher Werdegang
 
-[BITTE ERGAENZEN -- siehe Lebenslauf-Vorlage (07-lebenslauf-vorlage.md)]
+Der vollstaendige berufliche Werdegang ist dem beigefuegten tabellarischen Lebenslauf zu entnehmen. Zusammenfassend:
+
+- **2,5 Jahre IT-Projektmanagement** (]init[ AG) -- Digitalisierung konsularischer Dienstleistungen fuer das Auswaertige Amt
+- **2 Jahre Wirtschaftsforschung** (HWR Berlin) -- Forschungsprojekt zu auslaendischen Investoren in Berlin-Brandenburg
+- **1 Jahr Key Account Management** (Bundesdruckerei GmbH) -- Vertrieb im Bereich Digital Government
+- **1 Jahr Wirtschaftsanalyse** (WifOR Institute) -- Lieferketten- und Impact-Analysen
+- **LL.B. in Rechtswissenschaften** (University of Valencia) + Graduate Programs in australischen Wirtschaftskanzleien
+- **MBA** (ICEX-CECO, Madrid) -- Internationaler Handel
+- **B.A. Economics** (HWR Berlin) -- berufsbegleitend, voraussichtlicher Abschluss 2026. Dieses Studium wird parallel zur Gruendung abgeschlossen und ergaenzt die bereits vorhandenen Abschluesse (LL.B. und MBA).
 
 ### 3.5 Motivation
 
-Die Gruendung von Caelith verbindet meine technische Expertise in Softwareentwicklung und Datenbankarchitektur mit fundiertem Wissen ueber die EU-Fondsregulierung. Das Produkt loest ein konkretes, regulatorisch getriebenes Problem: Kleine und mittlere KVGs koennen sich die Enterprise-Loesungen der grossen Anbieter nicht leisten (ab 50.000 EUR/Jahr), sind aber durch AIFMD II zu umfassender Compliance verpflichtet. Caelith schliesst diese Luecke mit einer erschwinglichen, sofort einsatzbereiten Loesung.
+Die Gruendung von Caelith ist die logische Konsequenz meines interdisziplinaeren Werdegangs: Mein LL.B.-Studium in Spanien vermittelte mir tiefes Verstaendnis fuer regulatorische Rahmenbedingungen, Vertragsrecht und Compliance -- Kernthemen meines Produkts. Der MBA am ICEX-CECO ergaenzte dies um internationales Handels- und Marktverstaendnis. Meine technische Expertise in Python und Datenanalyse erwarb ich an der HWR Berlin und dem WifOR Institute, bevor ich bei ]init[ AG gelernt habe, komplexe IT-Projekte mit Budgetverantwortung bis zur Top-Management-Ebene zu steuern.
+
+Das Produkt loest ein konkretes, regulatorisch getriebenes Problem: Kleine und mittlere KVGs koennen sich die Enterprise-Loesungen der grossen Anbieter nicht leisten (ab 50.000 EUR/Jahr), sind aber durch AIFMD II zu umfassender Compliance verpflichtet. Meine Kombination aus juristischem Wissen, technischer Umsetzungskompetenz und kaufmaennischer Erfahrung versetzt mich in die Lage, diese Luecke mit einer erschwinglichen, sofort einsatzbereiten Loesung zu schliessen.
 
 ---
 
@@ -271,8 +291,6 @@ Caelith positioniert sich als **kostenguenstige, sofort einsetzbare Alternative*
 | **Beispiele** | Universal Investment, HANSAINVEST, INTREAL, Hauck Aufhaeuser Lampe |
 
 ### 6.3 Bestehende Kundenkontakte
-
-[BITTE ERGAENZEN: Falls bereits Kontakte zu potenziellen Kunden bestehen, hier auflisten. Falls nicht:]
 
 Zum Gruendungszeitpunkt bestehen noch keine verbindlichen Kundenvertraege. Folgende Schritte zur Kundengewinnung sind geplant:
 - Identifikation von 20 KVGs im Zielsegment ueber BAI-Mitgliederliste und BaFin-Register
@@ -448,7 +466,7 @@ Einzelgruendung: 100% Julian Laycock
 ### 11.1 Geschaeftsadresse
 
 **Standort:** Berlin (Home-Office)
-**Anschrift:** [STRASSE, PLZ BERLIN]
+**Anschrift:** Prinzenallee 21, 13357 Berlin
 
 ### 11.2 Begruendung der Standortwahl
 
@@ -533,7 +551,7 @@ Die detaillierte Finanzplanung ist in separaten Dokumenten aufgefuehrt:
 3. Umsatz- und Rentabilitaetsvorschau (04-umsatz-rentabilitaetsvorschau.md)
 4. Liquiditaetsplan (05-liquiditaetsplan.md)
 5. Aufstellung private Lebenshaltungskosten (06-private-lebenshaltungskosten.md)
-6. Lebenslauf mit Zeugnissen (07-lebenslauf-vorlage.md)
+6. Lebenslauf mit Zeugnissen (07-lebenslauf.md)
 7. Produktdokumentation (Screenshots, API-Dokumentation) -- separat beizufuegen
 8. Marktrecherche (BaFin-Register, AIFMD-II-Richtlinientext) -- separat beizufuegen
 

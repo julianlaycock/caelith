@@ -72,6 +72,13 @@ export const FRAMEWORKS = [
   { value: 'national', label: 'National' },
 ];
 
+export const SFDR_CLASSIFICATIONS = [
+  { value: 'not_classified', label: 'Not classified' },
+  { value: 'article_6', label: 'Article 6 (No sustainability integration)' },
+  { value: 'article_8', label: 'Article 8 (Promotes E/S characteristics)' },
+  { value: 'article_9', label: 'Article 9 (Sustainable investment objective)' },
+];
+
 export const STATUSES = [
   { value: 'active', label: 'Active' },
   { value: 'closing', label: 'Closing' },

@@ -40,6 +40,8 @@ export type RegulatoryFramework = 'AIFMD' | 'UCITS' | 'ELTIF' | 'national';
 
 export type FundStatus = 'active' | 'closing' | 'closed' | 'liquidating';
 
+export type SfdrClassification = 'article_6' | 'article_8' | 'article_9' | 'not_classified';
+
 export type DecisionType =
   | 'transfer_validation'
   | 'eligibility_check'
@@ -321,6 +323,7 @@ export interface FundStructure {
   inception_date: string | null;
   target_size: number | null;
   currency: string;
+  sfdr_classification: SfdrClassification;
   status: FundStatus;
   created_at: string;
   updated_at: string;
@@ -333,6 +336,7 @@ export interface CreateFundStructureRequest {
   regulatory_framework: RegulatoryFramework;
   aifm_name?: string;
   aifm_lei?: string;
+  sfdr_classification?: SfdrClassification;
   status?: FundStatus;
 }
 

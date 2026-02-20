@@ -190,7 +190,7 @@ export function CopilotPanel({
       {open && <div className="fixed inset-0 z-40 bg-black/20 md:hidden" onClick={onClose} />}
 
       <div
-        className={`fixed right-0 top-0 z-50 flex h-full flex-col bg-bg-secondary shadow-xl transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 top-0 z-50 flex h-full flex-col bg-[#2D3333] shadow-xl transition-transform duration-300 ease-in-out ${
           open ? 'translate-x-0' : 'translate-x-full'
         } w-full md:w-[480px]`}
       >
@@ -215,8 +215,8 @@ export function CopilotPanel({
         </div>
 
         {open && !acknowledged && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-bg-secondary/95 px-6">
-            <div className="w-full max-w-sm rounded-xl border border-edge bg-bg-primary p-6 shadow-lg">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#2D3333] px-6">
+            <div className="w-full max-w-sm rounded-xl border border-edge bg-[#2D3333] p-6 shadow-lg">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 mx-auto">
                 <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />

@@ -20,8 +20,8 @@ import {
 } from '../../components/ui';
 import { exportCSV } from '../../lib/export-csv';
 import { formatDate } from '../../lib/utils';
-import { LEGAL_FORMS, DOMICILES, FRAMEWORKS, STATUSES } from '../../lib/constants';
-import type { ApiError, FundStructure, CreateFundStructureRequest, LegalForm, RegulatoryFramework, FundStatus } from '../../lib/types';
+import { LEGAL_FORMS, DOMICILES, FRAMEWORKS, SFDR_CLASSIFICATIONS, STATUSES } from '../../lib/constants';
+import type { ApiError, FundStructure, CreateFundStructureRequest, LegalForm, RegulatoryFramework, SfdrClassification, FundStatus } from '../../lib/types';
 import { CsvUploadWizard } from '../../components/csv-upload-wizard';
 import { useI18n } from '../../lib/i18n';
 
@@ -166,6 +166,7 @@ export default function FundsPage() {
     const legal_form = form.get('legal_form') as LegalForm;
     const domicile = form.get('domicile') as string;
     const regulatory_framework = form.get('regulatory_framework') as RegulatoryFramework;
+    const sfdr_classification = form.get('sfdr_classification') as SfdrClassification;
     const aifm_name = form.get('aifm_name') as string;
 
     const errors: Record<string, string> = {};
@@ -185,6 +186,7 @@ export default function FundsPage() {
         legal_form,
         domicile,
         regulatory_framework,
+        sfdr_classification: sfdr_classification || undefined,
         aifm_name: aifm_name || undefined,
       });
       setShowForm(false);
@@ -207,6 +209,7 @@ export default function FundsPage() {
     const legal_form = form.get('legal_form') as LegalForm;
     const domicile = form.get('domicile') as string;
     const regulatory_framework = form.get('regulatory_framework') as RegulatoryFramework;
+    const sfdr_classification = form.get('sfdr_classification') as SfdrClassification;
     const status = form.get('status') as FundStatus;
     const aifm_name = form.get('aifm_name') as string;
 
@@ -214,6 +217,7 @@ export default function FundsPage() {
     if (legal_form) data.legal_form = legal_form;
     if (domicile) data.domicile = domicile;
     if (regulatory_framework) data.regulatory_framework = regulatory_framework;
+    if (sfdr_classification) (data as Record<string, unknown>).sfdr_classification = sfdr_classification;
     if (status) data.status = status;
     data.aifm_name = aifm_name || '';
 
@@ -286,6 +290,7 @@ export default function FundsPage() {
           <Select label={t('funds.form.legalForm')} name="legal_form" options={LEGAL_FORMS} error={fieldErrors.legal_form} />
           <Select label={t('funds.form.domicile')} name="domicile" options={DOMICILES} error={fieldErrors.domicile} />
           <Select label={t('funds.form.regulatoryFramework')} name="regulatory_framework" options={FRAMEWORKS} error={fieldErrors.regulatory_framework} />
+          <Select label="SFDR Classification" name="sfdr_classification" options={SFDR_CLASSIFICATIONS} />
           <Input label={t('funds.form.aifmName')} name="aifm_name" placeholder={t('funds.form.aifmPlaceholder')} />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>{t('common.cancel')}</Button>
@@ -303,6 +308,7 @@ export default function FundsPage() {
             <Select label={t('funds.form.legalForm')} name="legal_form" options={LEGAL_FORMS} defaultValue={editFund.legal_form} required />
             <Select label={t('funds.form.domicile')} name="domicile" options={DOMICILES} defaultValue={editFund.domicile} required />
             <Select label={t('funds.form.regulatoryFramework')} name="regulatory_framework" options={FRAMEWORKS} defaultValue={editFund.regulatory_framework} required />
+            <Select label="SFDR Classification" name="sfdr_classification" options={SFDR_CLASSIFICATIONS} defaultValue={editFund.sfdr_classification} />
             <Select label={t('investors.col.status')} name="status" options={STATUSES} defaultValue={editFund.status} required />
             <Input label={t('funds.form.aifmName')} name="aifm_name" defaultValue={editFund.aifm_name || ''} placeholder={t('funds.form.aifmPlaceholder')} />
             <div className="flex justify-end gap-3 pt-2">
@@ -358,6 +364,11 @@ export default function FundsPage() {
                       <Badge variant="green">{fund.regulatory_framework}</Badge>
                     )}
                     <Badge variant={STATUS_COLORS[fund.status] || 'gray'}>{fund.status}</Badge>
+                    {fund.sfdr_classification && fund.sfdr_classification !== 'not_classified' && (
+                      <Badge variant={fund.sfdr_classification === 'article_9' ? 'green' : fund.sfdr_classification === 'article_8' ? 'yellow' : 'gray'}>
+                        SFDR {fund.sfdr_classification.replace('article_', 'Art. ')}
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1">

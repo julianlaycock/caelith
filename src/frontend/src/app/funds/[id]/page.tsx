@@ -168,6 +168,11 @@ export default function FundDetailPage() {
               <Badge variant="gray">{f.domicile}</Badge>
               {f.regulatory_framework && <Badge variant="green">{f.regulatory_framework}</Badge>}
               <Badge variant={f.status === 'active' ? 'green' : 'gray'}>{f.status}</Badge>
+              {f.sfdr_classification && f.sfdr_classification !== 'not_classified' && (
+                <Badge variant={f.sfdr_classification === 'article_9' ? 'green' : f.sfdr_classification === 'article_8' ? 'yellow' : 'gray'}>
+                  SFDR {f.sfdr_classification.replace('article_', 'Art. ')}
+                </Badge>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -228,6 +233,10 @@ export default function FundDetailPage() {
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">Currency</p>
             <p className="mt-0.5 text-sm text-ink">{f.currency}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">SFDR</p>
+            <p className="mt-0.5 text-sm text-ink">{f.sfdr_classification ? f.sfdr_classification.replace('article_', 'Article ').replace('not_classified', 'Not classified') : 'Not classified'}</p>
           </div>
         </div>
       </Card>

@@ -21,6 +21,8 @@ export type LegalForm =
 
 export type RegulatoryFramework = 'AIFMD' | 'UCITS' | 'ELTIF' | 'national';
 
+export type SfdrClassification = 'article_6' | 'article_8' | 'article_9' | 'not_classified';
+
 // ============================================================================
 // AIFMD II COMPLIANCE TYPES
 // ============================================================================
@@ -192,6 +194,7 @@ export interface FundStructure {
   inception_date: string | null;
   target_size: number | null;
   currency: string;
+  sfdr_classification: SfdrClassification;
   status: FundStatus;
   lmt_types: LiquidityManagementTool[];
   leverage_limit_commitment: number | null;
@@ -428,6 +431,7 @@ export interface CreateFundStructureInput {
   inception_date?: string;
   target_size?: number;
   currency?: string;
+  sfdr_classification?: SfdrClassification;
   status?: FundStatus;
   lmt_types?: LiquidityManagementTool[];
   leverage_limit_commitment?: number;
@@ -505,6 +509,7 @@ export interface UpdateFundStructureInput {
   aifm_lei?: string;
   inception_date?: string;
   target_size?: number;
+  sfdr_classification?: SfdrClassification;
   status?: FundStatus;
   lmt_types?: LiquidityManagementTool[];
   leverage_limit_commitment?: number;

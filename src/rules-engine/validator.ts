@@ -157,6 +157,42 @@ const checkLeverageCompliance: ValidationRule = (ctx): string | null => {
   return null;
 };
 
+// ── AIFMD II LMT Enforcement (Art 16(2b)) ─────────────────
+
+const checkLmtFundSuspension: ValidationRule = (ctx): string | null => {
+  if (!ctx.fund?.lmt_types) return null;
+  const suspension = ctx.fund.lmt_types.find(
+    (lmt) => lmt.type === 'suspension' && lmt.active
+  );
+  if (suspension) {
+    return `Fund is suspended — all transfers blocked (AIFMD II Art 16(2b): ${suspension.description || 'Liquidity management tool active'})`;
+  }
+  return null;
+};
+
+const checkLmtRedemptionGate: ValidationRule = (ctx): string | null => {
+  if (!ctx.fund?.lmt_types) return null;
+  const gate = ctx.fund.lmt_types.find(
+    (lmt) => lmt.type === 'redemption_gate' && lmt.active
+  );
+  if (gate) {
+    const threshold = gate.threshold_pct != null ? ` (gate threshold: ${gate.threshold_pct}%)` : '';
+    return `Redemption gate is active — transfers restricted${threshold} (AIFMD II Art 16(2b): ${gate.description || 'Redemption gate in effect'})`;
+  }
+  return null;
+};
+
+const checkLmtNoticePeriod: ValidationRule = (ctx): string | null => {
+  if (!ctx.fund?.lmt_types) return null;
+  const notice = ctx.fund.lmt_types.find(
+    (lmt) => lmt.type === 'notice_period' && lmt.active
+  );
+  if (notice) {
+    return `Notice period required before transfer (AIFMD II Art 16(2b): ${notice.description || 'Notice period in effect'})`;
+  }
+  return null;
+};
+
 const checkConcentrationLimit: ValidationRule = (ctx): string | null => {
   if (!ctx.rules.concentration_limit_pct || !ctx.assetAggregates) {
     return null;
@@ -195,6 +231,10 @@ const builtInRules: BuiltInRule[] = [
   { name: 'maximum_investors', fn: checkMaximumInvestors },
   { name: 'concentration_limit', fn: checkConcentrationLimit },
   { name: 'leverage_compliance', fn: checkLeverageCompliance },
+  // AIFMD II LMT enforcement (Art 16(2b))
+  { name: 'lmt_fund_suspension', fn: checkLmtFundSuspension },
+  { name: 'lmt_redemption_gate', fn: checkLmtRedemptionGate },
+  { name: 'lmt_notice_period', fn: checkLmtNoticePeriod },
 ];
 
 // ── Composite Rule Evaluation ───────────────────────────────

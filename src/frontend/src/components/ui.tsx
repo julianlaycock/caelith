@@ -504,7 +504,7 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] animate-fade-in">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative z-10 w-full ${maxW} mx-4 md:mx-auto rounded-xl border border-edge-subtle bg-bg-secondary p-4 md:p-6 shadow-2xl shadow-black/20 border-t-accent-400/20 max-h-[80vh] overflow-y-auto`}>
+      <div className={`relative z-10 w-full ${maxW} mx-4 md:mx-auto rounded-xl border border-edge-subtle bg-white dark:bg-[#2D3333] p-4 md:p-6 shadow-2xl shadow-black/20 border-t-accent-400/20 max-h-[80vh] overflow-y-auto`}>
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-base font-semibold text-ink">{title}</h2>
           <button onClick={onClose} className="rounded-lg p-1 text-ink-tertiary hover:bg-bg-tertiary hover:text-ink transition-colors">

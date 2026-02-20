@@ -6,6 +6,7 @@ import {
   UpdateFundStructureInput,
   LegalForm,
   RegulatoryFramework,
+  SfdrClassification,
   FundStatus,
   LiquidityManagementTool,
   LiquidityBucket,
@@ -19,15 +20,16 @@ export async function createFundStructure(input: CreateFundStructureInput): Prom
 
   const result = await query<FundStructureRow>(
     `INSERT INTO fund_structures (id, tenant_id, name, legal_form, domicile, regulatory_framework,
-       aifm_name, aifm_lei, inception_date, target_size, currency, status,
+       aifm_name, aifm_lei, inception_date, target_size, currency, sfdr_classification, status,
        lmt_types, leverage_limit_commitment, leverage_limit_gross, leverage_current_commitment, leverage_current_gross,
        liquidity_profile, geographic_exposure, counterparty_exposure,
        created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING *`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING *`,
     [
       id, DEFAULT_TENANT_ID, input.name, input.legal_form, input.domicile, input.regulatory_framework,
       input.aifm_name ?? null, input.aifm_lei ?? null, input.inception_date ?? null,
-      input.target_size ?? null, input.currency ?? 'EUR', input.status ?? 'active',
+      input.target_size ?? null, input.currency ?? 'EUR', input.sfdr_classification ?? 'not_classified',
+      input.status ?? 'active',
       JSON.stringify(input.lmt_types ?? []),
       input.leverage_limit_commitment ?? null, input.leverage_limit_gross ?? null,
       input.leverage_current_commitment ?? null, input.leverage_current_gross ?? null,
@@ -69,6 +71,7 @@ export async function updateFundStructure(id: string, input: UpdateFundStructure
   if (input.aifm_lei !== undefined) { sets.push(`aifm_lei = $${idx++}`); params.push(input.aifm_lei); }
   if (input.inception_date !== undefined) { sets.push(`inception_date = $${idx++}`); params.push(input.inception_date); }
   if (input.target_size !== undefined) { sets.push(`target_size = $${idx++}`); params.push(input.target_size); }
+  if (input.sfdr_classification !== undefined) { sets.push(`sfdr_classification = $${idx++}`); params.push(input.sfdr_classification); }
   if (input.status !== undefined) { sets.push(`status = $${idx++}`); params.push(input.status); }
   if (input.lmt_types !== undefined) { sets.push(`lmt_types = $${idx++}`); params.push(JSON.stringify(input.lmt_types)); }
   if (input.leverage_limit_commitment !== undefined) { sets.push(`leverage_limit_commitment = $${idx++}`); params.push(input.leverage_limit_commitment); }
@@ -109,6 +112,7 @@ interface FundStructureRow {
   inception_date: string | Date | null;
   target_size: number | string | null;
   currency: string;
+  sfdr_classification: string;
   status: string;
   lmt_types: JsonArray;
   leverage_limit_commitment: number | string | null;
@@ -140,6 +144,7 @@ function rowToFundStructure(row: FundStructureRow): FundStructure {
     inception_date: row.inception_date ? String(row.inception_date) : null,
     target_size: row.target_size ? Number(row.target_size) : null,
     currency: row.currency,
+    sfdr_classification: (row.sfdr_classification || 'not_classified') as SfdrClassification,
     status: row.status as FundStatus,
     lmt_types: parseJsonb<LiquidityManagementTool>(row.lmt_types),
     leverage_limit_commitment: row.leverage_limit_commitment != null ? Number(row.leverage_limit_commitment) : null,
