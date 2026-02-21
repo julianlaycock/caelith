@@ -246,7 +246,7 @@ export default function FundDetailPage() {
             className={classNames(
               'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               activeTab === tab
-                ? 'bg-white text-ink shadow-sm'
+                ? 'bg-bg-primary text-ink shadow-sm border border-edge'
                 : 'text-ink-secondary hover:text-ink'
             )}
           >
