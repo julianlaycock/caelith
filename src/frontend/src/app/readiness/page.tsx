@@ -193,8 +193,8 @@ export default function ReadinessPage() {
   const handleAnswer = useCallback(async (questionKey: string, status: AnswerStatus, notes?: string) => {
     setSaving(questionKey);
     try {
-      await api.saveReadinessAnswer(questionKey, status, notes);
-      assessmentData.refetch();
+      const updated = await api.saveReadinessAnswer(questionKey, status, notes);
+      assessmentData.setData(updated);
     } catch (err) {
       console.error('Failed to save answer', err);
     } finally {

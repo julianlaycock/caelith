@@ -8,6 +8,7 @@ interface UseAsyncState<T> {
   loading: boolean;
   error: string | null;
   refetch: () => void;
+  setData: (data: T) => void;
 }
 
 export function useAsync<T>(
@@ -74,5 +75,5 @@ export function useAsync<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger, ...deps]);
 
-  return { data, loading, error, refetch };
+  return { data, loading, error, refetch, setData };
 }
