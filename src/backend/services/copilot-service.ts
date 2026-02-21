@@ -1,4 +1,12 @@
-﻿import { createEvent } from '../repositories/event-repository.js';
+/**
+ * Copilot Service v2 — Tool-Use Architecture
+ *
+ * Instead of hardcoded intent handlers, Claude gets the DB schema and a
+ * read-only query tool. It decides what data it needs, fetches it, and
+ * synthesizes a natural-language answer grounded in real data.
+ */
+
+import { createEvent } from '../repositories/event-repository.js';
 import { DEFAULT_TENANT_ID, queryInTenantContext } from '../db.js';
 import { ragService, RagResult } from './rag-service.js';
 import { compileNaturalLanguageRule } from './nl-rule-compiler.js';
@@ -8,18 +16,12 @@ import { logger } from '../lib/logger.js';
 import { callAnthropic, isAnthropicConfigured, ANTHROPIC_MODEL } from './anthropic-client.js';
 import { stripPII } from './pii-stripper.js';
 
+// ─── Types ───────────────────────────────────────────────────────────
+
 const VALID_ENTITY_TYPES: Set<EntityType> = new Set([
-  'asset',
-  'investor',
-  'holding',
-  'rules',
-  'transfer',
-  'composite_rule',
-  'fund_structure',
-  'eligibility_criteria',
-  'decision_record',
-  'onboarding_record',
-  'regulatory_document',
+  'asset', 'investor', 'holding', 'rules', 'transfer', 'composite_rule',
+  'fund_structure', 'eligibility_criteria', 'decision_record',
+  'onboarding_record', 'regulatory_document',
 ]);
 
 export interface CopilotRequest {
@@ -50,32 +52,48 @@ export interface CopilotResponse {
   suggestedActions?: SuggestedAction[];
 }
 
-type CopilotIntent = 'explain_decision' | 'regulatory_qa' | 'draft_rule' | 'what_if';
+interface CountRow { count: number; }
 
-interface DecisionRow {
-  id: string;
-  decision_type: string;
-  result: string;
-  result_details: unknown;
-  decided_at: string | Date;
+// ─── DB Schema (compact, injected into system prompt) ────────────────
+
+const DB_SCHEMA = `
+Tables (PostgreSQL, all tenant-scoped via tenant_id):
+
+fund_structures: id, name, legal_form, domicile, regulatory_framework, aifm_name, aifm_lei, inception_date, target_size, currency, status, sfdr_classification, lmt_types(jsonb), leverage_limit_commitment, leverage_limit_gross, leverage_current_commitment, leverage_current_gross, liquidity_profile(jsonb), geographic_exposure(jsonb), counterparty_exposure(jsonb), created_at, deleted_at
+assets: id, name, asset_type, total_units, unit_price, fund_structure_id(FK→fund_structures), created_at, deleted_at
+investors: id, name, jurisdiction, accredited(bool), investor_type(retail/professional/semi_professional/institutional), kyc_status(pending/verified/expired/rejected), kyc_expiry, tax_id, lei, email, classification_date, classification_evidence(jsonb), classification_method, created_at, deleted_at
+holdings: id, investor_id(FK), asset_id(FK), units, acquired_at
+transfers: id, asset_id(FK), from_investor_id(FK), to_investor_id(FK), units, status(executed/pending/rejected), executed_at, decision_record_id(FK), approved_by, approved_at, rejection_reason, pending_reason
+decision_records: id, decision_type, asset_id(FK), subject_id, input_snapshot(jsonb), rule_version_snapshot(jsonb), result(approved/rejected/pending), result_details(jsonb with checks[{rule,passed,message}]), decided_by, decided_at, sequence_number, integrity_hash, previous_hash
+composite_rules: id, asset_id(FK), name, description, operator(AND/OR), conditions(jsonb), enabled(bool), severity(high/medium/low), jurisdiction, created_at
+rules: id, asset_id(FK), version, qualification_required, lockup_days, jurisdiction_whitelist(jsonb), transfer_whitelist(jsonb), investor_type_whitelist(jsonb), minimum_investment, maximum_investors, concentration_limit_pct, kyc_required
+eligibility_criteria: id, fund_structure_id(FK), jurisdiction, investor_type, minimum_investment, maximum_allocation_pct, documentation_required(jsonb), suitability_required, source_reference, effective_date, superseded_at
+onboarding_records: id, investor_id(FK), asset_id(FK), status(applied/approved/rejected/pending_review), requested_units, eligibility_decision_id(FK), approval_decision_id(FK), reviewed_by, rejection_reasons(jsonb), applied_at, reviewed_at, owner_tag, handoff_notes
+investor_documents: id, investor_id(FK), document_type, filename, mime_type, file_size, status(uploaded/verified/rejected/expired), expiry_date, notes, uploaded_by, verified_by, verified_at
+events: id, event_type, entity_type, entity_id, payload(jsonb), timestamp
+regulatory_documents: id, source_name, jurisdiction, framework, article_ref, chunk_index, content(text), document_title
+`.trim();
+
+// ─── SQL Safety ──────────────────────────────────────────────────────
+
+const FORBIDDEN_PATTERNS = [
+  /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|GRANT|REVOKE|COPY)\b/i,
+  /\b(pg_sleep|pg_terminate|pg_cancel|set\s+role|set\s+session|set\s+local)\b/i,
+  /;\s*\S/,  // multiple statements
+  /--/,      // SQL comments (potential injection)
+  /\/\*/,    // block comments
+];
+
+function validateReadOnlySQL(sql: string): boolean {
+  const trimmed = sql.trim().replace(/;\s*$/, '');
+  if (!trimmed.toUpperCase().startsWith('SELECT')) return false;
+  for (const pattern of FORBIDDEN_PATTERNS) {
+    if (pattern.test(trimmed)) return false;
+  }
+  return true;
 }
 
-interface FundLookupRow {
-  id: string;
-  name: string;
-  legal_form: string;
-  domicile: string;
-}
-
-interface InvestorImpactRow {
-  id: string;
-  name: string;
-  invested_eur: number;
-}
-
-interface CountRow {
-  count: number;
-}
+// ─── Helpers ─────────────────────────────────────────────────────────
 
 function sanitizeMessage(input: string): string {
   const withoutControls = Array.from(input).map((ch) => {
@@ -91,532 +109,268 @@ function extractUuid(input: string): string | null {
 }
 
 function isEntityType(value: string | undefined): value is EntityType {
-  if (!value) {
-    return false;
-  }
-  return VALID_ENTITY_TYPES.has(value as EntityType);
+  return value ? VALID_ENTITY_TYPES.has(value as EntityType) : false;
 }
 
-function parseResultDetails(value: unknown): { checks: Array<{ rule: string; passed: boolean; message: string }> } {
-  const parsed = typeof value === 'string' ? JSON.parse(value) as Record<string, unknown> : value as Record<string, unknown>;
-  const checksValue = parsed?.checks;
-  if (!Array.isArray(checksValue)) {
-    return { checks: [] };
-  }
+// ─── Rate Limit ──────────────────────────────────────────────────────
 
-  const checks = checksValue.map(item => {
-    const row = item as Record<string, unknown>;
-    return {
-      rule: typeof row.rule === 'string' ? row.rule : 'check',
-      passed: Boolean(row.passed),
-      message: typeof row.message === 'string' ? row.message : 'No details',
-    };
-  });
-
-  return { checks };
-}
-
-function extractCitationsFromChecks(checks: Array<{ message: string }>): Citation[] {
-  const seen = new Set<string>();
-  const citations: Citation[] = [];
-
-  for (const check of checks) {
-    const matches = check.message.match(/\(([^()]*?(Art\.?|Law|Directive|Regulation)[^()]*)\)/gi);
-    if (!matches) {
-      continue;
-    }
-
-    for (const match of matches) {
-      const normalized = match.replace(/[()]/g, '').trim();
-      if (!seen.has(normalized)) {
-        seen.add(normalized);
-        citations.push({ documentTitle: normalized });
-      }
-    }
-  }
-
-  return citations;
-}
-
-function heuristicIntent(message: string): CopilotIntent {
-  const lower = message.toLowerCase();
-  if (lower.includes('what if') || lower.includes('would happen if')) {
-    return 'what_if';
-  }
-  if (lower.includes('create a rule') || lower.includes('make a rule') || lower.includes('block')) {
-    return 'draft_rule';
-  }
-  if (lower.includes('why') || lower.includes('rejected') || lower.includes('decision')) {
-    return 'explain_decision';
-  }
-  return 'regulatory_qa';
-}
-
-// callAnthropic imported from anthropic-client.ts
-
-async function classifyIntent(message: string): Promise<CopilotIntent> {
-  if (!isAnthropicConfigured()) {
-    return heuristicIntent(message);
-  }
-
-  try {
-    const response = await callAnthropic({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 128,
-      temperature: 0,
-      system: 'You are a compliance copilot. Classify user intent by selecting exactly one tool.',
-      tools: [
-        {
-          name: 'explain_decision',
-          description: 'User asks why a transfer or decision passed/failed.',
-          input_schema: {
-            type: 'object',
-            properties: {
-              rationale: { type: 'string' },
-            },
-            required: ['rationale'],
-          },
-        },
-        {
-          name: 'regulatory_qa',
-          description: 'User asks about regulatory requirements and legal text.',
-          input_schema: {
-            type: 'object',
-            properties: {
-              rationale: { type: 'string' },
-            },
-            required: ['rationale'],
-          },
-        },
-        {
-          name: 'draft_rule',
-          description: 'User asks to create/generate a compliance rule.',
-          input_schema: {
-            type: 'object',
-            properties: {
-              rationale: { type: 'string' },
-            },
-            required: ['rationale'],
-          },
-        },
-        {
-          name: 'what_if',
-          description: 'User asks impact analysis under changed parameters.',
-          input_schema: {
-            type: 'object',
-            properties: {
-              rationale: { type: 'string' },
-            },
-            required: ['rationale'],
-          },
-        },
-      ],
-      messages: [{ role: 'user', content: stripPII(message) }],
-    });
-
-    const toolUse = response.content.find(block => block.type === 'tool_use');
-    if (toolUse && toolUse.name) {
-      const intent = toolUse.name as CopilotIntent;
-      if (intent === 'explain_decision' || intent === 'regulatory_qa' || intent === 'draft_rule' || intent === 'what_if') {
-        return intent;
-      }
-    }
-  } catch {
-    // Fall through to heuristic classifier.
-  }
-
-  return heuristicIntent(message);
-}
-
-async function summarizeRagAnswer(question: string, results: RagResult[]): Promise<string> {
-  if (results.length === 0) {
-    return 'No regulatory documents have been ingested yet for this tenant.';
-  }
-
-  if (!isAnthropicConfigured()) {
-    return `Top regulatory context for "${question}":\n\n${results
-      .slice(0, 2)
-      .map(result => `- ${result.content.slice(0, 500)}...`)
-      .join('\n')}`;
-  }
-
-  const context = results
-    .slice(0, 5)
-    .map((result, index) => `Chunk ${index + 1} (${result.documentTitle}${result.articleRef ? `, ${result.articleRef}` : ''}): ${result.content}`)
-    .join('\n\n');
-
-  const response = await callAnthropic({
-    model: ANTHROPIC_MODEL,
-    max_tokens: 600,
-    temperature: 0.2,
-    system: 'Answer strictly from the provided regulatory excerpts. If uncertain, say so.',
-    messages: [
-      {
-        role: 'user',
-        content: `Question: ${stripPII(question)}\n\nExcerpts:\n${stripPII(context)}`,
-      },
-    ],
-  });
-
-  const textBlock = response.content.find(block => block.type === 'text');
-  return textBlock?.text?.trim() || 'Unable to synthesize an answer from the retrieved excerpts.';
-}
-
-function parseEuroAmount(message: string): number | null {
-  const match = message.match(/(?:€|eur|euro)?\s*([0-9]{1,3}(?:[\s.,][0-9]{3})+|[0-9]+)(\s*[kKmM])?/i);
-  if (!match) {
-    return null;
-  }
-
-  const numeric = match[1].replace(/[\s.,]/g, '');
-  let value = Number(numeric);
-  if (!Number.isFinite(value) || value <= 0) {
-    return null;
-  }
-
-  const suffix = match[2]?.trim().toLowerCase();
-  if (suffix === 'k') {
-    value *= 1_000;
-  } else if (suffix === 'm') {
-    value *= 1_000_000;
-  }
-
-  return value;
-}
 async function enforceRateLimit(tenantId: string, userId: string): Promise<void> {
   const rows = await queryInTenantContext<CountRow>(
-    `SELECT COUNT(*)::int AS count
-     FROM events
-     WHERE tenant_id = $1
-       AND event_type = 'copilot.query'
+    `SELECT COUNT(*)::int AS count FROM events
+     WHERE tenant_id = $1 AND event_type = 'copilot.query'
        AND timestamp >= NOW() - INTERVAL '1 hour'
        AND payload->>'user_id' = $2`,
     [tenantId, userId],
     tenantId
   );
-
-  if ((rows[0]?.count || 0) >= 20) {
+  if ((rows[0]?.count || 0) >= 30) {
     throw new RateLimitError('Rate limit exceeded');
   }
 }
 
-async function handleExplainDecision(message: string, tenantId: string): Promise<CopilotResponse> {
-  const decisionId = extractUuid(message);
-  const rows = decisionId
-    ? await queryInTenantContext<DecisionRow>(
-      `SELECT id, decision_type, result, result_details, decided_at
-       FROM decision_records
-       WHERE id = $1 AND tenant_id = $2
-       LIMIT 1`,
-      [decisionId, tenantId],
-      tenantId
-    )
-    : await queryInTenantContext<DecisionRow>(
-      `SELECT id, decision_type, result, result_details, decided_at
-       FROM decision_records
-       WHERE tenant_id = $1
-       ORDER BY decided_at DESC
-       LIMIT 3`,
-      [tenantId],
-      tenantId
-    );
+// ─── Tool-Use Copilot (the real thing) ───────────────────────────────
 
-  if (rows.length === 0) {
-    return {
-      intent: 'explain_decision',
-      message: 'No decision records were found for this tenant yet.',
-    };
-  }
+const MAX_TOOL_ROUNDS = 8;
+const MAX_ROWS_RETURNED = 50;
 
-  const snippets = rows.map((row) => {
-    const details = parseResultDetails(row.result_details);
-    const checks = details.checks
-      .slice(0, 6)
-      .map(check => `- ${check.passed ? 'PASS' : 'FAIL'} ${check.rule}: ${check.message}`)
-      .join('\n');
-
-    return `Decision ${row.id} (${String(row.decided_at).slice(0, 10)}) was ${row.result}.\n${checks}`;
-  });
-
-  const citations = extractCitationsFromChecks(rows.flatMap(row => parseResultDetails(row.result_details).checks));
-
-  return {
-    intent: 'explain_decision',
-    message: snippets.join('\n\n'),
-    citations,
-    suggestedActions: [
-      {
-        label: 'Open Decisions',
-        action: 'navigate',
-        payload: { path: '/decisions' },
-      },
-    ],
-  };
-}
-
-async function handleRegulatoryQa(message: string, tenantId: string): Promise<CopilotResponse> {
-  let results: RagResult[] = [];
-  try {
-    results = await ragService.query(message, {
-      tenantId,
-      topK: 5,
-    });
-  } catch (err: unknown) {
-    logger.warn('RAG query failed (embedding service may be unavailable)', { error: err });
-  }
-
-  if (results.length === 0) {
-    // Fallback: use Claude's built-in regulatory knowledge
-    try {
-      const fallbackResponse = await callAnthropic({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 800,
-        temperature: 0.2,
-        system: `You are the Caelith Compliance Copilot, an informational assistant that provides responses based on publicly available regulatory text related to Luxembourg fund regulation and EU financial compliance.
-
-Your responses cover topics including:
-- Luxembourg SIF (Specialized Investment Fund) Law of 13 February 2007
-- RAIF (Reserved Alternative Investment Fund) regime
-- AIFMD (Alternative Investment Fund Managers Directive) 2011/61/EU
-- UCITS Directive 2009/65/EC
-- CSSF (Commission de Surveillance du Secteur Financier) circulars and guidance
-- EU Anti-Money Laundering Directives (AMLD 4/5/6)
-- MiFID II investor categorization
-- Luxembourg Company Law (1915 as amended)
-- SCSp, SCA, SICAV, SICAF structures
-- Well-informed investor requirements (EUR 125,000 minimum or professional certification)
-- KYC/AML requirements for fund administrators
-
-Provide informational responses and cite specific articles, laws, or directives when relevant. Your responses may contain errors and must be independently verified by a qualified professional. You do not provide legal, regulatory, or compliance advice.
-
-If the question is outside the scope of these regulatory topics, say so honestly.
-
-Note: This response is generated from the AI model's training data, not from verified document sources. For document-grounded analysis, regulatory documents can be uploaded through the platform.`,
-        messages: [{ role: 'user', content: stripPII(message) }],
-      });
-
-      const textBlock = fallbackResponse.content.find(block => block.type === 'text');
-      const answer = textBlock?.text?.trim() || 'Unable to generate a response.';
-
-      return {
-        intent: 'regulatory_qa',
-        message: `UNVERIFIED — This response is based on the AI model's general regulatory knowledge, not verified document sources. All citations and regulatory references must be independently verified before reliance.\n\n${answer}\n\n---\nFor document-grounded analysis, upload regulatory documents through the platform.`,
-        citations: [],
-        suggestedActions: [
-          {
-            label: 'Upload Documents for Verified Analysis',
-            action: 'hint',
-            payload: { endpoint: '/api/regulatory/ingest' },
-          },
-        ],
-      };
-    } catch (err: unknown) {
-      logger.warn('Regulatory QA fallback failed', { error: err });
-      return {
-        intent: 'regulatory_qa',
-        message: 'I\'m unable to answer regulatory questions right now. Please ensure the Anthropic API key is configured, or upload regulatory documents through /api/regulatory/ingest for document-based answers.',
-        citations: [],
-        suggestedActions: [
-          {
-            label: 'Upload Documents',
-            action: 'hint',
-            payload: { endpoint: '/api/regulatory/ingest' },
-          },
-        ],
-      };
-    }
-  }
-
-  const answer = await summarizeRagAnswer(message, results);
-  const citations: Citation[] = results.map(result => ({
-    documentTitle: result.documentTitle,
-    articleRef: result.articleRef,
-    excerpt: result.content.slice(0, 180),
-  }));
-
-  return {
-    intent: 'regulatory_qa',
-    message: answer,
-    citations,
-  };
-}
-
-async function resolveAssetIdFromContextOrTenant(
-  tenantId: string,
-  context?: CopilotRequest['context']
-): Promise<string | null> {
-  if (context?.selectedEntityType === 'asset' && context.selectedEntityId) {
-    return context.selectedEntityId;
-  }
-
-  const rows = await queryInTenantContext<{ id: string }>(
-    `SELECT id FROM assets WHERE tenant_id = $1 ORDER BY created_at ASC LIMIT 1`,
-    [tenantId],
-    tenantId
-  );
-
-  return rows[0]?.id || null;
-}
-
-async function handleDraftRule(request: CopilotRequest, tenantId: string): Promise<CopilotResponse> {
-  const assetId = await resolveAssetIdFromContextOrTenant(tenantId, request.context);
-  if (!assetId) {
-    return {
-      intent: 'draft_rule',
-      message: 'No asset is available to attach a proposed rule. Select an asset and try again.',
-    };
-  }
-
-  const compiled = await compileNaturalLanguageRule({
-    description: request.message,
-    asset_id: assetId,
-  });
-
-  const citations: Citation[] = compiled.source_suggestion
-    ? [{ documentTitle: compiled.source_suggestion }]
-    : [];
-
-  return {
-    intent: 'draft_rule',
-    message: `Proposed rule (confidence ${Math.round(compiled.confidence * 100)}%):\n\n${JSON.stringify(compiled.proposed_rule, null, 2)}\n\n${compiled.explanation}`,
-    citations,
-    suggestedActions: [
-      {
-        label: 'Apply Proposed Rule',
-        action: 'apply_rule',
-        payload: {
-          asset_id: assetId,
-          proposed_rule: compiled.proposed_rule,
+const TOOLS = [
+  {
+    name: 'query_database',
+    description: 'Execute a read-only SQL query against the tenant database. Returns up to 50 rows as JSON. Always filter by tenant_id. Use this to answer questions about funds, investors, compliance status, decisions, transfers, holdings, rules, onboarding, etc.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        sql: {
+          type: 'string' as const,
+          description: 'A read-only SELECT query. Must include tenant_id filter. No INSERT/UPDATE/DELETE/DDL.',
+        },
+        explanation: {
+          type: 'string' as const,
+          description: 'Brief explanation of what this query fetches and why.',
         },
       },
-    ],
-  };
+      required: ['sql', 'explanation'],
+    },
+  },
+  {
+    name: 'search_regulations',
+    description: 'Search ingested regulatory documents (AIFMD II, KAGB, MiFID II, etc.) using semantic search. Use for regulatory/legal questions.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: {
+          type: 'string' as const,
+          description: 'Natural language search query for regulatory content.',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'draft_compliance_rule',
+    description: 'Generate a compliance rule from a natural language description. Returns proposed rule JSON.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        description: {
+          type: 'string' as const,
+          description: 'Natural language description of the rule to create.',
+        },
+        asset_id: {
+          type: 'string' as const,
+          description: 'UUID of the asset/fund to attach the rule to.',
+        },
+      },
+      required: ['description', 'asset_id'],
+    },
+  },
+];
+
+function buildSystemPrompt(tenantId: string, context?: CopilotRequest['context']): string {
+  let contextInfo = '';
+  if (context?.currentPage) {
+    contextInfo += `\nUser is currently viewing: ${context.currentPage}`;
+  }
+  if (context?.selectedEntityId) {
+    contextInfo += `\nSelected entity: ${context.selectedEntityType || 'unknown'} ${context.selectedEntityId}`;
+  }
+
+  return `You are the Caelith Compliance Copilot — an AI assistant embedded in a regulatory compliance platform for EU fund managers (AIFMD II, KAGB, MiFID II, ELTIF 2.0, AMLR).
+
+You have direct access to the tenant's live database via the query_database tool. Use it to answer questions with real data — compliance scores, fund structures, investor status, risk flags, decisions, transfers, holdings, rules, onboarding records, and more.
+
+TENANT_ID for all queries: '${tenantId}'
+
+DATABASE SCHEMA:
+${DB_SCHEMA}
+
+GUIDELINES:
+- Always filter queries with WHERE tenant_id = '${tenantId}' (and deleted_at IS NULL for soft-deleted tables: assets, investors, fund_structures, users).
+- You can run multiple queries in sequence to build a comprehensive answer.
+- Present data clearly with numbers, names, and specifics — not vague summaries.
+- For compliance status: check decision_records (result: approved/rejected), composite_rules (enabled, severity), investor kyc_status, transfer status.
+- For risk flags: look at rejected decisions, expired KYC, high-severity rules, pending transfers.
+- When citing regulations, reference specific articles (e.g., "Art. 21 AIFMD II").
+- Use search_regulations for questions about legal text / regulatory requirements.
+- Use draft_compliance_rule when user wants to create a new rule.
+- Keep answers concise but data-rich. Use markdown formatting.
+- If a query returns no data, say so clearly rather than guessing.
+${contextInfo}
+
+IMPORTANT: You have access to REAL, LIVE data. Never say "I don't have access to your data." Query the database instead.`;
 }
 
-async function resolveFundForWhatIf(
+async function executeToolCall(
+  toolName: string,
+  toolInput: Record<string, unknown>,
+  tenantId: string
+): Promise<string> {
+  try {
+    if (toolName === 'query_database') {
+      const sql = String(toolInput.sql || '');
+      if (!validateReadOnlySQL(sql)) {
+        return JSON.stringify({ error: 'Query rejected: only read-only SELECT statements are allowed.' });
+      }
+      // Enforce tenant_id presence
+      if (!sql.includes(tenantId)) {
+        return JSON.stringify({ error: `Query must filter by tenant_id = '${tenantId}'.` });
+      }
+      let safeSql = sql.trim().replace(/;\s*$/, '');
+      // Only add LIMIT if not already present
+      if (!/\bLIMIT\b/i.test(safeSql)) {
+        safeSql += ` LIMIT ${MAX_ROWS_RETURNED}`;
+      }
+      const rows = await queryInTenantContext(
+        safeSql,
+        [],
+        tenantId
+      );
+      return JSON.stringify({ rows, count: rows.length });
+    }
+
+    if (toolName === 'search_regulations') {
+      const query = String(toolInput.query || '');
+      let results: RagResult[] = [];
+      try {
+        results = await ragService.query(query, { tenantId, topK: 5 });
+      } catch {
+        // RAG may be unavailable
+      }
+      if (results.length === 0) {
+        return JSON.stringify({ results: [], note: 'No regulatory documents ingested. Answer from your training knowledge and note it is unverified.' });
+      }
+      return JSON.stringify({
+        results: results.map(r => ({
+          title: r.documentTitle,
+          article: r.articleRef,
+          content: r.content.slice(0, 500),
+        })),
+      });
+    }
+
+    if (toolName === 'draft_compliance_rule') {
+      const description = String(toolInput.description || '');
+      const assetId = String(toolInput.asset_id || '');
+      const compiled = await compileNaturalLanguageRule({ description, asset_id: assetId });
+      return JSON.stringify(compiled);
+    }
+
+    return JSON.stringify({ error: `Unknown tool: ${toolName}` });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Tool execution failed';
+    logger.warn('Copilot tool execution error', { toolName, error: msg });
+    return JSON.stringify({ error: msg });
+  }
+}
+
+async function chatWithTools(
+  message: string,
   tenantId: string,
-  context: CopilotRequest['context'] | undefined,
-  message: string
-): Promise<FundLookupRow | null> {
-  if (context?.selectedEntityType === 'fund_structure' && context.selectedEntityId) {
-    const byId = await queryInTenantContext<FundLookupRow>(
-      `SELECT id, name, legal_form, domicile
-       FROM fund_structures
-       WHERE id = $1 AND tenant_id = $2
-       LIMIT 1`,
-      [context.selectedEntityId, tenantId],
-      tenantId
-    );
-    if (byId[0]) {
-      return byId[0];
-    }
-  }
-
-  const forMatch = message.match(/for\s+(.+)$/i);
-  if (forMatch && forMatch[1]) {
-    const candidate = forMatch[1].trim();
-    const byName = await queryInTenantContext<FundLookupRow>(
-      `SELECT id, name, legal_form, domicile
-       FROM fund_structures
-       WHERE tenant_id = $1 AND name ILIKE $2
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [tenantId, `%${candidate}%`],
-      tenantId
-    );
-    if (byName[0]) {
-      return byName[0];
-    }
-  }
-
-  const fallback = await queryInTenantContext<FundLookupRow>(
-    `SELECT id, name, legal_form, domicile
-     FROM fund_structures
-     WHERE tenant_id = $1
-     ORDER BY created_at ASC
-     LIMIT 1`,
-    [tenantId],
-    tenantId
-  );
-
-  return fallback[0] || null;
-}
-
-async function handleWhatIf(request: CopilotRequest, tenantId: string): Promise<CopilotResponse> {
-  const newMinimum = parseEuroAmount(request.message);
-  if (!newMinimum) {
+  context?: CopilotRequest['context']
+): Promise<CopilotResponse> {
+  if (!isAnthropicConfigured()) {
     return {
-      intent: 'what_if',
-      message: 'I could not detect the new threshold amount. Try phrasing like: "What if minimum investment changed to EUR 200K?"',
+      intent: 'error',
+      message: 'The Anthropic API key is not configured. Please set ANTHROPIC_API_KEY in the environment.',
     };
   }
 
-  const fund = await resolveFundForWhatIf(tenantId, request.context, request.message);
-  if (!fund) {
-    return {
-      intent: 'what_if',
-      message: 'No fund structures are available to run this scenario.',
-    };
-  }
+  const systemPrompt = buildSystemPrompt(tenantId, context);
+  const messages: Array<{ role: string; content: unknown }> = [
+    { role: 'user', content: message },
+  ];
 
-  const impacted = await queryInTenantContext<InvestorImpactRow>(
-    `SELECT i.id,
-            i.name,
-            COALESCE(SUM(h.units * COALESCE(a.unit_price, 0)), 0)::numeric AS invested_eur
-     FROM investors i
-     LEFT JOIN holdings h ON h.investor_id = i.id
-     LEFT JOIN assets a ON a.id = h.asset_id AND a.fund_structure_id = $1
-     WHERE i.tenant_id = $2
-     GROUP BY i.id, i.name
-     HAVING COALESCE(SUM(h.units * COALESCE(a.unit_price, 0)), 0) < $3
-     ORDER BY invested_eur ASC`,
-    [fund.id, tenantId, newMinimum],
-    tenantId
-  );
+  let finalText = '';
+  let intent = 'general';
 
-  let blockedTransfers = 0;
-  if (impacted.length > 0) {
-    const params: (string | number)[] = [fund.id, tenantId];
-    const placeholders: string[] = [];
-    for (let index = 0; index < impacted.length; index++) {
-      params.push(impacted[index].id);
-      placeholders.push(`$${index + 3}`);
+  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    const response = await callAnthropic({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 4096,
+      temperature: 0.1,
+      system: systemPrompt,
+      tools: TOOLS,
+      messages,
+    });
+
+    // Collect any text blocks
+    const textBlocks = response.content.filter((b: { type: string }) => b.type === 'text');
+    const toolUseBlocks = response.content.filter((b: { type: string }) => b.type === 'tool_use');
+
+    // If no tool calls, this is the final response — capture text
+    if (toolUseBlocks.length === 0) {
+      if (textBlocks.length > 0) {
+        finalText = textBlocks.map((b: { text?: string }) => b.text || '').join('\n');
+      }
+      break;
     }
 
-    const transferRows = await queryInTenantContext<CountRow>(
-      `SELECT COUNT(*)::int AS count
-       FROM transfers t
-       JOIN assets a ON a.id = t.asset_id
-       WHERE a.fund_structure_id = $1
-         AND a.tenant_id = $2
-         AND t.to_investor_id IN (${placeholders.join(', ')})`,
-      params,
-      tenantId
-    );
+    // Tool calls present — any text here is just preamble, don't use as final answer
 
-    blockedTransfers = transferRows[0]?.count || 0;
+    // Detect intent from first tool use
+    if (round === 0) {
+      const firstTool = toolUseBlocks[0] as { name?: string };
+      if (firstTool.name === 'query_database') intent = 'data_query';
+      else if (firstTool.name === 'search_regulations') intent = 'regulatory_qa';
+      else if (firstTool.name === 'draft_compliance_rule') intent = 'draft_rule';
+    }
+
+    // Add assistant message with all content blocks
+    messages.push({ role: 'assistant', content: response.content });
+
+    // Execute each tool call and build tool results
+    const toolResults: Array<{ type: string; tool_use_id: string; content: string }> = [];
+    for (const block of toolUseBlocks) {
+      const tb = block as { id?: string; name?: string; input?: Record<string, unknown> };
+      logger.info('Copilot tool call', { tool: tb.name, input: tb.input });
+      const result = await executeToolCall(
+        tb.name || '',
+        tb.input || {},
+        tenantId
+      );
+      toolResults.push({
+        type: 'tool_result',
+        tool_use_id: tb.id || '',
+        content: result,
+      });
+    }
+
+    messages.push({ role: 'user', content: toolResults });
   }
 
-  const sample = impacted.slice(0, 5)
-    .map(row => `- ${row.name}: EUR ${Number(row.invested_eur).toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
-    .join('\n');
-
-  const details = sample
-    ? `\n\nExamples below threshold:\n${sample}`
-    : '';
+  if (!finalText) {
+    finalText = 'I was unable to generate a response. Please try rephrasing your question.';
+  }
 
   return {
-    intent: 'what_if',
-    message: `If ${fund.name} minimum investment is set to EUR ${newMinimum.toLocaleString()}, ${impacted.length} investors would fail eligibility and approximately ${blockedTransfers} historical transfers would be blocked under the same threshold.${details}`,
-    suggestedActions: [
-      {
-        label: 'Review Eligibility Criteria',
-        action: 'navigate',
-        payload: { path: `/funds/${fund.id}` },
-      },
-    ],
+    intent,
+    message: finalText,
+    citations: [],
+    suggestedActions: [],
   };
 }
+
+// ─── Public API ──────────────────────────────────────────────────────
 
 export async function chat(request: CopilotRequest, tenantId: string, userId?: string): Promise<CopilotResponse> {
   const sanitized = sanitizeMessage(request.message || '');
@@ -630,24 +384,12 @@ export async function chat(request: CopilotRequest, tenantId: string, userId?: s
     await enforceRateLimit(scopedTenantId, userId);
   }
 
-  const intent = await classifyIntent(sanitized);
+  const response = await chatWithTools(sanitized, scopedTenantId, request.context);
 
-  let response: CopilotResponse;
-
-  if (intent === 'explain_decision') {
-    response = await handleExplainDecision(sanitized, scopedTenantId);
-  } else if (intent === 'draft_rule') {
-    response = await handleDraftRule({ ...request, message: sanitized }, scopedTenantId);
-  } else if (intent === 'what_if') {
-    response = await handleWhatIf({ ...request, message: sanitized }, scopedTenantId);
-  } else {
-    response = await handleRegulatoryQa(sanitized, scopedTenantId);
-  }
-
+  // Log the query event
   const entityType: EntityType = isEntityType(request.context?.selectedEntityType)
     ? request.context!.selectedEntityType as EntityType
     : 'regulatory_document';
-
   const entityId = extractUuid(request.context?.selectedEntityId || '') || DEFAULT_TENANT_ID;
 
   await createEvent({
@@ -666,7 +408,3 @@ export async function chat(request: CopilotRequest, tenantId: string, userId?: s
 
   return response;
 }
-
-
-
-

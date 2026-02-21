@@ -8,7 +8,7 @@
 
 import { logger } from '../lib/logger.js';
 
-export const ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
+export const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
@@ -16,12 +16,14 @@ const MAX_RETRIES = 3;
 export interface AnthropicContentBlock {
   type: string;
   text?: string;
+  id?: string;
   name?: string;
   input?: Record<string, unknown>;
 }
 
 export interface AnthropicResponse {
   content: AnthropicContentBlock[];
+  stop_reason?: string;
 }
 
 /**
@@ -63,7 +65,7 @@ export async function callAnthropic(body: Record<string, unknown>): Promise<Anth
 
       if (!response.ok) {
         const payload = await response.text().catch(() => '');
-        const retryable = response.status === 429 || response.status >= 500;
+        const retryable = (response.status === 429 || response.status >= 500) && response.status !== 401;
 
         if (retryable && attempt < MAX_RETRIES - 1) {
           const delayMs = Math.min(8000, 400 * 2 ** attempt) + Math.floor(Math.random() * 200);
