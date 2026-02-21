@@ -278,7 +278,7 @@ export function CopilotPanel({
                   <button
                     key={prompt}
                     onClick={() => sendMessage(prompt)}
-                    className="w-full rounded-lg border border-[rgba(197,224,238,0.2)] bg-white px-3 py-2 text-left text-xs text-[rgba(45,51,51,0.65)] transition-colors hover:border-[#C5E0EE]"
+                    className="w-full rounded-lg border border-[rgba(197,224,238,0.2)] bg-white px-3 py-2 text-left text-xs text-[rgba(45,51,51,0.65)] transition-colors hover:border-[#C5E0EE] line-clamp-2"
                   >
                     {prompt}
                   </button>

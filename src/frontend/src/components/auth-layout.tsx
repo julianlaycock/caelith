@@ -63,7 +63,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         <div className="flex h-screen bg-bg-primary">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="fixed left-4 top-4 z-40 rounded-lg border border-edge bg-bg-sidebar p-2 text-ink shadow-lg md:hidden"
+            className="fixed left-4 top-4 z-40 rounded-lg border border-edge bg-bg-sidebar p-2 text-ink shadow-lg lg:hidden"
             aria-label="Open menu"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
@@ -73,7 +73,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
 
           {sidebarOpen && (
             <div
-              className="fixed inset-0 z-40 bg-black/40 md:hidden"
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
               onClick={() => setSidebarOpen(false)}
             />
           )}

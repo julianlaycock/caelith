@@ -42,6 +42,9 @@ import type {
   InvestorDocument,
   ReadinessAssessment,
   ReadinessScore,
+  ScreeningResult,
+  BulkScreeningResult,
+  CalendarEvent,
 } from './types';
 
 const resolveBaseUrl = (): string => {
@@ -721,17 +724,11 @@ class ApiClient {
 
   // Audit Package
   async downloadAuditPackagePdf(fundId: string): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/reports/audit-package/${fundId}/pdf`, {
-      headers: this.authHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to download audit package');
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `audit-package-${fundId.substring(0, 8)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    return this.downloadFile(
+      `/reports/audit-package/${fundId}/pdf`,
+      `audit-package-${fundId.substring(0, 8)}.pdf`,
+      'Failed to download audit package'
+    );
   }
 
   async getCalendarEvents(params?: { from?: string; to?: string; category?: string; severity?: string }): Promise<{ events: CalendarEvent[]; count: number }> {
@@ -759,7 +756,7 @@ class ApiClient {
   }
 
   getReadinessExportUrl(lang: string = 'en'): string {
-    return `${this.baseUrl}/readiness/export?lang=${lang}`;
+    return `${BASE_URL}/readiness/export?lang=${lang}`;
   }
 
   async saveReadinessAnswer(questionKey: string, status: string, notes?: string): Promise<ReadinessAssessment> {

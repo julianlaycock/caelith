@@ -9,12 +9,11 @@ import {
   Card,
   Badge,
   Button,
-  SectionHeader,
   LoadingSpinner,
   ErrorMessage,
   EmptyState,
 } from '../../components/ui';
-import { formatDate, classNames } from '../../lib/utils';
+import { classNames } from '../../lib/utils';
 import type { CalendarEvent } from '../../lib/types';
 
 function useCategoryLabels() {

@@ -273,7 +273,7 @@ export function Badge({
   };
   return (
     <span className={classNames(
-      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium font-mono',
+      'inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium font-mono',
       colors[variant]
     )}>
       {children}

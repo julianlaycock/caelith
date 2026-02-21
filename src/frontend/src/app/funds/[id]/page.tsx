@@ -24,6 +24,8 @@ import {
 } from '../../../components/ui';
 import { InvestorTypeDonut, JurisdictionExposureBar, KycExpiryHorizon } from '../../../components/charts';
 import { formatNumber, formatDate, formatDateTime, titleCase, classNames } from '../../../lib/utils';
+// ScrollableTable used in sub-tables when needed
+// import { ScrollableTable } from '../../../components/scrollable-table';
 import { useI18n } from '../../../lib/i18n';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -180,7 +182,7 @@ export default function FundDetailPage() {
               )}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 justify-start">
             <Link href={`/holdings?fund=${id}`}>
               <Button variant="secondary" size="sm">
                 Holdings

@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import { useI18n } from '../../lib/i18n';
 import {
   Card,
   Badge,
-  Button,
   LoadingSpinner,
   ErrorMessage,
 } from '../../components/ui';
@@ -365,7 +364,7 @@ function Methodology({ lang, collapsed, onToggle }: { lang: 'de' | 'en'; collaps
 // ── Main Page ──
 
 export default function ReadinessPage() {
-  const { t, locale } = useI18n();
+  const { locale } = useI18n();
   const lang = (locale?.startsWith('de') ? 'de' : 'en') as 'de' | 'en';
   const [activeCategory, setActiveCategory] = useState<ReadinessCategory>('delegation');
   const [saving, setSaving] = useState<string | null>(null);
@@ -468,7 +467,7 @@ export default function ReadinessPage() {
         <Card className="!p-6 flex flex-col items-center justify-center">
           <ScoreRing score={score.overall} label={lang === 'de' ? 'Bereitschaft' : 'Readiness'} />
           <p className="mt-4 text-xs text-ink-tertiary text-center tabular-nums">
-            {score.answeredCount}/{score.applicableCount} {lang === 'de' ? 'beantwortet' : 'answered'}
+            {score.answeredCount}/{score.totalCount} {lang === 'de' ? 'beantwortet' : 'answered'}
           </p>
           <p className="text-[10px] text-ink-tertiary/60 text-center mt-1">
             {lang === 'de' ? '(N/A-Fragen ausgeschlossen)' : '(N/A questions excluded)'}

@@ -30,6 +30,7 @@ import { CsvUploadWizard } from '../../components/csv-upload-wizard';
 import { useI18n } from '../../lib/i18n';
 import { useAutoDismiss } from '../../lib/use-auto-dismiss';
 import { Pagination, usePagination } from '../../components/pagination';
+import { ScrollableTable } from '../../components/scrollable-table';
 
 function daysUntilExpiry(expiryDate: string | null | undefined) {
   if (!expiryDate) return null;
@@ -106,7 +107,9 @@ function InvestorsContent() {
   const [filterJurisdiction, setFilterJurisdiction] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterKyc, setFilterKyc] = useState('');
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const hasLocalFilters = searchQuery || filterJurisdiction || filterType || filterKyc;
+  const activeFilterCount = [filterJurisdiction, filterType, filterKyc].filter(Boolean).length + (searchQuery ? 1 : 0);
   const clearLocalFilters = () => { setSearchQuery(''); setFilterJurisdiction(''); setFilterType(''); setFilterKyc(''); };
 
   const investors = useAsync(() => api.getInvestors());
@@ -324,7 +327,30 @@ function InvestorsContent() {
 
       {/* Filter bar */}
       <Card>
-        <div className="flex flex-wrap items-end gap-3">
+        {/* Mobile toggle */}
+        <div className="flex items-center justify-between sm:hidden mb-2">
+          <button
+            onClick={() => setFiltersExpanded(!filtersExpanded)}
+            className="flex items-center gap-2 rounded-lg border border-edge bg-bg-secondary px-3 py-2 text-xs font-medium text-ink-secondary transition-colors hover:bg-bg-tertiary"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+            </svg>
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-500/20 text-[10px] font-bold text-accent-400">
+                {activeFilterCount}
+              </span>
+            )}
+            <svg className={classNames('h-3 w-3 transition-transform', filtersExpanded && 'rotate-180')} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+          {hasLocalFilters && (
+            <Button variant="ghost" size="sm" onClick={clearLocalFilters}>{t('common.clear')}</Button>
+          )}
+        </div>
+        <div className={classNames('flex flex-wrap items-end gap-3', !filtersExpanded && 'hidden sm:flex')}>
           <div className="flex-1 min-w-0 sm:min-w-[200px]">
             <Input
               label={t('investors.search')}
@@ -333,7 +359,7 @@ function InvestorsContent() {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="w-[160px]">
+          <div className="w-full sm:w-[160px]">
             <Select
               label={t('investors.col.jurisdiction')}
               value={filterJurisdiction}
@@ -341,7 +367,7 @@ function InvestorsContent() {
               options={[{ value: '', label: t('investors.all') }, ...JURISDICTIONS]}
             />
           </div>
-          <div className="w-[180px]">
+          <div className="w-full sm:w-[180px]">
             <Select
               label={t('investors.investorType')}
               value={filterType}
@@ -349,7 +375,7 @@ function InvestorsContent() {
               options={[{ value: '', label: t('investors.all') }, ...INVESTOR_TYPE_OPTIONS]}
             />
           </div>
-          <div className="w-[140px]">
+          <div className="w-full sm:w-[140px]">
             <Select
               label={t('investors.kycStatus')}
               value={filterKyc}
@@ -358,7 +384,7 @@ function InvestorsContent() {
             />
           </div>
           {hasLocalFilters && (
-            <Button variant="secondary" size="sm" onClick={clearLocalFilters}>{t('common.clear')}</Button>
+            <Button variant="secondary" size="sm" className="hidden sm:inline-flex" onClick={clearLocalFilters}>{t('common.clear')}</Button>
           )}
         </div>
         <p className="mt-2 text-xs text-ink-tertiary">
@@ -437,9 +463,9 @@ function InvestorsContent() {
         <ErrorMessage message={investors.error} onRetry={investors.refetch} />
       ) : filteredInvestors.length > 0 ? (
         <Card padding={false}>
-          <div className="overflow-x-auto">
+          <ScrollableTable>
           <table className="w-full text-left text-sm min-w-[900px]">
-            <thead className="border-b border-edge">
+            <thead className="border-b border-edge sticky-thead">
               <tr>
                 <SortableHeader<Investor> label={t('investors.col.name')} sortKey="name" sort={sort} onToggle={toggle} />
                 <SortableHeader<Investor> label={t('investors.col.jurisdiction')} sortKey="jurisdiction" sort={sort} onToggle={toggle} />
@@ -507,7 +533,7 @@ function InvestorsContent() {
               ))}
             </tbody>
           </table>
-          </div>
+          </ScrollableTable>
           <div className="px-4">
             <Pagination total={paginatedTotal} page={page} perPage={perPage} onPageChange={setPage} />
           </div>

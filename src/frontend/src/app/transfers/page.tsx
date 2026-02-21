@@ -25,6 +25,8 @@ import { formatNumber, formatDateTime, classNames } from '../../lib/utils';
 import type { DetailedValidationResult, ApiError, TransferHistoryEntry } from '../../lib/types';
 import { useI18n } from '../../lib/i18n';
 import { useAutoDismiss } from '../../lib/use-auto-dismiss';
+import { ScrollableTable } from '../../components/scrollable-table';
+import { ResponsiveTimestamp } from '../../components/responsive-timestamp';
 
 type TransferSortKey = 'executed_at' | 'from_name' | 'to_name' | 'units';
 type TransferSortDirection = 'asc' | 'desc' | null;
@@ -940,9 +942,9 @@ export default function TransfersPage() {
       ) : history.data && history.data.length > 0 ? (
         viewMode === 'table' ? (
           <Card padding={false}>
-            <div className="overflow-x-auto">
+            <ScrollableTable>
             <table className="w-full text-left text-sm min-w-[700px]">
-              <thead className="border-b border-edge">
+              <thead className="border-b border-edge sticky-thead">
                 <tr>
                   <SortableHeader label="Date" sortKey="executed_at" sort={sort} onToggle={toggleSort} />
                   <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Asset</th>
@@ -955,7 +957,7 @@ export default function TransfersPage() {
               <tbody className="divide-y divide-edge-subtle">
                 {paginatedHistory.map((t) => (
                   <tr key={t.id} className="transition-colors hover:bg-bg-tertiary">
-                    <td className="px-5 py-3 text-ink-tertiary">{formatDateTime(t.executed_at)}</td>
+                    <td className="px-5 py-3 text-ink-tertiary text-xs tabular-nums"><ResponsiveTimestamp value={t.executed_at} /></td>
                     <td className="px-5 py-3 text-ink-secondary">{t.asset_name ?? t.asset_id}</td>
                     <td className="px-5 py-3 font-medium text-ink">{t.from_name}</td>
                     <td className="px-5 py-3 font-medium text-ink">{t.to_name}</td>
@@ -974,7 +976,7 @@ export default function TransfersPage() {
                 ))}
               </tbody>
             </table>
-            </div>
+            </ScrollableTable>
             <div className="px-4"><Pagination total={paginatedTotal} page={page} perPage={perPage} onPageChange={setPage} /></div>
           </Card>
         ) : (

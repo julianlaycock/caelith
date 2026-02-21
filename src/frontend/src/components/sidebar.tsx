@@ -129,7 +129,7 @@ function ThemeToggle() {
     <button
       onClick={toggle}
       className={classNames(
-        'rounded-lg border p-1.5 transition-all',
+        'rounded-lg border p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center transition-all',
         dark
           ? 'border-[rgba(197,224,238,0.2)] bg-[rgba(197,224,238,0.08)] text-[#C5E0EE] hover:bg-[rgba(197,224,238,0.15)] hover:text-[#dceef7]'
           : 'border-gray-300 bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
@@ -185,7 +185,7 @@ export function Sidebar({
   return (
     <aside
       className={classNames(
-        'fixed z-50 flex h-screen w-[220px] flex-col transition-transform duration-200 md:static md:translate-x-0',
+        'fixed z-50 flex h-screen w-[220px] flex-col transition-transform duration-200 lg:static lg:translate-x-0',
         'bg-bg-sidebar border-r border-edge',
         mobileOpen ? 'translate-x-0' : '-translate-x-full'
       )}
@@ -202,7 +202,7 @@ export function Sidebar({
         {onMobileClose && (
           <button
             onClick={onMobileClose}
-            className="rounded-md p-1 text-ink-muted hover:text-ink-secondary md:hidden"
+            className="rounded-md p-1 text-ink-muted hover:text-ink-secondary lg:hidden"
             aria-label="Close menu"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">

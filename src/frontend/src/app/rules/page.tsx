@@ -417,7 +417,7 @@ export default function RulesPage() {
           </div>
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-ink">AI Rule Builder</h3>
-            <p className="mt-1 text-xs text-ink-secondary">
+            <p className="mt-1 text-xs text-ink-secondary break-words">
               Describe a compliance rule in plain English and we&apos;ll generate the logic for you.
               {!selectedAssetId && <span className="ml-1 text-yellow-400">Select an asset below first.</span>}
             </p>

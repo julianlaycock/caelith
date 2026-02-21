@@ -13,6 +13,7 @@ import {
 } from '../../lib/dashboard-utils';
 import type { FundReportPair, RiskFlag, ActionQueueItem } from '../../lib/dashboard-utils';
 import type { CapTableEntry, DecisionRecord, Investor, Event } from '../../lib/types';
+import { ScrollableTable } from '../../components/scrollable-table';
 import { useI18n, useLocaleDate } from '../../lib/i18n';
 import { SkeletonBanner, SkeletonFundBand, SkeletonSidebar } from './components/skeletons';
 import { ComplianceScoreRing } from './components/compliance-score-ring';
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [fundReports, setFundReports] = useState<FundReportPair[]>([]);
   const [allInvestors, setAllInvestors] = useState<Investor[]>([]);
   const [capTables, setCapTables] = useState<Map<string, CapTableEntry[]>>(new Map());
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [wizardDismissed, setWizardDismissed] = useState(false);
@@ -258,8 +260,8 @@ export default function DashboardPage() {
               <h1 className="text-lg font-bold tracking-tight text-ink">{t('dashboard.title')}</h1>
               <p className="text-xs text-ink-secondary mt-0.5">{t('dashboard.subtitle')}</p>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="flex gap-6">
+            <div className="flex flex-wrap items-center gap-4 lg:gap-6">
+              <div className="flex flex-wrap gap-4 lg:gap-6">
                 <div className="text-center">
                   <div className="font-mono text-lg font-bold text-ink">{totalFunds}</div>
                   <div className="text-[9px] text-ink-tertiary uppercase tracking-wider">Funds</div>
@@ -355,9 +357,9 @@ export default function DashboardPage() {
                   <span className="text-[13px] font-bold text-[#C5E0EE]">{t('dashboard.recentDecisions')}</span>
                   <Badge variant="blue">{allDecisions.length} total</Badge>
                 </div>
-                <div className="overflow-x-auto">
+                <ScrollableTable>
                   <table className="w-full text-left min-w-[600px]">
-                    <thead className="border-b border-edge">
+                    <thead className="border-b border-edge sticky-thead">
                       <tr className="border-b border-edge">
                         <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.time')}</th>
                         <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.type')}</th>
@@ -401,7 +403,7 @@ export default function DashboardPage() {
                       })}
                     </tbody>
                   </table>
-                </div>
+                </ScrollableTable>
               </Card>
             )}
 

@@ -181,3 +181,45 @@ body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ── Table Scroll Wrapper ────────────────────────── */
+.table-scroll-wrapper {
+  position: relative;
+  overflow-x: auto;
+}
+.table-scroll-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--bg-secondary));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.table-scroll-wrapper.has-overflow::after {
+  opacity: 1;
+}
+.table-scroll-wrapper.scrolled-end::after {
+  opacity: 0;
+}
+
+/* ── Sticky Table Headers ────────────────────────── */
+.sticky-thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--bg-secondary);
+}
+
+/* ── Compact timestamps on mobile ────────────────── */
+@media (max-width: 767px) {
+  .timestamp-verbose { display: none; }
+  .timestamp-compact { display: inline; }
+}
+@media (min-width: 768px) {
+  .timestamp-verbose { display: inline; }
+  .timestamp-compact { display: none; }
+}

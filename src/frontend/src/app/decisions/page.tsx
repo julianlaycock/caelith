@@ -20,6 +20,8 @@ import {
 import { exportCSV } from '../../lib/export-csv';
 import { formatDateTime, classNames, titleCase } from '../../lib/utils';
 import { Pagination, usePagination } from '../../components/pagination';
+import { ScrollableTable } from '../../components/scrollable-table';
+import { ResponsiveTimestamp } from '../../components/responsive-timestamp';
 import type { DecisionRecord } from '../../lib/types';
 import { useI18n } from '../../lib/i18n';
 
@@ -195,9 +197,9 @@ export default function DecisionsPage() {
         <ErrorMessage message={decisions.error} onRetry={decisions.refetch} />
       ) : filtered.length > 0 ? (
         <Card padding={false}>
-          <div className="overflow-x-auto">
+          <ScrollableTable>
           <table className="w-full text-left text-sm min-w-[700px]">
-            <thead className="border-b border-edge">
+            <thead className="border-b border-edge sticky-thead">
               <tr>
                 <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.time')}</th>
                 <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.type')}</th>
@@ -219,7 +221,7 @@ export default function DecisionsPage() {
                     onClick={() => { setSelectedDecision(d); setExplanation(null); }}
                   >
                     <td className="px-5 py-3 text-xs tabular-nums text-ink-secondary">
-                      {formatDateTime(d.decided_at)}
+                      <ResponsiveTimestamp value={d.decided_at} />
                     </td>
                     <td className="px-5 py-3 text-sm text-ink">
                       {titleCase(d.decision_type)}
@@ -249,7 +251,7 @@ export default function DecisionsPage() {
               })}
             </tbody>
           </table>
-          </div>
+          </ScrollableTable>
           <div className="px-4">
             <Pagination total={paginatedTotal} page={page} perPage={perPage} onPageChange={setPage} />
           </div>

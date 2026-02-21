@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Card, Badge, UtilizationBar } from './ui';
+import { classNames } from '../lib/utils';
 import type { FundReportPair } from '../lib/dashboard-utils';
 import { useI18n } from '../lib/i18n';
 
@@ -51,7 +52,10 @@ export function FundCard({ fund, report }: FundCardProps) {
   }[scoreStatus];
 
   return (
-    <Card>
+    <Card className={classNames(
+      scoreStatus === 'critical' && 'border-l-[3px] border-l-semantic-danger',
+      scoreStatus === 'warning' && 'border-l-[3px] border-l-semantic-warning',
+    )}>
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold text-ink">{fund.name}</h3>
