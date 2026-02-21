@@ -705,6 +705,21 @@ class ApiClient {
   }
 
   // Calendar
+  // Audit Package
+  async downloadAuditPackagePdf(fundId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/reports/audit-package/${fundId}/pdf`, {
+      headers: this.authHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to download audit package');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-package-${fundId.substring(0, 8)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async getCalendarEvents(params?: { from?: string; to?: string; category?: string; severity?: string }): Promise<{ events: CalendarEvent[]; count: number }> {
     const qs = new URLSearchParams();
     if (params?.from) qs.set('from', params.from);
