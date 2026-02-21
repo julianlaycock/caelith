@@ -72,6 +72,9 @@ onboarding_records: id, investor_id(FK), asset_id(FK), status(applied/approved/r
 investor_documents: id, investor_id(FK), document_type, filename, mime_type, file_size, status(uploaded/verified/rejected/expired), expiry_date, notes, uploaded_by, verified_by, verified_at
 events: id, event_type, entity_type, entity_id, payload(jsonb), timestamp
 regulatory_documents: id, source_name, jurisdiction, framework, article_ref, chunk_index, content(text), document_title
+fund_lmts: id, fund_structure_id(FK→fund_structures), lmt_type(redemption_gates/swing_pricing/anti_dilution_levy/side_pockets/notice_periods/redemption_in_kind/borrowing_arrangements), activation_threshold(text), activation_policy(text), status(configured/active/deactivated), last_activated_at, last_deactivated_at, nca_notified(bool), nca_notified_at, notes, created_at
+fund_delegations: id, fund_structure_id(FK→fund_structures), delegate_name, delegate_lei, function_delegated(portfolio_management/risk_management/administration/distribution/valuation/it_infrastructure/compliance_monitoring), jurisdiction, start_date, oversight_frequency(monthly/quarterly/semi-annually/annually), last_review_date, next_review_date, status(active/under_review/terminated), letterbox_risk(low/medium/high), termination_clause, notes, created_at
+aifmd_readiness_answers: id, question_key(text), status(yes/partial/no/na), notes(text), updated_at — stores per-question answers for AIFMD II readiness assessment; question_key maps to categories: annex_iv_reporting, audit_trail, compliance_calendar, lmt_framework, delegation_oversight, cost_transparency, depositary_arrangements, loan_origination
 `.trim();
 
 // ─── SQL Safety ──────────────────────────────────────────────────────
@@ -215,6 +218,12 @@ GUIDELINES:
 - Use draft_compliance_rule when user wants to create a new rule.
 - Keep answers concise but data-rich. Use markdown formatting.
 - If a query returns no data, say so clearly rather than guessing.
+
+AIFMD II CONTEXT (transposition deadline: April 16, 2026):
+- fund_lmts: Liquidity Management Tools per fund. AIFMD II Art. 16 requires at least 2 LMTs configured per fund. Check status (active vs configured), NCA notification status.
+- fund_delegations: Delegation arrangements per fund. AIFMD II Art. 20 tightens the "letterbox entity" test. High letterbox_risk delegations need enhanced oversight. Check next_review_date for overdue reviews.
+- aifmd_readiness_answers: AIFMD II readiness self-assessment. Score = (yes*1 + partial*0.5) / applicable questions. Categories map to AIFMD II implementation areas.
+- When asked about AIFMD II readiness, compliance gaps, or preparation status, query all three tables to give a comprehensive picture.
 ${contextInfo}
 
 IMPORTANT: You have access to REAL, LIVE data. Never say "I don't have access to your data." Query the database instead.`;
