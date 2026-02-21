@@ -17,13 +17,16 @@ import {
 import { formatDate, classNames } from '../../lib/utils';
 import type { CalendarEvent } from '../../lib/types';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  kyc: 'KYC',
-  reporting: 'Reporting',
-  regulatory: 'Regulatory',
-  document: 'Document',
-  review: 'Review',
-};
+function useCategoryLabels() {
+  const { t } = useI18n();
+  return {
+    kyc: t('calendar.cat.kyc'),
+    reporting: t('calendar.cat.reporting'),
+    regulatory: t('calendar.cat.regulatory'),
+    document: t('calendar.cat.document'),
+    review: t('calendar.cat.review'),
+  } as Record<string, string>;
+}
 
 const CATEGORY_COLORS: Record<string, string> = {
   kyc: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
@@ -33,22 +36,26 @@ const CATEGORY_COLORS: Record<string, string> = {
   review: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
 };
 
-const SEVERITY_CONFIG = {
-  critical: { badge: 'red' as const, icon: '🔴', label: 'Critical' },
-  warning: { badge: 'yellow' as const, icon: '🟡', label: 'Warning' },
-  info: { badge: 'gray' as const, icon: '🔵', label: 'Info' },
-};
+function useSeverityConfig() {
+  const { t } = useI18n();
+  return {
+    critical: { badge: 'red' as const, icon: '🔴', label: t('calendar.sev.critical') },
+    warning: { badge: 'yellow' as const, icon: '🟡', label: t('calendar.sev.warning') },
+    info: { badge: 'gray' as const, icon: '🔵', label: t('calendar.sev.info') },
+  };
+}
 
 function DaysLabel({ days }: { days: number }) {
+  const { t } = useI18n();
   if (days < 0) {
     return (
       <span className="text-xs font-semibold text-red-400">
-        {Math.abs(days)}d overdue
+        {Math.abs(days)}d {t('calendar.overdue').toLowerCase()}
       </span>
     );
   }
   if (days === 0) {
-    return <span className="text-xs font-semibold text-red-400">Today</span>;
+    return <span className="text-xs font-semibold text-red-400">{t('calendar.today')}</span>;
   }
   if (days <= 7) {
     return <span className="text-xs font-semibold text-red-400">{days}d</span>;
@@ -60,6 +67,9 @@ function DaysLabel({ days }: { days: number }) {
 }
 
 function EventCard({ event }: { event: CalendarEvent }) {
+  const { t } = useI18n();
+  const SEVERITY_CONFIG = useSeverityConfig();
+  const CATEGORY_LABELS = useCategoryLabels();
   const config = SEVERITY_CONFIG[event.severity];
   const catColor = CATEGORY_COLORS[event.category] || CATEGORY_COLORS.review;
 
@@ -98,7 +108,7 @@ function EventCard({ event }: { event: CalendarEvent }) {
             href={`/investors/${event.entityId}`}
             className="mt-1.5 inline-flex items-center text-xs text-accent-400 hover:text-accent-300 hover:underline"
           >
-            View Investor →
+            {t('calendar.viewInvestor')} →
           </Link>
         )}
         {event.entityId && event.entityType === 'fund_structure' && (
@@ -106,7 +116,7 @@ function EventCard({ event }: { event: CalendarEvent }) {
             href={`/funds/${event.entityId}`}
             className="mt-1.5 inline-flex items-center text-xs text-accent-400 hover:text-accent-300 hover:underline"
           >
-            View Fund →
+            {t('calendar.viewFund')} →
           </Link>
         )}
       </div>
@@ -125,6 +135,7 @@ type CategoryFilter = 'all' | 'kyc' | 'reporting' | 'regulatory' | 'document';
 
 export default function CalendarPage() {
   const { t } = useI18n();
+  const CATEGORY_LABELS = useCategoryLabels();
   const [view, setView] = useState<ViewMode>('upcoming');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
 
@@ -157,11 +168,11 @@ export default function CalendarPage() {
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">Compliance Calendar</h1>
-          <p className="text-sm text-ink-secondary">Regulatory deadlines, KYC renewals, and reporting obligations</p>
+          <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">{t('calendar.title')}</h1>
+          <p className="text-sm text-ink-secondary">{t('calendar.subtitle')}</p>
         </div>
         <Button variant="secondary" size="sm" onClick={() => calendarData.refetch()}>
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
@@ -169,24 +180,24 @@ export default function CalendarPage() {
       {summary && (
         <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
           <Card className="!p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">Next 90 Days</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('calendar.next90')}</p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-ink">{summary.total}</p>
-            <p className="text-xs text-ink-tertiary">events</p>
+            <p className="text-xs text-ink-tertiary">{t('calendar.events')}</p>
           </Card>
           <Card className={classNames('!p-4', summary.overdue > 0 ? 'ring-1 ring-red-500/30' : '')}>
-            <p className="text-xs font-medium uppercase tracking-wide text-red-400">Overdue</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-red-400">{t('calendar.overdue')}</p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-red-400">{summary.overdue}</p>
-            <p className="text-xs text-ink-tertiary">require action</p>
+            <p className="text-xs text-ink-tertiary">{t('calendar.requireAction')}</p>
           </Card>
           <Card className={classNames('!p-4', summary.critical > 0 ? 'ring-1 ring-amber-500/30' : '')}>
-            <p className="text-xs font-medium uppercase tracking-wide text-amber-400">Critical</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-amber-400">{t('calendar.sev.critical')}</p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-amber-400">{summary.critical}</p>
-            <p className="text-xs text-ink-tertiary">within 30 days</p>
+            <p className="text-xs text-ink-tertiary">{t('calendar.within30')}</p>
           </Card>
           <Card className="!p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">Warnings</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('calendar.sev.warning')}</p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-ink">{summary.warning}</p>
-            <p className="text-xs text-ink-tertiary">within 90 days</p>
+            <p className="text-xs text-ink-tertiary">{t('calendar.within90')}</p>
           </Card>
         </div>
       )}
@@ -204,7 +215,7 @@ export default function CalendarPage() {
                 : 'text-ink-secondary hover:text-ink hover:bg-bg-tertiary'
             )}
           >
-            {v === 'upcoming' ? 'Upcoming' : v === 'overdue' ? 'Overdue' : 'All'}
+            {v === 'upcoming' ? t('calendar.upcoming') : v === 'overdue' ? t('calendar.overdue') : t('common.all')}
             {v === 'overdue' && summary?.overdue ? ` (${summary.overdue})` : ''}
           </button>
         ))}
@@ -222,7 +233,7 @@ export default function CalendarPage() {
                 : 'text-ink-secondary hover:text-ink hover:bg-bg-tertiary'
             )}
           >
-            {c === 'all' ? 'All Types' : CATEGORY_LABELS[c] || c}
+            {c === 'all' ? t('calendar.allTypes') : CATEGORY_LABELS[c] || c}
           </button>
         ))}
       </div>
@@ -230,8 +241,8 @@ export default function CalendarPage() {
       {/* Event List */}
       {events.length === 0 ? (
         <EmptyState
-          title="No events"
-          description={view === 'overdue' ? 'No overdue items — all clear!' : 'No compliance events found for the selected filters.'}
+          title={t('calendar.noEvents')}
+          description={view === 'overdue' ? t('calendar.noOverdue') : t('calendar.noEventsDesc')}
         />
       ) : (
         <div className="space-y-3">
