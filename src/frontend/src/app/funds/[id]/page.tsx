@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAsync } from '../../../lib/hooks';
 import type { ScenarioResult, RulePackInfo } from '../../../lib/types';
@@ -178,7 +179,12 @@ export default function FundDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={openRulePackModal}>
+            <Link href={`/holdings?fund=${id}`}>
+              <Button variant="secondary" size="sm">
+                Holdings
+              </Button>
+            </Link>
+            <Button size="sm" onClick={openRulePackModal}>
               Apply Rule Pack
             </Button>
             <Button
