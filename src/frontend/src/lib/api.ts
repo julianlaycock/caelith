@@ -40,6 +40,8 @@ import type {
   ApplyRulePackResult,
   AnnexIVReport,
   InvestorDocument,
+  ReadinessAssessment,
+  ReadinessScore,
 } from './types';
 
 const resolveBaseUrl = (): string => {
@@ -744,6 +746,23 @@ class ApiClient {
 
   async getCalendarAlerts(days?: number): Promise<{ alerts: CalendarEvent[]; summary: { total: number; critical: number; warning: number; overdue: number } }> {
     return this.request(`/calendar/alerts${days ? `?days=${days}` : ''}`);
+  }
+
+  // ── AIFMD II Readiness Assessment ──
+
+  async getReadinessAssessment(): Promise<ReadinessAssessment> {
+    return this.request('/readiness');
+  }
+
+  async getReadinessScore(): Promise<ReadinessScore> {
+    return this.request('/readiness/score');
+  }
+
+  async saveReadinessAnswer(questionKey: string, status: string, notes?: string): Promise<ReadinessAssessment> {
+    return this.request(`/readiness/${questionKey}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes }),
+    });
   }
 }
 

@@ -820,3 +820,48 @@ export interface CalendarEvent {
   entityName?: string;
   daysUntil: number;
 }
+
+// ── AIFMD II Readiness Assessment ──
+
+export type ReadinessCategory = 'delegation' | 'liquidity' | 'reporting' | 'disclosure' | 'loan_origination' | 'governance';
+export type AnswerStatus = 'yes' | 'no' | 'partial' | 'na' | 'unanswered';
+
+export interface ReadinessQuestion {
+  key: string;
+  category: ReadinessCategory;
+  question_de: string;
+  question_en: string;
+  hint_de?: string;
+  hint_en?: string;
+  weight: number;
+  autoCheck?: string;
+}
+
+export interface ReadinessAnswer {
+  status: AnswerStatus;
+  notes?: string;
+  auto?: boolean;
+}
+
+export interface CategoryScore {
+  category: ReadinessCategory;
+  answered: number;
+  total: number;
+  score: number;
+  maxScore: number;
+  weightedScore: number;
+}
+
+export interface ReadinessScore {
+  overall: number;
+  categories: CategoryScore[];
+  answeredCount: number;
+  totalCount: number;
+  daysUntilDeadline: number;
+}
+
+export interface ReadinessAssessment {
+  questions: ReadinessQuestion[];
+  answers: Record<string, ReadinessAnswer>;
+  score: ReadinessScore;
+}

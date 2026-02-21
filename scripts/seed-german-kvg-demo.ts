@@ -661,7 +661,6 @@ async function seed() {
   // Get tenant ID from an existing investor
   const tenantRows = await query<{ tenant_id: string }>(`SELECT tenant_id FROM investors LIMIT 1`);
   const TENANT_ID = tenantRows[0]?.tenant_id;
-  console.log(`  Tenant ID: ${TENANT_ID || 'NOT FOUND'}`);
   if (!TENANT_ID) { console.log('  ⚠ No tenant found, skipping documents'); }
   const docDefs = [
     // daysAgo(-N) = N days in the future, daysAgo(N) = N days in the past
@@ -677,7 +676,6 @@ async function seed() {
 
   for (const doc of (TENANT_ID ? docDefs : [])) {
     const invId = I[doc.investor];
-    console.log(`  Looking up: "${doc.investor}" → ${invId || 'NOT FOUND'}`);
     if (!invId) { console.log(`  ⚠ Investor not found: ${doc.investor}`); continue; }
     try {
       const ex = await query<{ id: string }>(
