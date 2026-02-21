@@ -779,3 +779,16 @@ export interface BulkImportResult {
   warnings?: ImportWarning[];
   skipped: number;
 }
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  category: 'kyc' | 'reporting' | 'regulatory' | 'document' | 'review';
+  severity: 'critical' | 'warning' | 'info';
+  entityType?: string;
+  entityId?: string;
+  entityName?: string;
+  daysUntil: number;
+}

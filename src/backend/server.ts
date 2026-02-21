@@ -54,6 +54,7 @@ import rulePackRoutes from './routes/rule-pack-routes.js';
 import annexIVRoutes from './routes/annex-iv-routes.js';
 import evidenceBundleRoutes from './routes/evidence-bundle-routes.js';
 import investorDocumentRoutes from './routes/investor-document-routes.js';
+import { createCalendarRoutes } from './routes/calendar-routes.js';
 import { isResetEndpointEnabled, shouldBootstrapAdmin } from './config/security-config.js';
 import { logger } from './lib/logger.js';
 
@@ -286,6 +287,7 @@ app.use('/api/rule-packs', authenticate, authorizeWrite('admin', 'compliance_off
 app.use('/api/reports/annex-iv', authenticate, authorizeWrite('admin'), annexIVRoutes);
 app.use('/api/reports/evidence-bundle', authenticate, authorizeWrite('admin'), evidenceBundleRoutes);
 app.use('/api/investor-documents', authenticate, authorizeWrite('admin', 'compliance_officer'), investorDocumentRoutes);
+app.use('/api/calendar', authenticate, createCalendarRoutes());
 
 // Test-only: reset database
 app.post('/api/reset', authenticate, authorize('admin'), async (_req, res): Promise<void> => {

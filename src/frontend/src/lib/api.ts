@@ -703,6 +703,21 @@ class ApiClient {
   async getNews(): Promise<{ articles: Array<{ title: string; source: string; sourceType: 'regulatory' | 'news'; date: string; excerpt: string; url: string }>; cachedAt: string; stale?: boolean }> {
     return this.request('/news');
   }
+
+  // Calendar
+  async getCalendarEvents(params?: { from?: string; to?: string; category?: string; severity?: string }): Promise<{ events: CalendarEvent[]; count: number }> {
+    const qs = new URLSearchParams();
+    if (params?.from) qs.set('from', params.from);
+    if (params?.to) qs.set('to', params.to);
+    if (params?.category) qs.set('category', params.category);
+    if (params?.severity) qs.set('severity', params.severity);
+    const query = qs.toString();
+    return this.request(`/calendar${query ? `?${query}` : ''}`);
+  }
+
+  async getCalendarAlerts(days?: number): Promise<{ alerts: CalendarEvent[]; summary: { total: number; critical: number; warning: number; overdue: number } }> {
+    return this.request(`/calendar/alerts${days ? `?days=${days}` : ''}`);
+  }
 }
 
 export const api = new ApiClient();
