@@ -705,6 +705,18 @@ class ApiClient {
   }
 
   // Calendar
+  // Screening
+  async screenInvestor(investorId: string): Promise<ScreeningResult> {
+    return this.request(`/screening/${investorId}`, { method: 'POST' });
+  }
+
+  async bulkScreen(fundStructureId?: string): Promise<BulkScreeningResult> {
+    return this.request('/screening/bulk/run', {
+      method: 'POST',
+      body: JSON.stringify({ fundStructureId }),
+    });
+  }
+
   // Audit Package
   async downloadAuditPackagePdf(fundId: string): Promise<void> {
     const res = await fetch(`${this.baseUrl}/reports/audit-package/${fundId}/pdf`, {

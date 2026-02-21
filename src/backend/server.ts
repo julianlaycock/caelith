@@ -56,6 +56,7 @@ import evidenceBundleRoutes from './routes/evidence-bundle-routes.js';
 import investorDocumentRoutes from './routes/investor-document-routes.js';
 import { createCalendarRoutes } from './routes/calendar-routes.js';
 import { createAuditPackageRoutes } from './routes/audit-package-routes.js';
+import { createScreeningRoutes } from './routes/screening-routes.js';
 import { isResetEndpointEnabled, shouldBootstrapAdmin } from './config/security-config.js';
 import { logger } from './lib/logger.js';
 
@@ -290,6 +291,7 @@ app.use('/api/reports/evidence-bundle', authenticate, authorizeWrite('admin'), e
 app.use('/api/investor-documents', authenticate, authorizeWrite('admin', 'compliance_officer'), investorDocumentRoutes);
 app.use('/api/calendar', authenticate, createCalendarRoutes());
 app.use('/api/reports/audit-package', authenticate, authorizeWrite('admin'), createAuditPackageRoutes());
+app.use('/api/screening', authenticate, authorizeWrite('admin', 'compliance_officer'), createScreeningRoutes());
 
 // Test-only: reset database
 app.post('/api/reset', authenticate, authorize('admin'), async (_req, res): Promise<void> => {

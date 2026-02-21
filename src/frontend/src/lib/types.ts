@@ -780,6 +780,34 @@ export interface BulkImportResult {
   skipped: number;
 }
 
+export interface ScreeningMatch {
+  matchScore: number;
+  entityId: string;
+  name: string;
+  datasets: string[];
+  topics: string[];
+  countries: string[];
+  listingDate?: string;
+  referenceUrl?: string;
+}
+
+export interface ScreeningResult {
+  investorId: string;
+  investorName: string;
+  screenedAt: string;
+  status: 'clear' | 'potential_match' | 'confirmed_match';
+  matches: ScreeningMatch[];
+  provider: 'opensanctions' | 'mock';
+}
+
+export interface BulkScreeningResult {
+  screenedAt: string;
+  totalScreened: number;
+  clear: number;
+  potentialMatches: number;
+  results: ScreeningResult[];
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;
