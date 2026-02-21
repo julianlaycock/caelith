@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAsync } from '../../../lib/hooks';
 import type { ScenarioResult, RulePackInfo } from '../../../lib/types';
-import Link from 'next/link';
 import { BackLink } from '../../../components/back-link';
 import { DetailBreadcrumb } from '../../../components/breadcrumb';
 import {
