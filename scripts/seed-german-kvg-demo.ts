@@ -699,6 +699,60 @@ async function seed() {
   }
 
   // ====================================================================
+  // LMTs (Liquidity Management Tools)
+  // ====================================================================
+  console.log('\n── Liquiditätsmanagement-Tools ──');
+  try {
+    const lmtDefs = [
+      { fund: FUND_IMMO, lmt_type: 'redemption_gates', activation_threshold: 'Redemptions > 10% NAV per quarter', activation_policy: 'Board approval + BaFin notification', status: 'configured' },
+      { fund: FUND_IMMO, lmt_type: 'notice_periods', activation_threshold: '12 months notice for redemptions > €5M', activation_policy: 'Automatic enforcement', status: 'active' },
+      { fund: FUND_IMMO, lmt_type: 'swing_pricing', activation_threshold: 'Net flows > 5% NAV', activation_policy: 'Swing factor: 50-200bps', status: 'configured' },
+      { fund: FUND_WP, lmt_type: 'anti_dilution_levy', activation_threshold: 'Net redemptions > 3% NAV', activation_policy: 'Auto-apply levy of 50bps', status: 'active' },
+      { fund: FUND_WP, lmt_type: 'redemption_in_kind', activation_threshold: 'Single redemption > €10M', activation_policy: 'Pro-rata portfolio slice', status: 'configured' },
+    ];
+    for (const lmt of lmtDefs) {
+      const ex = await query('SELECT 1 FROM fund_lmts WHERE fund_structure_id = $1 AND lmt_type = $2', [lmt.fund, lmt.lmt_type]);
+      if (ex.length > 0) {
+        console.log(`  → ${lmt.lmt_type} for ${lmt.fund.slice(-1)} exists`);
+      } else {
+        await execute(
+          `INSERT INTO fund_lmts (tenant_id, fund_structure_id, lmt_type, activation_threshold, activation_policy, status)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [TENANT_ID, lmt.fund, lmt.lmt_type, lmt.activation_threshold, lmt.activation_policy, lmt.status]
+        );
+        console.log(`  ✓ ${lmt.lmt_type} for fund ...${lmt.fund.slice(-1)}`);
+      }
+    }
+  } catch (err: any) { console.log(`  ✗ LMTs: ${err.message}`); }
+
+  // ====================================================================
+  // Delegations
+  // ====================================================================
+  console.log('\n── Auslagerungen ──');
+  try {
+    const delDefs = [
+      { fund: FUND_IMMO, delegate_name: 'Universal-Investment GmbH', delegate_lei: '529900G38V4MTZ5JI138', function_delegated: 'administration', jurisdiction: 'DE', oversight_frequency: 'quarterly', letterbox_risk: 'low', start_date: '2022-01-15', last_review_date: '2025-09-30', next_review_date: '2026-03-31', termination_clause: '90 days written notice' },
+      { fund: FUND_IMMO, delegate_name: 'KPMG AG Wirtschaftsprüfungsgesellschaft', delegate_lei: '529900KNDEV97PCXFX79', function_delegated: 'valuation', jurisdiction: 'DE', oversight_frequency: 'semi-annually', letterbox_risk: 'low', start_date: '2021-06-01', last_review_date: '2025-06-30', next_review_date: '2026-06-30', termination_clause: '60 days notice' },
+      { fund: FUND_IMMO, delegate_name: 'Berenberg Bank AG', delegate_lei: '529900UC2OD7II24Z667', function_delegated: 'portfolio_management', jurisdiction: 'DE', oversight_frequency: 'monthly', letterbox_risk: 'medium', start_date: '2023-03-01', last_review_date: '2025-11-30', next_review_date: '2026-02-28', termination_clause: '180 days notice' },
+      { fund: FUND_MULTI, delegate_name: 'Apex Group Ltd', delegate_lei: '213800HFBHKWGFBKXL17', function_delegated: 'administration', jurisdiction: 'LU', oversight_frequency: 'quarterly', letterbox_risk: 'medium', start_date: '2023-09-01', last_review_date: '2025-08-31', next_review_date: '2026-02-28', termination_clause: '90 days notice' },
+      { fund: FUND_MULTI, delegate_name: 'Outsourced IT Solutions GmbH', function_delegated: 'it_infrastructure', jurisdiction: 'DE', oversight_frequency: 'annually', letterbox_risk: 'high', start_date: '2024-01-01', last_review_date: '2025-01-15', next_review_date: '2026-01-15', termination_clause: '30 days notice' },
+    ];
+    for (const del of delDefs) {
+      const ex = await query('SELECT 1 FROM fund_delegations WHERE fund_structure_id = $1 AND delegate_name = $2', [del.fund, del.delegate_name]);
+      if (ex.length > 0) {
+        console.log(`  → ${del.delegate_name} exists`);
+      } else {
+        await execute(
+          `INSERT INTO fund_delegations (tenant_id, fund_structure_id, delegate_name, delegate_lei, function_delegated, jurisdiction, oversight_frequency, letterbox_risk, start_date, last_review_date, next_review_date, termination_clause)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          [TENANT_ID, del.fund, del.delegate_name, (del as any).delegate_lei || null, del.function_delegated, del.jurisdiction, del.oversight_frequency, del.letterbox_risk, del.start_date, del.last_review_date, del.next_review_date, del.termination_clause]
+        );
+        console.log(`  ✓ ${del.delegate_name}`);
+      }
+    }
+  } catch (err: any) { console.log(`  ✗ Delegations: ${err.message}`); }
+
+  // ====================================================================
   // Summary
   // ====================================================================
   console.log('\n╔══════════════════════════════════════════════════════════╗');

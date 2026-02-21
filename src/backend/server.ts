@@ -58,6 +58,8 @@ import { createCalendarRoutes } from './routes/calendar-routes.js';
 import { createAuditPackageRoutes } from './routes/audit-package-routes.js';
 import { createScreeningRoutes } from './routes/screening-routes.js';
 import readinessRoutes from './routes/readiness-routes.js';
+import lmtRoutes from './routes/lmt-routes.js';
+import delegationRoutes from './routes/delegation-routes.js';
 import { isResetEndpointEnabled, shouldBootstrapAdmin } from './config/security-config.js';
 import { logger } from './lib/logger.js';
 
@@ -295,6 +297,8 @@ app.use('/api/reports/audit-package', authenticate, authorizeWrite('admin'), cre
 app.use('/api/screening', authenticate, authorizeWrite('admin', 'compliance_officer'), createScreeningRoutes());
 app.use('/api/readiness', authenticate, readinessRoutes);
 app.use('/api/readiness', authenticate, readinessRoutes);
+app.use('/api/funds/:fundId/lmts', authenticate, authorizeWrite('admin', 'compliance_officer'), lmtRoutes);
+app.use('/api/funds/:fundId/delegations', authenticate, authorizeWrite('admin', 'compliance_officer'), delegationRoutes);
 
 // Test-only: reset database
 app.post('/api/reset', authenticate, authorize('admin'), async (_req, res): Promise<void> => {

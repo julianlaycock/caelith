@@ -768,6 +768,50 @@ class ApiClient {
       body: JSON.stringify({ status, notes }),
     });
   }
+
+  // ── Fund LMTs (Liquidity Management Tools) ──
+
+  async getFundLmts(fundId: string): Promise<Record<string, unknown>[]> {
+    return this.request(`/funds/${fundId}/lmts`);
+  }
+
+  async createFundLmt(fundId: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return this.request(`/funds/${fundId}/lmts`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateFundLmt(fundId: string, lmtId: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return this.request(`/funds/${fundId}/lmts/${lmtId}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteFundLmt(fundId: string, lmtId: string): Promise<void> {
+    return this.request(`/funds/${fundId}/lmts/${lmtId}`, { method: 'DELETE' });
+  }
+
+  async activateFundLmt(fundId: string, lmtId: string): Promise<Record<string, unknown>> {
+    return this.request(`/funds/${fundId}/lmts/${lmtId}/activate`, { method: 'POST' });
+  }
+
+  async deactivateFundLmt(fundId: string, lmtId: string): Promise<Record<string, unknown>> {
+    return this.request(`/funds/${fundId}/lmts/${lmtId}/deactivate`, { method: 'POST' });
+  }
+
+  // ── Fund Delegations ──
+
+  async getFundDelegations(fundId: string): Promise<Record<string, unknown>[]> {
+    return this.request(`/funds/${fundId}/delegations`);
+  }
+
+  async createFundDelegation(fundId: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return this.request(`/funds/${fundId}/delegations`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateFundDelegation(fundId: string, delegationId: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return this.request(`/funds/${fundId}/delegations/${delegationId}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteFundDelegation(fundId: string, delegationId: string): Promise<void> {
+    return this.request(`/funds/${fundId}/delegations/${delegationId}`, { method: 'DELETE' });
+  }
 }
 
 export const api = new ApiClient();

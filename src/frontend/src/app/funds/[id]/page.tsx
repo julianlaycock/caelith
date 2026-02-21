@@ -23,7 +23,8 @@ import {
   ErrorMessage,
 } from '../../../components/ui';
 import { InvestorTypeDonut, JurisdictionExposureBar, KycExpiryHorizon } from '../../../components/charts';
-import { formatNumber, formatDate, formatDateTime, titleCase } from '../../../lib/utils';
+import { formatNumber, formatDate, formatDateTime, titleCase, classNames } from '../../../lib/utils';
+import { useI18n } from '../../../lib/i18n';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -31,6 +32,8 @@ export default function FundDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const isValidFundId = UUID_RE.test(id);
+  const { t } = useI18n();
+  const [activeTab, setActiveTab] = useState<'overview' | 'lmts' | 'delegations'>('overview');
 
   // Rule Pack state
   const [rulePackOpen, setRulePackOpen] = useState(false);
@@ -234,6 +237,25 @@ export default function FundDetailPage() {
         </div>
       </div>
 
+      {/* Tab Bar */}
+      <div className="mb-6 flex gap-1 rounded-lg bg-bg-secondary p-1">
+        {(['overview', 'lmts', 'delegations'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={classNames(
+              'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors',
+              activeTab === tab
+                ? 'bg-white text-ink shadow-sm'
+                : 'text-ink-secondary hover:text-ink'
+            )}
+          >
+            {t(`fundDetail.tab.${tab}`)}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'overview' && (<>
       {/* Fund Info */}
       <Card className="mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
@@ -605,6 +627,11 @@ export default function FundDetailPage() {
         </>
       )}
 
+      </>)}
+
+      {activeTab === 'lmts' && <LmtTab fundId={id} />}
+      {activeTab === 'delegations' && <DelegationTab fundId={id} />}
+
       {/* Rule Pack Modal */}
       <Modal open={rulePackOpen} onClose={() => { setRulePackOpen(false); setRulePackMsg(null); }} title="Apply AIFMD II Rule Pack">
         <div className="space-y-4">
@@ -632,6 +659,300 @@ export default function FundDetailPage() {
             <Button onClick={handleApplyRulePack} disabled={rulePackLoading}>
               {rulePackLoading ? 'Applying...' : 'Apply Rule Pack'}
             </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+// ── LMT Tab ──────────────────────────────────────────────
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const LMT_TYPES = [
+  'redemption_gates', 'swing_pricing', 'anti_dilution_levy', 'side_pockets',
+  'notice_periods', 'redemption_in_kind', 'borrowing_arrangements',
+];
+
+function LmtTab({ fundId }: { fundId: string }) {
+  const { t } = useI18n();
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState({ lmt_type: '', activation_threshold: '', activation_policy: '', notes: '' });
+  const [saving, setSaving] = useState(false);
+
+  const lmts = useAsync(() => api.getFundLmts(fundId), [fundId]);
+
+  const handleAdd = async () => {
+    if (!form.lmt_type) return;
+    setSaving(true);
+    try {
+      await api.createFundLmt(fundId, form);
+      setAddOpen(false);
+      setForm({ lmt_type: '', activation_threshold: '', activation_policy: '', notes: '' });
+      lmts.refetch();
+    } catch { /* silent */ } finally { setSaving(false); }
+  };
+
+  const handleActivate = async (id: string) => {
+    await api.activateFundLmt(fundId, id);
+    lmts.refetch();
+  };
+
+  const handleDeactivate = async (id: string) => {
+    await api.deactivateFundLmt(fundId, id);
+    lmts.refetch();
+  };
+
+  const handleDelete = async (id: string) => {
+    await api.deleteFundLmt(fundId, id);
+    lmts.refetch();
+  };
+
+  if (lmts.loading) return <LoadingSpinner />;
+  if (lmts.error) return <ErrorMessage message={lmts.error} onRetry={lmts.refetch} />;
+
+  const items = lmts.data || [];
+  const isCompliant = items.length >= 2;
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader title={t('fundDetail.lmt.title')} action={<Button size="sm" onClick={() => setAddOpen(true)}>{t('fundDetail.lmt.addLmt')}</Button>} />
+
+      {/* Compliance Banner */}
+      <Alert variant={isCompliant ? 'success' : 'error'}>
+        <div className="flex items-center justify-between">
+          <span>{t('fundDetail.lmt.complianceBanner')}</span>
+          <Badge variant={isCompliant ? 'green' : 'red'}>
+            {isCompliant ? t('fundDetail.lmt.compliant') : t('fundDetail.lmt.nonCompliant')} ({items.length}/2)
+          </Badge>
+        </div>
+      </Alert>
+
+      {items.length === 0 ? (
+        <Card><p className="py-8 text-center text-sm text-ink-secondary">{t('fundDetail.lmt.noLmts')}</p></Card>
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="border-b border-edge">
+                <tr>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.lmt.type')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.lmt.status')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.lmt.threshold')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.lmt.lastActivated')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.lmt.ncaNotified')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-edge-subtle">
+                {items.map((lmt: any) => (
+                  <tr key={lmt.id} className="hover:bg-bg-tertiary/50">
+                    <td className="px-4 py-3 text-sm font-medium text-ink">{titleCase(lmt.lmt_type)}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant={lmt.status === 'active' ? 'green' : 'gray'}>{lmt.status}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-ink-secondary">{lmt.activation_threshold || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-ink-secondary">{lmt.last_activated_at ? formatDateTime(lmt.last_activated_at) : '—'}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant={lmt.nca_notified ? 'green' : 'gray'}>{lmt.nca_notified ? 'Yes' : 'No'}</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        {lmt.status !== 'active' ? (
+                          <Button size="sm" variant="secondary" onClick={() => handleActivate(lmt.id)}>{t('fundDetail.lmt.activate')}</Button>
+                        ) : (
+                          <Button size="sm" variant="secondary" onClick={() => handleDeactivate(lmt.id)}>{t('fundDetail.lmt.deactivate')}</Button>
+                        )}
+                        <Button size="sm" variant="danger" onClick={() => handleDelete(lmt.id)}>✕</Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={t('fundDetail.lmt.addLmt')}>
+        <div className="space-y-4">
+          <Select
+            label={t('fundDetail.lmt.type')}
+            value={form.lmt_type}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm(prev => ({ ...prev, lmt_type: e.target.value }))}
+            options={[{ value: '', label: 'Select type...' }, ...LMT_TYPES.map(t => ({ value: t, label: titleCase(t) }))]}
+          />
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">{t('fundDetail.lmt.threshold')}</label>
+            <input className="w-full rounded-md border border-edge px-3 py-2 text-sm" value={form.activation_threshold} onChange={e => setForm(prev => ({ ...prev, activation_threshold: e.target.value }))} placeholder="e.g., NAV drop > 10%" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">{t('fundDetail.lmt.policy')}</label>
+            <input className="w-full rounded-md border border-edge px-3 py-2 text-sm" value={form.activation_policy} onChange={e => setForm(prev => ({ ...prev, activation_policy: e.target.value }))} placeholder="e.g., Board approval required" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">{t('fundDetail.lmt.notes')}</label>
+            <textarea className="w-full rounded-md border border-edge px-3 py-2 text-sm" rows={3} value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={saving || !form.lmt_type}>{saving ? 'Saving...' : t('fundDetail.lmt.addLmt')}</Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+// ── Delegation Tab ───────────────────────────────────────
+
+const DELEGATION_FUNCTIONS = [
+  'portfolio_management', 'risk_management', 'administration', 'distribution',
+  'valuation', 'it_infrastructure', 'compliance_monitoring',
+];
+
+function DelegationTab({ fundId }: { fundId: string }) {
+  const { t } = useI18n();
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState({
+    delegate_name: '', delegate_lei: '', function_delegated: '', jurisdiction: '',
+    start_date: '', oversight_frequency: '', letterbox_risk: 'low', termination_clause: '', notes: '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const delegations = useAsync(() => api.getFundDelegations(fundId), [fundId]);
+
+  const handleAdd = async () => {
+    if (!form.delegate_name || !form.function_delegated) return;
+    setSaving(true);
+    try {
+      await api.createFundDelegation(fundId, form);
+      setAddOpen(false);
+      setForm({ delegate_name: '', delegate_lei: '', function_delegated: '', jurisdiction: '', start_date: '', oversight_frequency: '', letterbox_risk: 'low', termination_clause: '', notes: '' });
+      delegations.refetch();
+    } catch { /* silent */ } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (id: string) => {
+    await api.deleteFundDelegation(fundId, id);
+    delegations.refetch();
+  };
+
+  if (delegations.loading) return <LoadingSpinner />;
+  if (delegations.error) return <ErrorMessage message={delegations.error} onRetry={delegations.refetch} />;
+
+  const items = delegations.data || [];
+  const highRisk = items.filter((d: any) => d.letterbox_risk === 'high').length;
+  const medRisk = items.filter((d: any) => d.letterbox_risk === 'medium').length;
+  const lowRisk = items.filter((d: any) => d.letterbox_risk === 'low').length;
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader title={t('fundDetail.delegation.title')} action={<Button size="sm" onClick={() => setAddOpen(true)}>{t('fundDetail.delegation.addDelegation')}</Button>} />
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <MetricCard label={t('fundDetail.delegation.total')} value={items.length} accent="default" />
+        <MetricCard label={t('fundDetail.delegation.highRisk')} value={highRisk} accent={highRisk > 0 ? 'danger' : 'default'} />
+        <MetricCard label={t('fundDetail.delegation.mediumRisk')} value={medRisk} accent={medRisk > 0 ? 'warning' : 'default'} />
+        <MetricCard label={t('fundDetail.delegation.lowRisk')} value={lowRisk} accent="success" />
+      </div>
+
+      {items.length === 0 ? (
+        <Card><p className="py-8 text-center text-sm text-ink-secondary">{t('fundDetail.delegation.noDelegations')}</p></Card>
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="border-b border-edge">
+                <tr>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.delegation.delegate')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.delegation.function')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.delegation.jurisdiction')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.delegation.oversight')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.delegation.lastReview')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.delegation.nextReview')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.delegation.letterboxRisk')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('fundDetail.delegation.status')}</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-edge-subtle">
+                {items.map((d: any) => (
+                  <tr key={d.id} className={classNames(
+                    'hover:bg-bg-tertiary/50',
+                    d.letterbox_risk === 'high' && 'bg-red-50'
+                  )}>
+                    <td className="px-4 py-3 text-sm font-medium text-ink">{d.delegate_name}</td>
+                    <td className="px-4 py-3 text-sm text-ink-secondary">{titleCase(d.function_delegated)}</td>
+                    <td className="px-4 py-3 text-sm text-ink-secondary">{d.jurisdiction || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-ink-secondary">{d.oversight_frequency || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-ink-secondary">{d.last_review_date ? formatDate(d.last_review_date) : '—'}</td>
+                    <td className="px-4 py-3 text-sm text-ink-secondary">{d.next_review_date ? formatDate(d.next_review_date) : '—'}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant={d.letterbox_risk === 'high' ? 'red' : d.letterbox_risk === 'medium' ? 'yellow' : 'green'}>
+                        {titleCase(d.letterbox_risk)}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant={d.status === 'active' ? 'green' : 'gray'}>{d.status}</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button size="sm" variant="danger" onClick={() => handleDelete(d.id)}>✕</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={t('fundDetail.delegation.addDelegation')}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">{t('fundDetail.delegation.delegate')}</label>
+            <input className="w-full rounded-md border border-edge px-3 py-2 text-sm" value={form.delegate_name} onChange={e => setForm(prev => ({ ...prev, delegate_name: e.target.value }))} placeholder="e.g., Universal-Investment GmbH" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">{t('fundDetail.delegation.lei')}</label>
+            <input className="w-full rounded-md border border-edge px-3 py-2 text-sm" value={form.delegate_lei} onChange={e => setForm(prev => ({ ...prev, delegate_lei: e.target.value }))} placeholder="20-char LEI" />
+          </div>
+          <Select
+            label={t('fundDetail.delegation.function')}
+            value={form.function_delegated}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm(prev => ({ ...prev, function_delegated: e.target.value }))}
+            options={[{ value: '', label: 'Select function...' }, ...DELEGATION_FUNCTIONS.map(f => ({ value: f, label: titleCase(f) }))]}
+          />
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">{t('fundDetail.delegation.jurisdiction')}</label>
+            <input className="w-full rounded-md border border-edge px-3 py-2 text-sm" value={form.jurisdiction} onChange={e => setForm(prev => ({ ...prev, jurisdiction: e.target.value }))} placeholder="e.g., DE" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">{t('fundDetail.delegation.startDate')}</label>
+            <input type="date" className="w-full rounded-md border border-edge px-3 py-2 text-sm" value={form.start_date} onChange={e => setForm(prev => ({ ...prev, start_date: e.target.value }))} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">{t('fundDetail.delegation.oversight')}</label>
+            <input className="w-full rounded-md border border-edge px-3 py-2 text-sm" value={form.oversight_frequency} onChange={e => setForm(prev => ({ ...prev, oversight_frequency: e.target.value }))} placeholder="e.g., quarterly" />
+          </div>
+          <Select
+            label={t('fundDetail.delegation.letterboxRisk')}
+            value={form.letterbox_risk}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm(prev => ({ ...prev, letterbox_risk: e.target.value }))}
+            options={[{ value: 'low', label: 'Low' }, { value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }]}
+          />
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">{t('fundDetail.delegation.terminationClause')}</label>
+            <input className="w-full rounded-md border border-edge px-3 py-2 text-sm" value={form.termination_clause} onChange={e => setForm(prev => ({ ...prev, termination_clause: e.target.value }))} placeholder="e.g., 90 days notice" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">{t('fundDetail.delegation.notes')}</label>
+            <textarea className="w-full rounded-md border border-edge px-3 py-2 text-sm" rows={3} value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={saving || !form.delegate_name || !form.function_delegated}>{saving ? 'Saving...' : t('fundDetail.delegation.addDelegation')}</Button>
           </div>
         </div>
       </Modal>
