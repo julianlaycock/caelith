@@ -655,6 +655,52 @@ async function seed() {
   }
 
   // ====================================================================
+  // 9. Investor Documents (with expiry dates for calendar testing)
+  // ====================================================================
+  console.log('\n── Investor Documents ──');
+  // Get tenant ID from an existing investor
+  const tenantRows = await query<{ tenant_id: string }>(`SELECT tenant_id FROM investors LIMIT 1`);
+  const TENANT_ID = tenantRows[0]?.tenant_id;
+  console.log(`  Tenant ID: ${TENANT_ID || 'NOT FOUND'}`);
+  if (!TENANT_ID) { console.log('  ⚠ No tenant found, skipping documents'); }
+  const docDefs = [
+    // daysAgo(-N) = N days in the future, daysAgo(N) = N days in the past
+    { investor: 'Bayerische Versorgungskammer', type: 'KYC_identity', filename: 'BVK_Handelsregister.pdf', expiry: daysAgo(-45), status: 'verified' },
+    { investor: 'Bayerische Versorgungskammer', type: 'AML_screening', filename: 'BVK_AML_Screening_2025.pdf', expiry: daysAgo(-10), status: 'verified' },
+    { investor: 'Sparkasse KölnBonn', type: 'KYC_identity', filename: 'SKB_Ausweis.pdf', expiry: daysAgo(15), status: 'expired' },
+    { investor: 'Pensionskasse der Mitarbeiter der Bosch-Gruppe', type: 'proof_of_institutional_status', filename: 'Bosch_Institutsbescheinigung.pdf', expiry: daysAgo(-120), status: 'verified' },
+    { investor: 'Deutsche Apotheker- und Ärztebank eG', type: 'MiFID_professional_classification', filename: 'ApoBank_MiFID_Einstufung.pdf', expiry: daysAgo(-60), status: 'verified' },
+    { investor: 'Schneider & Partner Familienstiftung', type: 'source_of_funds', filename: 'Schneider_Mittelherkunft.pdf', expiry: daysAgo(30), status: 'expired' },
+    { investor: 'Müller Family Office GmbH', type: 'suitability_questionnaire', filename: 'Mueller_Eignungsfragebogen.pdf', expiry: daysAgo(90), status: 'expired' },
+    { investor: 'Becker Vermögensverwaltung GmbH', type: 'semi_professional_declaration', filename: 'Becker_Semi_Prof_Erklaerung.pdf', expiry: daysAgo(-25), status: 'verified' },
+  ];
+
+  for (const doc of (TENANT_ID ? docDefs : [])) {
+    const invId = I[doc.investor];
+    console.log(`  Looking up: "${doc.investor}" → ${invId || 'NOT FOUND'}`);
+    if (!invId) { console.log(`  ⚠ Investor not found: ${doc.investor}`); continue; }
+    try {
+      const ex = await query<{ id: string }>(
+        `SELECT id FROM investor_documents WHERE investor_id = $1 AND document_type = $2 AND tenant_id = $3 LIMIT 1`,
+        [invId, doc.type, TENANT_ID]
+      );
+      if (ex.length > 0) {
+        console.log(`  → ${doc.investor} ${doc.type} exists`);
+      } else {
+        await execute(
+          `INSERT INTO investor_documents
+             (id, tenant_id, investor_id, document_type, filename, mime_type, file_size, file_data, status, expiry_date, created_at, updated_at)
+           VALUES (gen_random_uuid(), $1, $2, $3, $4, 'application/pdf', 1024, $5, $6, $7, now(), now())`,
+          [TENANT_ID, invId, doc.type, doc.filename, Buffer.from('placeholder'), doc.status, doc.expiry]
+        );
+        console.log(`  ✓ ${doc.investor} — ${doc.type} (expires: ${doc.expiry?.slice(0,10) || 'n/a'})`);
+      }
+    } catch (docErr: any) {
+      console.log(`  ✗ ${doc.investor} — ${doc.type}: ${docErr.message}`);
+    }
+  }
+
+  // ====================================================================
   // Summary
   // ====================================================================
   console.log('\n╔══════════════════════════════════════════════════════════╗');

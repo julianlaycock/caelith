@@ -15,29 +15,23 @@ interface ChatMessage {
   suggestedActions?: CopilotSuggestedAction[];
 }
 
+const DASHBOARD_PROMPTS = {
+  title: 'Dashboard',
+  prompts: [
+    'Summarize my portfolio compliance status',
+    'What risk flags need immediate attention?',
+    'What are the KAGB Spezial-AIF investor requirements?',
+    'What if minimum investment changed to EUR 200K?',
+  ],
+};
+
 const PAGE_PROMPTS: Record<string, { title: string; prompts: string[] }> = {
-  '/': {
-    title: 'Dashboard',
-    prompts: [
-      'Summarize my portfolio compliance status',
-      'What risk flags need immediate attention?',
-      'What are the KAGB Spezial-AIF investor requirements?',
-      'What if minimum investment changed to EUR 200K?',
-    ],
-  },
-  '/dashboard': {
-    title: 'Dashboard',
-    prompts: [
-      'Summarize my portfolio compliance status',
-      'What risk flags need immediate attention?',
-      'What are the KAGB Spezial-AIF investor requirements?',
-      'What if minimum investment changed to EUR 200K?',
-    ],
-  },
+  '/': DASHBOARD_PROMPTS,
+  '/dashboard': DASHBOARD_PROMPTS,
   '/funds': {
     title: 'Funds',
     prompts: [
-      'What if minimum investment changed to €200K?',
+      'What if minimum investment changed to EUR 200K?',
       'Explain the difference between Spezial-AIF and Publikumsfonds',
       'What BaFin requirements apply to my fund?',
       'Which investors would be affected by new criteria?',

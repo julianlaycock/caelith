@@ -285,11 +285,16 @@ export async function getCalendarEvents(
       getSfdrReportingDeadlines(tenantId),
     ]);
 
-    // Get static deadlines for this year and next
+    // Get static deadlines for this year and next, deduplicate fixed-date events
+    const seen = new Set<string>();
     const staticEvents = [
       ...getStaticDeadlines(year),
       ...getStaticDeadlines(year + 1),
-    ].map(e => ({
+    ].filter(e => {
+      if (seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    }).map(e => ({
       ...e,
       daysUntil: Math.ceil((new Date(e.date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
     })).map(e => ({

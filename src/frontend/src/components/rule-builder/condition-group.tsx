@@ -5,7 +5,9 @@ import { OperatorToggle } from './operator-toggle';
 import { ConditionRow } from './condition-row';
 import type { RuleCondition } from '../../lib/types';
 
-// TODO v2: support nested ConditionGroups for (A AND (B OR C)) patterns
+// NOTE [2026-02-21]: v2 feature — support nested ConditionGroups for (A AND (B OR C))
+// patterns. Current implementation supports flat condition lists with a single operator.
+// Tracked as: BACKLOG — Nested composite rule conditions
 
 interface ConditionGroupProps {
   operator: 'AND' | 'OR' | 'NOT';

@@ -13,7 +13,8 @@ import {
   createEvent,
 } from '../repositories/index.js';
 import { Holding, CreateHoldingInput } from '../models/index.js';
-import { ValidationError, NotFoundError, BusinessLogicError } from '../errors.js';
+import { NotFoundError, BusinessLogicError } from '../errors.js';
+import { requirePositive } from '../validators.js';
 import { withTransaction } from './transaction-helper.js';
 
 /**
@@ -26,9 +27,7 @@ export async function allocateHolding(input: CreateHoldingInput): Promise<Holdin
     throw new NotFoundError('Investor', input.investor_id);
   }
 
-  if (input.units <= 0) {
-    throw new ValidationError('Units must be greater than zero');
-  }
+  requirePositive(input.units, 'Units');
 
   await withTransaction(async (client) => {
     const assetResult = await client.query(

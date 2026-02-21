@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { classNames } from '../lib/utils';
 import { useAuth } from './auth-provider';
 import { useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/use-theme';
 
 interface NavItem {
   href: string;
@@ -111,22 +112,7 @@ const navItems: NavItem[] = [
 
 // Theme toggle rendered in sidebar footer
 function ThemeToggle() {
-  const [dark, setDark] = React.useState(false);
-
-  React.useEffect(() => {
-    const saved = localStorage.getItem('caelith_theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = saved ? saved === 'dark' : prefersDark;
-    setDark(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
-
-  const toggle = () => {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle('dark', next);
-    localStorage.setItem('caelith_theme', next ? 'dark' : 'light');
-  };
+  const { dark, toggle } = useTheme();
 
   return (
     <button

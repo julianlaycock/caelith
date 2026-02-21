@@ -87,8 +87,10 @@ server.tool(
 );
 
 // ── Tool 4: search_investors ────────────────────────────────────────────────
-// NOTE: Backend GET /api/investors does not support query param filtering.
-// Filtering is done client-side. TODO: move filtering server-side.
+// NOTE [2026-02-21]: Backend GET /api/investors does not support query param filtering.
+// Filtering is done client-side. For large datasets, add server-side filtering with
+// query params (jurisdiction, investor_type, kyc_status) to the investor-routes.
+// Tracked as: BACKLOG — Server-side investor filtering for MCP
 server.tool(
   'search_investors',
   'Search and filter investors by jurisdiction, classification type, or KYC status',

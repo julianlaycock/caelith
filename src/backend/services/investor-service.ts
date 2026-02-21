@@ -6,16 +6,11 @@ import {
   createEvent,
 } from '../repositories/index.js';
 import { Investor, CreateInvestorInput, UpdateInvestorInput } from '../models/index.js';
-import { ValidationError } from '../errors.js';
+import { requireNonEmpty } from '../validators.js';
 
 export async function createInvestor(input: CreateInvestorInput): Promise<Investor> {
-  if (!input.name.trim()) {
-    throw new ValidationError('Investor name cannot be empty');
-  }
-
-  if (!input.jurisdiction.trim()) {
-    throw new ValidationError('Jurisdiction cannot be empty');
-  }
+  requireNonEmpty(input.name, 'Investor name');
+  requireNonEmpty(input.jurisdiction, 'Jurisdiction');
 
   const investor = await createInvestorRepo(input);
 

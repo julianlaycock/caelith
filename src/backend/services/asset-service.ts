@@ -8,16 +8,12 @@ import {
   createEvent,
 } from '../repositories/index.js';
 import { Asset, CreateAssetInput, UpdateAssetInput } from '../models/index.js';
-import { ValidationError, NotFoundError, ConflictError } from '../errors.js';
+import { NotFoundError, ConflictError } from '../errors.js';
+import { requireNonEmpty, requirePositive, requirePositiveIfPresent } from '../validators.js';
 
 export async function createAsset(input: CreateAssetInput): Promise<Asset> {
-  if (input.total_units <= 0) {
-    throw new ValidationError('Total units must be greater than zero');
-  }
-
-  if (!input.name.trim()) {
-    throw new ValidationError('Asset name cannot be empty');
-  }
+  requirePositive(input.total_units, 'Total units');
+  requireNonEmpty(input.name, 'Asset name');
 
   const asset = await createAssetRepo(input);
 
@@ -101,9 +97,7 @@ export async function updateAsset(id: string, input: UpdateAssetInput): Promise<
     throw new NotFoundError('Asset', id);
   }
 
-  if (input.total_units !== undefined && input.total_units <= 0) {
-    throw new ValidationError('Total units must be greater than zero');
-  }
+  requirePositiveIfPresent(input.total_units, 'Total units');
 
   const updated = await updateAssetRepo(id, input);
   if (!updated) {
