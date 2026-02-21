@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
-import { useLanguage } from '../../lib/i18n';
+import { useI18n } from '../../lib/i18n';
 import {
   Card,
   Badge,
@@ -124,7 +124,7 @@ type ViewMode = 'all' | 'upcoming' | 'overdue';
 type CategoryFilter = 'all' | 'kyc' | 'reporting' | 'regulatory' | 'document';
 
 export default function CalendarPage() {
-  const { t } = useLanguage();
+  const { t } = useI18n();
   const [view, setView] = useState<ViewMode>('upcoming');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
 
