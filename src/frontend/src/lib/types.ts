@@ -833,20 +833,24 @@ export interface ReadinessQuestion {
   question_en: string;
   hint_de?: string;
   hint_en?: string;
+  source: string;
   weight: number;
   autoCheck?: string;
+  dependsOn?: string;
 }
 
 export interface ReadinessAnswer {
   status: AnswerStatus;
   notes?: string;
   auto?: boolean;
+  needsVerification?: boolean;
 }
 
 export interface CategoryScore {
   category: ReadinessCategory;
   answered: number;
   total: number;
+  applicable: number;
   score: number;
   maxScore: number;
   weightedScore: number;

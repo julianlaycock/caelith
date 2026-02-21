@@ -12,9 +12,16 @@ import {
   ErrorMessage,
 } from '../../components/ui';
 import { classNames } from '../../lib/utils';
-import type { ReadinessQuestion, ReadinessAnswer, ReadinessCategory } from '../../lib/types';
+import type {
+  ReadinessAssessment,
+  ReadinessQuestion,
+  ReadinessAnswer,
+  ReadinessCategory,
+  AnswerStatus,
+  CategoryScore,
+} from '../../lib/types';
 
-// ─── Category config ─────────────────────────────────────────────────
+// ── Category config ──
 
 const CATEGORY_META: Record<ReadinessCategory, { icon: string; order: number }> = {
   delegation:       { icon: '🤝', order: 1 },
@@ -25,168 +32,345 @@ const CATEGORY_META: Record<ReadinessCategory, { icon: string; order: number }> 
   governance:       { icon: '⚙️', order: 6 },
 };
 
-const STATUS_CONFIG = {
-  yes:        { color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', label_de: 'Ja', label_en: 'Yes', ring: 'ring-emerald-500/30' },
-  partial:    { color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', label_de: 'Teilweise', label_en: 'Partial', ring: 'ring-amber-500/30' },
-  no:         { color: 'bg-red-500/20 text-red-400 border-red-500/30', label_de: 'Nein', label_en: 'No', ring: 'ring-red-500/30' },
-  na:         { color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', label_de: 'N/A', label_en: 'N/A', ring: 'ring-gray-500/30' },
-  unanswered: { color: 'bg-gray-500/10 text-gray-500 border-gray-500/20', label_de: 'Offen', label_en: 'Open', ring: '' },
-};
+const STATUS_OPTIONS: { value: AnswerStatus; labelDe: string; labelEn: string; color: string }[] = [
+  { value: 'yes',     labelDe: 'Ja',        labelEn: 'Yes',     color: 'bg-emerald-500' },
+  { value: 'partial', labelDe: 'Teilweise',  labelEn: 'Partial', color: 'bg-amber-500' },
+  { value: 'no',      labelDe: 'Nein',       labelEn: 'No',      color: 'bg-red-500' },
+  { value: 'na',      labelDe: 'N/A',        labelEn: 'N/A',     color: 'bg-gray-500' },
+];
 
-// ─── Score Ring (compact, reused from dashboard pattern) ─────────────
+// ── Score Ring ──
 
-function ScoreRing({ score, size = 120, label }: { score: number; size?: number; label: string }) {
-  const radius = (size - 12) / 2;
+function ScoreRing({ score, size = 160, label }: { score: number; size?: number; label: string }) {
+  const radius = (size - 16) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
   const color = score >= 70 ? '#6ee7b7' : score >= 40 ? '#fbbf24' : '#f87171';
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="relative flex flex-col items-center gap-2" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="currentColor" strokeWidth="6" className="text-edge" />
-        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth="6"
-          strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
-          className="transition-all duration-700 ease-out" />
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="currentColor" strokeWidth="8" className="text-edge" />
+        <circle
+          cx={size/2} cy={size/2} r={radius} fill="none"
+          stroke={color} strokeWidth="8" strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+        />
       </svg>
-      <div className="absolute flex flex-col items-center justify-center" style={{ width: size, height: size }}>
-        <span className="text-2xl font-bold tabular-nums text-ink">{score}%</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-bold tabular-nums text-ink">{score}%</span>
+        <span className="text-[10px] uppercase tracking-wider text-ink-tertiary">{label}</span>
       </div>
-      <span className="text-xs font-medium text-ink-tertiary mt-1">{label}</span>
     </div>
   );
 }
 
-// ─── Question Row ────────────────────────────────────────────────────
+// ── Category Bar ──
 
-function QuestionRow({ 
-  question, answer, lang, onAnswer, saving
-}: { 
-  question: ReadinessQuestion; 
-  answer: ReadinessAnswer; 
+function CategoryBar({ catScore, meta, label, isActive, onClick, lang }: {
+  catScore: CategoryScore;
+  meta: { icon: string };
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
   lang: 'de' | 'en';
-  onAnswer: (key: string, status: string) => void;
-  saving: string | null;
 }) {
+  const color = catScore.score >= 70 ? 'bg-emerald-500' : catScore.score >= 40 ? 'bg-amber-500' : catScore.score === 0 && catScore.applicable > 0 ? 'bg-red-500/60' : 'bg-red-500';
+  const unanswered = catScore.applicable - catScore.answered;
+
+  return (
+    <button
+      onClick={onClick}
+      className={classNames(
+        'w-full rounded-xl border p-4 text-left transition-all',
+        isActive
+          ? 'border-accent-500/40 bg-accent-500/5 ring-1 ring-accent-500/20'
+          : 'border-edge bg-bg-secondary hover:bg-bg-tertiary'
+      )}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{meta.icon}</span>
+          <span className="text-sm font-medium text-ink">{label}</span>
+          {unanswered > 0 && (
+            <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-400 tabular-nums">
+              {unanswered} {lang === 'de' ? 'offen' : 'open'}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs tabular-nums text-ink-tertiary">{catScore.answered}/{catScore.applicable}</span>
+          <Badge variant={catScore.score >= 70 ? 'green' : catScore.score >= 40 ? 'yellow' : 'red'}>
+            {catScore.score}%
+          </Badge>
+        </div>
+      </div>
+      <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+        <div className={classNames('h-full rounded-full transition-all duration-500', color)} style={{ width: `${catScore.score}%` }} />
+      </div>
+    </button>
+  );
+}
+
+// ── Saved Toast ──
+
+function SavedToast({ visible }: { visible: boolean }) {
+  return (
+    <div className={classNames(
+      'fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-emerald-500/90 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-all duration-300',
+      visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'
+    )}>
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
+      Gespeichert
+    </div>
+  );
+}
+
+// ── Question Row ──
+
+function QuestionRow({ question, answer, lang, onAnswer, saving, loanSkipped }: {
+  question: ReadinessQuestion;
+  answer: ReadinessAnswer;
+  lang: 'de' | 'en';
+  onAnswer: (key: string, status: AnswerStatus, notes?: string) => void;
+  saving: string | null;
+  loanSkipped: boolean;
+}) {
+  const [showNotes, setShowNotes] = useState(false);
+  const [notes, setNotes] = useState(answer.notes || '');
   const questionText = lang === 'de' ? question.question_de : question.question_en;
   const hintText = lang === 'de' ? question.hint_de : question.hint_en;
   const isSaving = saving === question.key;
-  const statuses = ['yes', 'partial', 'no', 'na'] as const;
+  const isSkipped = question.dependsOn === 'loan_applicable' && loanSkipped;
+
+  if (isSkipped) {
+    return (
+      <div className="rounded-xl border border-edge bg-bg-secondary/50 p-4 opacity-50">
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-ink-tertiary line-through">{questionText}</p>
+          <span className="rounded-full bg-gray-500/20 px-2 py-0.5 text-[10px] font-medium text-gray-400">
+            {lang === 'de' ? 'Übersprungen' : 'Skipped'}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={classNames(
-      'group rounded-xl border p-4 transition-all',
-      answer.status === 'unanswered' ? 'border-edge bg-bg-secondary opacity-80 hover:opacity-100' :
-      answer.status === 'yes' ? 'border-emerald-500/20 bg-emerald-500/5' :
-      answer.status === 'no' ? 'border-red-500/20 bg-red-500/5' :
-      answer.status === 'partial' ? 'border-amber-500/20 bg-amber-500/5' :
+      'rounded-xl border p-4 transition-colors',
+      answer.needsVerification ? 'border-amber-500/30 bg-amber-500/5' :
+      answer.auto ? 'border-accent-500/20 bg-accent-500/5' :
       'border-edge bg-bg-secondary'
     )}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-medium text-ink">{questionText}</p>
-            {answer.auto && (
-              <span className="inline-flex items-center rounded-full bg-accent-500/10 px-1.5 py-0.5 text-[10px] font-medium text-accent-400">
-                Auto
+            {answer.needsVerification && (
+              <span className="flex-shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium text-amber-400 cursor-help"
+                title={lang === 'de' ? 'Automatisch erkannt — bitte manuell bestätigen' : 'Auto-detected — please verify manually'}>
+                ⚠ {lang === 'de' ? 'Prüfen' : 'Verify'}
               </span>
             )}
-            {Array.from({ length: question.weight }).map((_, i) => (
-              <span key={i} className="text-[10px] text-amber-400">●</span>
-            ))}
+            {answer.auto && !answer.needsVerification && (
+              <span className="flex-shrink-0 rounded-full bg-accent-500/20 px-2 py-0.5 text-[10px] font-medium text-accent-300 cursor-help"
+                title={lang === 'de' ? 'Automatisch aus Plattformdaten erkannt' : 'Auto-detected from platform data'}>
+                AUTO
+              </span>
+            )}
+            {question.weight === 3 && (
+              <span className="flex-shrink-0 text-[10px] text-amber-400 cursor-help"
+                title={lang === 'de' ? 'Hohe Priorität' : 'High priority'}>●●●</span>
+            )}
+            {question.weight === 2 && (
+              <span className="flex-shrink-0 text-[10px] text-ink-tertiary cursor-help"
+                title={lang === 'de' ? 'Mittlere Priorität' : 'Medium priority'}>●●</span>
+            )}
           </div>
-          {hintText && (
-            <p className="mt-1 text-xs text-ink-tertiary">{hintText}</p>
+          {hintText && <p className="mt-1 text-xs text-ink-tertiary">{hintText}</p>}
+          {answer.auto && answer.notes && (
+            <p className="mt-1 text-xs text-accent-400 italic">{answer.notes}</p>
           )}
-          {answer.notes && (
-            <p className="mt-1.5 text-xs text-ink-secondary italic">{answer.notes}</p>
-          )}
+          {/* Source reference */}
+          <p className="mt-1.5 text-[10px] font-mono text-ink-tertiary/60">
+            📖 {question.source}
+          </p>
         </div>
 
-        <div className="flex-shrink-0 flex items-center gap-1.5">
-          {statuses.map(s => {
-            const cfg = STATUS_CONFIG[s];
-            const isActive = answer.status === s;
-            const label = lang === 'de' ? cfg.label_de : cfg.label_en;
-            return (
-              <button
-                key={s}
-                onClick={() => onAnswer(question.key, s)}
-                disabled={isSaving}
-                className={classNames(
-                  'rounded-lg px-2.5 py-1 text-xs font-medium border transition-all',
-                  isActive ? `${cfg.color} ${cfg.ring} ring-1` : 'border-transparent text-ink-tertiary hover:text-ink hover:bg-bg-tertiary'
-                )}
-              >
-                {label}
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {STATUS_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => onAnswer(question.key, opt.value, notes || undefined)}
+              disabled={isSaving}
+              className={classNames(
+                'rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all',
+                answer.status === opt.value
+                  ? `${opt.color} text-white shadow-sm`
+                  : 'bg-bg-tertiary text-ink-tertiary hover:text-ink hover:bg-bg-primary'
+              )}
+            >
+              {lang === 'de' ? opt.labelDe : opt.labelEn}
+            </button>
+          ))}
+          <button
+            onClick={() => setShowNotes(!showNotes)}
+            className={classNames(
+              'ml-1 rounded-lg p-1 transition-colors',
+              showNotes || notes ? 'text-accent-400 bg-accent-500/10' : 'text-ink-tertiary hover:text-ink hover:bg-bg-tertiary'
+            )}
+            title={lang === 'de' ? 'Anmerkung' : 'Notes'}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {showNotes && (
+        <div className="mt-3 flex gap-2">
+          <input
+            type="text"
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            onBlur={() => { if (notes !== (answer.notes || '') && answer.status !== 'unanswered') onAnswer(question.key, answer.status, notes); }}
+            onKeyDown={e => { if (e.key === 'Enter' && answer.status !== 'unanswered') onAnswer(question.key, answer.status, notes); }}
+            placeholder={lang === 'de' ? 'Anmerkung hinzufügen...' : 'Add a note...'}
+            className="flex-1 rounded-lg border border-edge bg-bg-primary px-3 py-1.5 text-xs text-ink placeholder:text-ink-tertiary focus:border-accent-500/50 focus:outline-none"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Legal Disclaimer ──
+
+function Disclaimer({ lang }: { lang: 'de' | 'en' }) {
+  return (
+    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-5 py-3">
+      <div className="flex gap-3">
+        <span className="text-lg flex-shrink-0">⚖️</span>
+        <div>
+          <p className="text-xs font-medium text-amber-400 uppercase tracking-wider mb-1">
+            {lang === 'de' ? 'Rechtlicher Hinweis' : 'Legal Notice'}
+          </p>
+          <p className="text-xs text-ink-secondary leading-relaxed">
+            {lang === 'de'
+              ? 'Dieses Assessment dient als Orientierungshilfe und ersetzt keine rechtliche Beratung. Die Ergebnisse sind nicht rechtsverbindlich und stellen keine Garantie für die AIFMD-II-Konformität dar. Automatisch erkannte Antworten basieren auf Plattformdaten und müssen manuell verifiziert werden. Konsultieren Sie Ihren Compliance-Beauftragten oder Rechtsberater für eine vollständige regulatorische Analyse.'
+              : 'This assessment serves as an orientation tool and does not constitute legal advice. Results are non-binding and do not guarantee AIFMD II compliance. Auto-detected answers are based on platform data and must be manually verified. Consult your compliance officer or legal counsel for a complete regulatory analysis.'}
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Category Section ────────────────────────────────────────────────
+// ── Deadline Banner ──
 
-function CategorySection({
-  category, questions, answers, lang, score, onAnswer, saving
-}: {
-  category: ReadinessCategory;
-  questions: ReadinessQuestion[];
-  answers: Record<string, ReadinessAnswer>;
-  lang: 'de' | 'en';
-  score: number;
-  onAnswer: (key: string, status: string) => void;
-  saving: string | null;
-}) {
-  const { t } = useI18n();
-  const meta = CATEGORY_META[category];
-  const catLabel = t(`readiness.cat.${category}`);
-  const scoreColor = score >= 70 ? 'text-emerald-400' : score >= 40 ? 'text-amber-400' : 'text-red-400';
+function DeadlineBanner({ days, lang }: { days: number; lang: 'de' | 'en' }) {
+  const urgent = days <= 30;
+  const critical = days <= 14;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{meta.icon}</span>
-          <h2 className="text-sm font-semibold text-ink">{catLabel}</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-1.5 w-24 rounded-full bg-edge overflow-hidden">
-            <div
-              className={classNames('h-full rounded-full transition-all duration-500',
-                score >= 70 ? 'bg-emerald-400' : score >= 40 ? 'bg-amber-400' : 'bg-red-400'
-              )}
-              style={{ width: `${score}%` }}
-            />
-          </div>
-          <span className={classNames('text-xs font-bold tabular-nums', scoreColor)}>{score}%</span>
+    <div className={classNames(
+      'rounded-xl border px-5 py-3 flex items-center justify-between',
+      critical ? 'border-red-500/30 bg-red-500/10' :
+      urgent ? 'border-amber-500/30 bg-amber-500/10' :
+      'border-accent-500/20 bg-accent-500/5'
+    )}>
+      <div className="flex items-center gap-3">
+        <span className="text-xl">📅</span>
+        <div>
+          <p className="text-sm font-medium text-ink">
+            {lang === 'de' ? 'AIFMD II Umsetzungsfrist' : 'AIFMD II Transposition Deadline'}
+          </p>
+          <p className="text-xs text-ink-secondary">16. April 2026 · FoMaStG (Fondsmarktstärkungsgesetz)</p>
         </div>
       </div>
-      <div className="space-y-2">
-        {questions.map(q => (
-          <QuestionRow
-            key={q.key}
-            question={q}
-            answer={answers[q.key] || { status: 'unanswered' }}
-            lang={lang}
-            onAnswer={onAnswer}
-            saving={saving}
-          />
-        ))}
+      <div className="text-right">
+        <p className={classNames(
+          'text-2xl font-bold tabular-nums',
+          critical ? 'text-red-400' : urgent ? 'text-amber-400' : 'text-ink'
+        )}>
+          {days}
+        </p>
+        <p className="text-[10px] uppercase tracking-wider text-ink-tertiary">
+          {lang === 'de' ? 'Tage verbleibend' : 'Days remaining'}
+        </p>
       </div>
     </div>
   );
 }
 
-// ─── Main Page ───────────────────────────────────────────────────────
+// ── Methodology Section ──
+
+function Methodology({ lang, collapsed, onToggle }: { lang: 'de' | 'en'; collapsed: boolean; onToggle: () => void }) {
+  return (
+    <div className="rounded-xl border border-edge bg-bg-secondary">
+      <button onClick={onToggle} className="w-full flex items-center justify-between px-5 py-3 text-left">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">📐</span>
+          <span className="text-xs font-medium text-ink-secondary">
+            {lang === 'de' ? 'Methodik & Bewertungslogik' : 'Methodology & Scoring Logic'}
+          </span>
+        </div>
+        <svg className={classNames('w-4 h-4 text-ink-tertiary transition-transform', collapsed ? '' : 'rotate-180')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {!collapsed && (
+        <div className="px-5 pb-4 text-xs text-ink-secondary leading-relaxed space-y-2 border-t border-edge pt-3">
+          <p>
+            {lang === 'de'
+              ? '• 24 Fragen in 6 Kategorien, abgeleitet aus AIFMD II (Richtlinie 2024/927/EU) und dem Referentenentwurf des FoMaStG.'
+              : '• 24 questions across 6 categories, derived from AIFMD II (Directive 2024/927/EU) and the FoMaStG draft bill.'}
+          </p>
+          <p>
+            {lang === 'de'
+              ? '• Gewichtung: ●●● = hohe Priorität (3x), ●● = mittel (2x), ● = niedrig (1x). Höhere Gewichtung für Kernpflichten.'
+              : '• Weighting: ●●● = high priority (3x), ●● = medium (2x), ● = low (1x). Higher weight for core obligations.'}
+          </p>
+          <p>
+            {lang === 'de'
+              ? '• Bewertung: Ja = 100%, Teilweise = 50%, Nein = 0%, N/A = aus Berechnung ausgeschlossen.'
+              : '• Scoring: Yes = 100%, Partial = 50%, No = 0%, N/A = excluded from calculation.'}
+          </p>
+          <p>
+            {lang === 'de'
+              ? '• Automatische Erkennung (⚠ Prüfen): Basiert auf Plattformdaten. Maximal "Teilweise" bis zur manuellen Bestätigung.'
+              : '• Auto-detection (⚠ Verify): Based on platform data. Capped at "Partial" until manually confirmed.'}
+          </p>
+          <p>
+            {lang === 'de'
+              ? '• Kreditvergabe: Wird bei "Nein" oder "N/A" automatisch aus der Gesamtbewertung ausgeschlossen.'
+              : '• Loan origination: Automatically excluded from overall scoring when answered "No" or "N/A".'}
+          </p>
+          <p className="text-amber-400">
+            {lang === 'de'
+              ? '• Dieses Tool ist eine Orientierungshilfe. Es ersetzt nicht die Beratung durch qualifizierte Rechts- und Compliance-Experten.'
+              : '• This tool is an orientation aid. It does not replace advice from qualified legal and compliance professionals.'}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Page ──
 
 export default function ReadinessPage() {
   const { t, locale } = useI18n();
-  const lang = (locale === 'de' ? 'de' : 'en') as 'de' | 'en';
+  const lang = (locale?.startsWith('de') ? 'de' : 'en') as 'de' | 'en';
+  const [activeCategory, setActiveCategory] = useState<ReadinessCategory>('delegation');
   const [saving, setSaving] = useState<string | null>(null);
+  const [showSaved, setShowSaved] = useState(false);
+  const [methodologyCollapsed, setMethodologyCollapsed] = useState(true);
 
   const assessmentData = useAsync(() => api.getReadinessAssessment(), []);
 
@@ -195,6 +379,9 @@ export default function ReadinessPage() {
     try {
       const updated = await api.saveReadinessAnswer(questionKey, status, notes);
       assessmentData.setData(updated);
+      // Show saved toast
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 1500);
     } catch (err) {
       console.error('Failed to save answer', err);
     } finally {
@@ -202,105 +389,127 @@ export default function ReadinessPage() {
     }
   }, [assessmentData]);
 
-  const categories = useMemo(() => {
-    return (Object.keys(CATEGORY_META) as ReadinessCategory[])
-      .sort((a, b) => CATEGORY_META[a].order - CATEGORY_META[b].order);
-  }, []);
-
   if (assessmentData.loading) return <LoadingSpinner />;
   if (assessmentData.error) return <ErrorMessage message={assessmentData.error} onRetry={assessmentData.refetch} />;
 
-  const data = assessmentData.data;
+  const data = assessmentData.data as ReadinessAssessment;
   if (!data) return null;
 
   const { questions, answers, score } = data;
-  const categoryScoreMap = new Map(score.categories.map(c => [c.category, c]));
+
+  // Check if loan origination should be skipped
+  const loanAnswer = answers['loan_applicable'];
+  const loanSkipped = loanAnswer && (loanAnswer.status === 'na' || loanAnswer.status === 'no');
+
+  const sortedCategories = Object.entries(CATEGORY_META)
+    .sort(([, a], [, b]) => a.order - b.order)
+    .map(([key]) => key as ReadinessCategory);
+
+  const categoryLabels: Record<ReadinessCategory, string> = {
+    delegation: lang === 'de' ? 'Delegation & Auslagerung' : 'Delegation & Outsourcing',
+    liquidity: lang === 'de' ? 'Liquiditätssteuerung' : 'Liquidity Management',
+    reporting: lang === 'de' ? 'Reporting & Meldewesen' : 'Reporting & Disclosure',
+    disclosure: lang === 'de' ? 'Anlegerinformation' : 'Investor Disclosure',
+    loan_origination: lang === 'de' ? 'Kreditvergabe' : 'Loan Origination',
+    governance: lang === 'de' ? 'Governance & Umsetzung' : 'Governance & Implementation',
+  };
+
+  const activeQuestions = questions.filter(q => q.category === activeCategory);
+  const activeCatScore = score.categories.find(c => c.category === activeCategory);
 
   return (
-    <div className="max-w-4xl">
+    <div>
+      {/* Saved Toast */}
+      <SavedToast visible={showSaved} />
+
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">{t('readiness.title')}</h1>
-        <p className="text-sm text-ink-secondary">{t('readiness.subtitle')}</p>
+        <h1 className="text-lg md:text-xl font-semibold tracking-tight text-ink">
+          AIFMD II Readiness Assessment
+        </h1>
+        <p className="text-sm text-ink-secondary">
+          {lang === 'de'
+            ? 'Strukturierte Gap-Analyse gemäß Richtlinie 2024/927/EU und FoMaStG-Referentenentwurf.'
+            : 'Structured gap analysis based on Directive 2024/927/EU and the FoMaStG draft bill.'}
+        </p>
+      </div>
+
+      {/* Legal Disclaimer */}
+      <div className="mb-4">
+        <Disclaimer lang={lang} />
+      </div>
+
+      {/* Deadline Banner */}
+      <div className="mb-4">
+        <DeadlineBanner days={score.daysUntilDeadline} lang={lang} />
+      </div>
+
+      {/* Methodology */}
+      <div className="mb-6">
+        <Methodology lang={lang} collapsed={methodologyCollapsed} onToggle={() => setMethodologyCollapsed(!methodologyCollapsed)} />
       </div>
 
       {/* Score Overview */}
-      <Card className="!p-6 mb-8">
-        <div className="flex flex-col sm:flex-row items-center gap-6">
-          <div className="relative">
-            <ScoreRing score={score.overall} size={130} label={t('readiness.overall')} />
-          </div>
+      <div className="mb-8 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+        {/* Score Ring */}
+        <Card className="!p-6 flex flex-col items-center justify-center">
+          <ScoreRing score={score.overall} label={lang === 'de' ? 'Bereitschaft' : 'Readiness'} />
+          <p className="mt-4 text-xs text-ink-tertiary text-center tabular-nums">
+            {score.answeredCount}/{score.applicableCount} {lang === 'de' ? 'beantwortet' : 'answered'}
+          </p>
+          <p className="text-[10px] text-ink-tertiary/60 text-center mt-1">
+            {lang === 'de' ? '(N/A-Fragen ausgeschlossen)' : '(N/A questions excluded)'}
+          </p>
+        </Card>
 
-          <div className="flex-1 space-y-3">
-            <div className="flex items-center gap-3">
-              <span className={classNames(
-                'text-3xl font-bold tabular-nums',
-                score.daysUntilDeadline <= 30 ? 'text-red-400' :
-                score.daysUntilDeadline <= 90 ? 'text-amber-400' : 'text-ink'
-              )}>
-                {score.daysUntilDeadline}
-              </span>
-              <div>
-                <p className="text-sm font-medium text-ink">{t('readiness.daysLeft')}</p>
-                <p className="text-xs text-ink-tertiary">16. April 2026 — {t('readiness.transposition')}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 text-xs text-ink-tertiary">
-              <span>{score.answeredCount}/{score.totalCount} {t('readiness.answered')}</span>
-              <span>●●● = {t('readiness.highWeight')}</span>
-            </div>
-
-            {/* Mini category bars */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {categories.map(cat => {
-                const catScore = categoryScoreMap.get(cat);
-                const s = catScore?.score ?? 0;
-                return (
-                  <div key={cat} className="flex items-center gap-2">
-                    <span className="text-xs">{CATEGORY_META[cat].icon}</span>
-                    <div className="flex-1 h-1 rounded-full bg-edge overflow-hidden">
-                      <div
-                        className={classNames('h-full rounded-full',
-                          s >= 70 ? 'bg-emerald-400' : s >= 40 ? 'bg-amber-400' : 'bg-red-400'
-                        )}
-                        style={{ width: `${s}%` }}
-                      />
-                    </div>
-                    <span className="text-[10px] font-bold tabular-nums text-ink-tertiary w-7 text-right">{s}%</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        {/* Category bars */}
+        <div className="space-y-2">
+          {sortedCategories.map(cat => {
+            const catScore = score.categories.find(c => c.category === cat);
+            if (!catScore) return null;
+            return (
+              <CategoryBar
+                key={cat}
+                catScore={catScore}
+                meta={CATEGORY_META[cat]}
+                label={categoryLabels[cat]}
+                isActive={activeCategory === cat}
+                onClick={() => setActiveCategory(cat)}
+                lang={lang}
+              />
+            );
+          })}
         </div>
-      </Card>
-
-      {/* Questions by category */}
-      <div className="space-y-8">
-        {categories.map(cat => {
-          const catQuestions = questions.filter((q: ReadinessQuestion) => q.category === cat);
-          const catScore = categoryScoreMap.get(cat)?.score ?? 0;
-          return (
-            <CategorySection
-              key={cat}
-              category={cat}
-              questions={catQuestions}
-              answers={answers}
-              lang={lang}
-              score={catScore}
-              onAnswer={handleAnswer}
-              saving={saving}
-            />
-          );
-        })}
       </div>
 
-      {/* Footer note */}
-      <div className="mt-8 rounded-xl border border-edge bg-bg-secondary p-4">
-        <p className="text-xs text-ink-tertiary leading-relaxed">
-          {t('readiness.footer')}
-        </p>
+      {/* Active Category Questions */}
+      <div className="mb-4 flex items-center gap-3">
+        <span className="text-xl">{CATEGORY_META[activeCategory].icon}</span>
+        <h2 className="text-base font-semibold text-ink">{categoryLabels[activeCategory]}</h2>
+        {activeCatScore && (
+          <Badge variant={activeCatScore.score >= 70 ? 'green' : activeCatScore.score >= 40 ? 'yellow' : 'red'}>
+            {activeCatScore.score}%
+          </Badge>
+        )}
+        {activeCatScore && activeCatScore.applicable - activeCatScore.answered > 0 && (
+          <span className="text-xs text-amber-400">
+            {activeCatScore.applicable - activeCatScore.answered} {lang === 'de' ? 'offen' : 'open'}
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        {activeQuestions.map(q => (
+          <QuestionRow
+            key={q.key}
+            question={q}
+            answer={answers[q.key] || { status: 'unanswered' }}
+            lang={lang}
+            onAnswer={handleAnswer}
+            saving={saving}
+            loanSkipped={!!loanSkipped}
+          />
+        ))}
       </div>
     </div>
   );
