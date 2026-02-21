@@ -758,6 +758,10 @@ class ApiClient {
     return this.request('/readiness/score');
   }
 
+  getReadinessExportUrl(lang: string = 'en'): string {
+    return `${this.baseUrl}/readiness/export?lang=${lang}`;
+  }
+
   async saveReadinessAnswer(questionKey: string, status: string, notes?: string): Promise<ReadinessAssessment> {
     return this.request(`/readiness/${questionKey}`, {
       method: 'PUT',
