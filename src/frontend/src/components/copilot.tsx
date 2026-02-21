@@ -472,7 +472,7 @@ export function CopilotToggleButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-30 flex h-12 items-center gap-2.5 rounded-full bg-[#2D3333] px-5 text-white shadow-lg transition-all hover:scale-105 hover:bg-[#3a4242] hover:shadow-xl"
+      className="fixed bottom-6 right-6 z-30 flex h-12 items-center gap-2.5 rounded-full bg-[#5A8FA6] px-5 text-white shadow-lg transition-all hover:scale-105 hover:bg-[#3D7A91] hover:shadow-xl dark:bg-[#C5E0EE] dark:text-[#2D3333] dark:hover:bg-[#A3C4D4]"
       title={t('copilot.title')}
     >
       <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

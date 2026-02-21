@@ -800,7 +800,7 @@ export default function DashboardPage() {
           </div>
 
           {/* RIGHT: Sidebar */}
-          <div className="space-y-3 lg:sticky lg:top-4">
+          <div className="space-y-3 lg:sticky lg:top-[60px]">
             {loading ? (
               <SkeletonSidebar />
             ) : (

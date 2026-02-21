@@ -85,7 +85,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           />
 
           <main className="relative flex-1 overflow-y-auto text-ink">
-            <div className="sticky top-0 z-20 flex h-11 items-center justify-between border-b border-edge bg-bg-primary/80 px-4 backdrop-blur-sm md:px-6 lg:px-8">
+            <div className="sticky top-0 z-20 flex h-11 items-center justify-between border-b border-edge bg-bg-primary px-4 backdrop-blur-none md:px-6 lg:px-8">
               <Breadcrumb />
               <TopRightControls />
             </div>

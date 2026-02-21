@@ -111,7 +111,12 @@ function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="rounded-lg border border-edge bg-surface p-1.5 text-ink-tertiary transition-all hover:border-edge-strong hover:text-ink-secondary"
+      className={classNames(
+        'rounded-lg border p-1.5 transition-all',
+        dark
+          ? 'border-[rgba(197,224,238,0.2)] bg-[rgba(197,224,238,0.08)] text-[#C5E0EE] hover:bg-[rgba(197,224,238,0.15)] hover:text-[#dceef7]'
+          : 'border-gray-300 bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+      )}
       title={dark ? 'Light Mode' : 'Dark Mode'}
     >
       {dark ? (
