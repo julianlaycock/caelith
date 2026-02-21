@@ -71,7 +71,7 @@ export default function InvestorDetailPage() {
   );
   const [showUpload, setShowUpload] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadDocType, setUploadDocType] = useState('passport');
+  const [uploadDocType, setUploadDocType] = useState('KYC_identity');
   const [uploadExpiry, setUploadExpiry] = useState('');
   const [uploadNotes, setUploadNotes] = useState('');
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -89,7 +89,7 @@ export default function InvestorDetailPage() {
       setDocMsg({ type: 'success', text: 'Document uploaded successfully.' });
       setShowUpload(false);
       setUploadFile(null);
-      setUploadDocType('passport');
+      setUploadDocType('KYC_identity');
       setUploadExpiry('');
       setUploadNotes('');
       documents.refetch();
@@ -609,20 +609,21 @@ export default function InvestorDetailPage() {
             value={uploadDocType}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setUploadDocType(e.target.value)}
             options={[
-              { value: 'passport', label: 'Passport' },
-              { value: 'national_id', label: 'National ID' },
+              { value: 'KYC_identity', label: 'Identity Document (Passport / ID)' },
               { value: 'proof_of_address', label: 'Proof of Address' },
-              { value: 'certificate_of_incorporation', label: 'Certificate of Incorporation' },
-              { value: 'beneficial_ownership', label: 'Beneficial Ownership Declaration' },
-              { value: 'tax_certificate', label: 'Tax Certificate' },
-              { value: 'bank_reference', label: 'Bank Reference' },
-              { value: 'accreditation_letter', label: 'Accreditation Letter' },
-              { value: 'aml_declaration', label: 'AML Declaration' },
-              { value: 'source_of_funds', label: 'Source of Funds' },
-              { value: 'power_of_attorney', label: 'Power of Attorney' },
-              { value: 'board_resolution', label: 'Board Resolution' },
-              { value: 'financial_statement', label: 'Financial Statement' },
+              { value: 'proof_of_institutional_status', label: 'Proof of Institutional Status' },
+              { value: 'MiFID_professional_classification', label: 'MiFID Professional Classification' },
+              { value: 'written_confirmation_of_well_informed_status', label: 'Well-Informed Status Confirmation' },
+              { value: 'proof_of_experience', label: 'Proof of Experience' },
+              { value: 'qualifying_investor_declaration', label: 'Qualifying Investor Declaration' },
+              { value: 'semi_professional_declaration', label: 'Semi-Professional Declaration' },
+              { value: 'suitability_questionnaire', label: 'Suitability Questionnaire' },
               { value: 'subscription_agreement', label: 'Subscription Agreement' },
+              { value: 'prospectus_acknowledgement', label: 'Prospectus Acknowledgement' },
+              { value: 'tax_declaration', label: 'Tax Declaration' },
+              { value: 'AML_screening', label: 'AML Screening' },
+              { value: 'source_of_funds', label: 'Source of Funds' },
+              { value: 'beneficial_ownership', label: 'Beneficial Ownership Declaration' },
               { value: 'other', label: 'Other' },
             ]}
           />

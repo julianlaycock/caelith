@@ -617,6 +617,10 @@ export default function RulesPage() {
                         <span className="text-sm font-medium text-ink">{rule.name}</span>
                         <Badge variant={rule.enabled ? 'green' : 'gray'}>{rule.enabled ? 'Active' : 'Disabled'}</Badge>
                         <Badge variant="blue">{rule.operator}</Badge>
+                        <Badge variant={rule.severity === 'critical' ? 'red' : rule.severity === 'high' ? 'red' : rule.severity === 'medium' ? 'yellow' : 'gray'}>
+                          {rule.severity}
+                        </Badge>
+                        {rule.jurisdiction && <Badge variant="blue">{rule.jurisdiction}</Badge>}
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => handleToggleCompositeRule(rule)}

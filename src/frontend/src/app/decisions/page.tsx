@@ -127,7 +127,7 @@ export default function DecisionsPage() {
               onClick={handleVerifyChain}
               disabled={verifying}
             >
-              {verifying ? 'Verifying...' : '🔗 Verify Chain Integrity'}
+              {verifying ? t('decisions.verifying') : `🔗 ${t('decisions.verifyChain')}`}
             </Button>
             <ExportMenu
               onExportCSV={() => {
@@ -163,7 +163,7 @@ export default function DecisionsPage() {
         <div className="flex flex-wrap items-end gap-3">
           <div className="w-[200px]">
             <Select
-              label="Decision Type"
+              label={t('decisions.decisionType')}
               value={filterType}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterType(e.target.value)}
               options={DECISION_TYPE_OPTIONS}
@@ -171,7 +171,7 @@ export default function DecisionsPage() {
           </div>
           <div className="w-[160px]">
             <Select
-              label="Result"
+              label={t('table.result')}
               value={filterResult}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterResult(e.target.value)}
               options={RESULT_OPTIONS}
@@ -179,7 +179,7 @@ export default function DecisionsPage() {
           </div>
           {(filterType || filterResult) && (
             <Button variant="ghost" size="sm" onClick={() => { setFilterType(''); setFilterResult(''); }}>
-              Clear
+              {t('common.clear')}
             </Button>
           )}
         </div>
@@ -199,13 +199,13 @@ export default function DecisionsPage() {
           <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="border-b border-edge">
               <tr>
-                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Time</th>
-                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Type</th>
-                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Result</th>
-                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Checks</th>
-                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Decided By</th>
-                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">Seq</th>
-                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">Actions</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.time')}</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.type')}</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.result')}</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.checks')}</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.decidedBy')}</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary">{t('table.seq')}</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-ink-tertiary">{t('table.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-edge-subtle">
@@ -256,8 +256,8 @@ export default function DecisionsPage() {
         </Card>
       ) : (
         <EmptyState
-          title="No decisions found"
-          description={filterType || filterResult ? 'Try adjusting your filters.' : 'Compliance decisions will appear here as transfers and eligibility checks are processed.'}
+          title={t('decisions.noDecisions')}
+          description={filterType || filterResult ? t('decisions.adjustFilters') : t('decisions.noDecisionsDesc')}
         />
       )}
 
@@ -265,15 +265,15 @@ export default function DecisionsPage() {
       {selectedDecision && (
         <div className="fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedDecision(null)} />
-          <div className="ml-auto relative z-10 w-full md:max-w-xl h-full bg-bg-secondary shadow-xl border-l border-edge overflow-y-auto">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-edge bg-bg-secondary px-6 py-4">
+          <div className="ml-auto relative z-10 w-full md:max-w-xl h-full bg-bg-primary shadow-xl border-l border-edge overflow-y-auto">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-edge bg-bg-primary px-6 py-4">
               <div>
-                <h2 className="text-base font-semibold text-ink">Decision Record</h2>
+                <h2 className="text-base font-semibold text-ink">{t('decisions.decisionRecord')}</h2>
                 <p className="text-xs text-ink-tertiary font-mono">{selectedDecision.id.substring(0, 8)}…</p>
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="secondary" size="sm" onClick={() => handleExportEvidence(selectedDecision)}>
-                  Export PDF
+                  {t('decisions.exportPdf')}
                 </Button>
                 {exportError && (
                   <span className="text-[10px] text-red-400 max-w-[180px] truncate" title={exportError}>
@@ -295,19 +295,19 @@ export default function DecisionsPage() {
               {/* Overview */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">Type</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">{t('table.type')}</p>
                   <p className="text-sm font-medium text-ink">{titleCase(selectedDecision.decision_type)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">Result</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">{t('table.result')}</p>
                   <Badge variant={resultBadgeVariant(selectedDecision.result)}>{selectedDecision.result}</Badge>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">Decided By</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">{t('table.decidedBy')}</p>
                   <p className="text-sm text-ink">{selectedDecision.decided_by_name || 'System (automated)'}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">Timestamp</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-ink-tertiary mb-1">{t('decisions.timestamp')}</p>
                   <p className="text-sm tabular-nums text-ink">{formatDateTime(selectedDecision.decided_at)}</p>
                 </div>
               </div>
@@ -329,7 +329,7 @@ export default function DecisionsPage() {
 
               {/* Per-Rule Check Results */}
               <div>
-                <SectionHeader title="Compliance Checks" description="Per-rule pass/fail with explanations" />
+                <SectionHeader title={t('decisions.complianceChecks')} description={t('decisions.checksDesc')} />
                 {selectedDecision.result_details?.checks?.length > 0 ? (
                   <div className="space-y-2">
                     {selectedDecision.result_details.checks.map((check, i) => (
@@ -366,7 +366,7 @@ export default function DecisionsPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-ink-secondary">No detailed check data available.</p>
+                  <p className="text-sm text-ink-secondary">{t('decisions.noCheckData')}</p>
                 )}
               </div>
 
@@ -382,14 +382,14 @@ export default function DecisionsPage() {
                       {explainLoading ? (
                         <>
                           <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#24364A]/30 border-t-[#24364A]" />
-                          Analyzing...
+                          {t('decisions.analyzing')}
                         </>
                       ) : (
                         <>
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                           </svg>
-                          Explain This Decision
+                          {t('decisions.explainDecision')}
                         </>
                       )}
                     </button>
@@ -399,7 +399,7 @@ export default function DecisionsPage() {
                   </>
                 ) : (
                   <div className="space-y-4">
-                    <SectionHeader title="AI Explanation" description="Regulatory context and recommendation" />
+                    <SectionHeader title={t('decisions.aiExplanation')} description={t('decisions.regulatoryContext')} />
 
                     {/* Summary */}
                     <div className="rounded-lg border border-[#24364A]/15 bg-[#24364A]/5 p-4">
@@ -434,14 +434,14 @@ export default function DecisionsPage() {
 
                     {/* Recommendation */}
                     <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
-                      <p className="text-xs font-semibold text-emerald-700 mb-1">Recommendation</p>
+                      <p className="text-xs font-semibold text-emerald-700 mb-1">{t('decisions.recommendation')}</p>
                       <p className="text-xs text-emerald-600">{explanation.recommendation}</p>
                     </div>
 
                     {/* Trust actions */}
                     <div className="flex items-center gap-2">
                       <Button variant="primary" size="sm" onClick={() => handleExportEvidence(selectedDecision)}>
-                        Download Evidence Bundle
+                        {t('decisions.downloadEvidence')}
                       </Button>
                       {exportError && (
                         <span className="text-xs text-red-400">{exportError}</span>
@@ -466,7 +466,7 @@ export default function DecisionsPage() {
               {/* Input Snapshot */}
               {selectedDecision.input_snapshot && Object.keys(selectedDecision.input_snapshot).length > 0 && (
                 <div>
-                  <SectionHeader title="Input Snapshot" description="Exact data at decision time" />
+                  <SectionHeader title={t('decisions.inputSnapshot')} description={t('decisions.inputSnapshotDesc')} />
                   <div className="rounded-lg border border-edge-subtle bg-bg-tertiary p-4 overflow-x-auto">
                     <pre className="text-xs font-mono text-ink-secondary whitespace-pre-wrap break-words">
                       {JSON.stringify(selectedDecision.input_snapshot, null, 2)}
@@ -478,7 +478,7 @@ export default function DecisionsPage() {
               {/* Rule Version Snapshot */}
               {selectedDecision.rule_version_snapshot && Object.keys(selectedDecision.rule_version_snapshot).length > 0 && (
                 <div>
-                  <SectionHeader title="Rule Version Snapshot" description="Exact rules that applied at decision time" />
+                  <SectionHeader title={t('decisions.ruleVersionSnapshot')} description={t('decisions.ruleVersionSnapshotDesc')} />
                   <div className="rounded-lg border border-edge-subtle bg-bg-tertiary p-4 overflow-x-auto">
                     <pre className="text-xs font-mono text-ink-secondary whitespace-pre-wrap break-words">
                       {JSON.stringify(selectedDecision.rule_version_snapshot, null, 2)}

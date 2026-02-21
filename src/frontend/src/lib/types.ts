@@ -287,6 +287,8 @@ export interface CompositeRule {
   operator: 'AND' | 'OR' | 'NOT';
   conditions: RuleCondition[];
   enabled: boolean;
+  severity: string;
+  jurisdiction: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

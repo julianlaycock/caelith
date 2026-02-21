@@ -595,6 +595,66 @@ async function seed() {
   }
 
   // ====================================================================
+  // 9. SFDR Classification
+  // ====================================================================
+  console.log('\n▸ [SFDR Classification]');
+
+  await execute(
+    `UPDATE fund_structures SET sfdr_classification = 'article_9' WHERE id = $1`,
+    [FUND_IMMO]
+  );
+  console.log('  ✓ Rhein-Main Immobilien → Article 9 (sustainable investment objective)');
+
+  await execute(
+    `UPDATE fund_structures SET sfdr_classification = 'article_6' WHERE id = $1`,
+    [FUND_WP]
+  );
+  console.log('  ✓ Süddeutsche Wertpapier → Article 6 (no sustainability integration)');
+
+  await execute(
+    `UPDATE fund_structures SET sfdr_classification = 'article_8' WHERE id = $1`,
+    [FUND_MULTI]
+  );
+  console.log('  ✓ Hanseatischer Multi-Asset → Article 8 (promotes E/S characteristics)');
+
+  // ====================================================================
+  // 10. Transfers — sample transfer records
+  // ====================================================================
+  console.log('\n▸ [Transfers]');
+
+  const transferDefs = [
+    { from: aerzte,    to: sparkasse, asset: A_IMMO_A, units: 10000, status: 'executed',          days: 30 },
+    { from: bvk,       to: bosch,     asset: A_IMMO_A, units: 25000, status: 'executed',          days: 20 },
+    { from: sparkasse, to: mueller,   asset: A_MULTI_A, units: 15000, status: 'executed',          days: 15 },
+    { from: apoBank,   to: schneider, asset: A_WP_I,   units: 20000, status: 'pending_approval',  days: 3 },
+    { from: bvk,       to: aerzte,    asset: A_IMMO_A, units: 30000, status: 'pending_approval',  days: 1 },
+    { from: schneider, to: weber,     asset: A_MULTI_S, units: 5000,  status: 'rejected',          days: 10 },
+    { from: mueller,   to: becker,    asset: A_IMMO_A, units: 8000,  status: 'rejected',          days: 7 },
+  ];
+
+  for (const t of transferDefs) {
+    const ex = await query(
+      'SELECT 1 FROM transfers WHERE from_investor_id = $1 AND to_investor_id = $2 AND asset_id = $3 AND units = $4',
+      [t.from, t.to, t.asset, t.units]
+    );
+    if (ex.length > 0) {
+      console.log(`  → Transfer ${t.from.slice(0, 8)}→${t.to.slice(0, 8)} exists`);
+    } else {
+      await execute(
+        `INSERT INTO transfers
+           (id, asset_id, from_investor_id, to_investor_id, units, status, executed_at, rejection_reason, created_at)
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, now())`,
+        [
+          t.asset, t.from, t.to, t.units, t.status,
+          daysAgo(t.days),
+          t.status === 'rejected' ? 'Compliance-Verstoß: KYC-Status nicht verifiziert' : null,
+        ]
+      );
+      console.log(`  ✓ ${t.status.toUpperCase().padEnd(18)} ${t.units.toLocaleString().padStart(8)} units (${t.asset.slice(0, 8)}...)`);
+    }
+  }
+
+  // ====================================================================
   // Summary
   // ====================================================================
   console.log('\n╔══════════════════════════════════════════════════════════╗');

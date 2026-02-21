@@ -1,7 +1,7 @@
 -- Migration 032: Investor Documents — KYC Document Upload & Management
 -- Stores file metadata and binary content for investor KYC documents.
 
-CREATE TABLE investor_documents (
+CREATE TABLE IF NOT EXISTS investor_documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id),
     investor_id UUID NOT NULL REFERENCES investors(id) ON DELETE RESTRICT,
@@ -30,14 +30,18 @@ CREATE TABLE investor_documents (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_inv_doc_investor ON investor_documents(investor_id);
-CREATE INDEX idx_inv_doc_type ON investor_documents(document_type);
-CREATE INDEX idx_inv_doc_status ON investor_documents(status);
-CREATE INDEX idx_inv_doc_tenant ON investor_documents(tenant_id);
-CREATE INDEX idx_inv_doc_expiry ON investor_documents(expiry_date) WHERE expiry_date IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_inv_doc_investor ON investor_documents(investor_id);
+CREATE INDEX IF NOT EXISTS idx_inv_doc_type ON investor_documents(document_type);
+CREATE INDEX IF NOT EXISTS idx_inv_doc_status ON investor_documents(status);
+CREATE INDEX IF NOT EXISTS idx_inv_doc_tenant ON investor_documents(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_inv_doc_expiry ON investor_documents(expiry_date) WHERE expiry_date IS NOT NULL;
 
 -- RLS policy
 ALTER TABLE investor_documents ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY tenant_isolation_investor_documents ON investor_documents
-    USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_investor_documents') THEN
+    CREATE POLICY tenant_isolation_investor_documents ON investor_documents
+      USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  END IF;
+END $$;

@@ -25,6 +25,8 @@ interface CompositeRuleRow {
   operator: string;
   conditions: string | RuleCondition[];
   enabled: boolean;
+  severity: string;
+  jurisdiction: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -43,6 +45,8 @@ function rowToRule(row: CompositeRuleRow): StoredCompositeRule {
     operator: row.operator as 'AND' | 'OR' | 'NOT',
     conditions,
     enabled: row.enabled,
+    severity: row.severity || 'medium',
+    jurisdiction: row.jurisdiction || null,
     created_by: row.created_by,
     created_at: row.created_at,
     updated_at: row.updated_at,
